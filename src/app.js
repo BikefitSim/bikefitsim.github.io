@@ -125,7 +125,7 @@
   const isLocal = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.hostname.endsWith('.localhost');
   const inClaude = !!(window.claude && typeof window.claude.use === 'function');
   const keepInBrowser = isLocal || inClaude;
-  $('saveNotice').hidden = keepInBrowser;
+  const NO_SAVE = 'This website doesn\'t save data. Keep a copy of your bikes and fits on your computer.';
   $('dataNote').textContent = inClaude ? 'Your bikes are saved to your Claude account and to any file you save.'
     : isLocal ? 'Nothing you enter is sent to a server. Your bikes stay in this browser and in any file you save.'
     : 'Nothing you enter is sent to a server or kept after you leave. Save to a file to keep your bikes.';
@@ -806,9 +806,9 @@
     } else if (GBFile.canLink() && fileState === 'prompt') {
       html = `<span class="file-status warn">${fileMsg ? `${esc(fileMsg)} ` : ''}<b>${esc(GBFile.name)}</b> needs your permission again to keep saving.</span>${btn('fileReconnect', 'Reconnect')}${btn('fileUnlink', 'Forget this file')}`;
     } else if (GBFile.canLink()) {
-      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : (keepInBrowser ? 'Keep your bikes in a file on this computer as well.' : '')}</span>${btn('fileCreate', 'Save to a file')}${btn('fileOpen', 'Open data file')}`;
+      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : (keepInBrowser ? 'Keep your bikes in a file on this computer as well.' : NO_SAVE)}</span>${btn('fileCreate', 'Save to a file')}${btn('fileOpen', 'Open data file')}`;
     } else {
-      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : (keepInBrowser ? 'Keep a copy of your bikes in a file on this computer.' : '')}</span>${btn('fileDownload', 'Download data file')}${btn('fileOpen', 'Open data file')}`;
+      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : (keepInBrowser ? 'Keep a copy of your bikes in a file on this computer.' : NO_SAVE)}</span>${btn('fileDownload', 'Download data file')}${btn('fileOpen', 'Open data file')}`;
     }
     el.innerHTML = html;
   }
