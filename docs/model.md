@@ -1,4 +1,4 @@
-# Geobike calculation model
+# Bikefit Simulator calculation model
 
 Grid: BB centre at (0, 0), X forward, Y up. Lengths in mm, angles in degrees.
 
@@ -41,5 +41,6 @@ Code: `src/engine.js` holds everything below; `test/engine.test.js` checks it.
 ## Saving
 - Saved shape stays v3; new fields are only added with defaults, so older saves keep loading. Reference bikes are a list (`refs`, each with its own `fit`); a save from before that held a single `ref` + `fit` loads as the first reference. Target bikes may still carry an old `refId`; it is ignored. A target bike without `barWidth` uses the reference width.
 - `fit.barWidth` missing in older saves is loaded as 0 (rider reach read in side view), so their results don't shift; the page asks for the width.
+- Start: one empty reference bike ("Reference bike 1") and one empty target bike ("Target bike 1"). Opened from disk or localhost, and inside Claude, bikes are kept in the browser; on any other web address (GitHub Pages) nothing is kept between visits unless a data file is used.
 - Edits are locked until saved data has loaded. Copies: browser, account (published page) and an optional data file on the computer (`{app: 'geobike', format: 3, savedAt, state}`); each carries the time of the last edit and the newest wins.
 - Data from the earlier hoods-based version can be brought in from a banner: frames map directly (lower headset added to fork length); rider reach and drop are converted from the hood measurements; spacers are estimated and flagged for checking.

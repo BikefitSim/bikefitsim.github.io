@@ -1,4 +1,4 @@
-"""Build Geobike from src/ into dist/.
+"""Build Bikefit Simulator from src/ into dist/.
 
     python3 build.py
 
@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, 'src')
 DIST = os.path.join(ROOT, 'dist')
 
-HEAD = '''<title>Geobike</title>
+HEAD = '''<title>Bikefit Simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

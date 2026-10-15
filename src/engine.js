@@ -1,4 +1,4 @@
-/* Geobike calculation engine.
+/* Bikefit Simulator calculation engine.
    Grid: BB centre at (0, 0), X forward, Y up. Lengths in mm, angles in degrees. */
 const GB = (() => {
   const rad = (d) => (d * Math.PI) / 180;
