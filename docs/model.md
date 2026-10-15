@@ -7,15 +7,17 @@ Workflow: 1. references, as many as needed (e.g. a road and a gravel position), 
 Code: `src/engine.js` holds everything below; `test/engine.test.js` checks it.
 
 ## Inputs
-- Frame (each reference and each target bike): seat tube angle, head tube angle, head tube length, effective top tube, seat tube length, BB drop, fork length (axle to crown, plus any lower headset cup), fork offset. Stack and reach from the chart are optional overrides.
+- Frame (each reference and each target bike): seat tube angle, head tube angle, head tube length, BB drop, top tube (effective or actual, one is enough), seat tube (c-t or c-c, one is enough), fork length (axle to crown, plus any lower headset cup), fork offset. Stack and reach from the chart are optional overrides.
 - Bike fit, besides its frame: saddle height (BB centre to saddle top along the seat tube), saddle setback (horizontal, BB centre to a plumb line from the saddle tip), spacers under the stem (head tube top to stem, top cap included), stem length and angle, handlebar reach (0 = flat bar) and handlebar width (centre to centre at the hoods).
 - Personal fit: saddle height as the straight line from the BB centre to the saddle tip, saddle setback, personal reach (straight tape line, saddle tip to the base of the hoods, or to where the hands sit on a bar without hoods), handlebar drop (vertical, saddle top to top of bar), handlebar width.
 - Each target bike: handlebar reach and handlebar width of the bar it will use (width empty = same as the reference).
-- Fixed assumptions: stem 40 mm tall (clamp centre 20 mm above the spacers), bar 31.8 mm (radius 15.9).
+- Fixed assumptions: stem 40 mm tall (clamp centre 20 mm above the spacers), bar 31.8 mm (radius 15.9). The top tube meets the head tube 18 mm below its top. With only one seat tube length, c-t = c-c + 20 mm; results that rest on that are flagged.
 
 ## Frame
 - Stack = BB drop + (fork length + head tube length) × sin(HTA) − fork offset × cos(HTA)
-- Reach = top tube − stack ÷ tan(STA)
+- Reach = effective top tube − stack ÷ tan(STA)
+- Without an effective top tube, reach comes from the actual one, which runs centre to centre from P = c-c × (−cos STA, sin STA) on the seat tube to J = T − 18 × d on the head tube: reach = P.x + √(actual² − (stack − 18 × sin HTA − P.y)²) − 18 × cos HTA. With both top tubes, the effective one is used and reaches more than 8 mm apart are flagged.
+- Seatpost showing = (S.y − 45) ÷ sin(STA) − seat tube c-t, checked against 40 and 280 mm.
 - Head tube top T = (reach, stack). Steering axis direction d = (−cos HTA, sin HTA).
 - Calculated stack and reach rarely match a chart exactly: a lower headset cup missing from fork length (10 mm of cup ≈ 9.5 mm of stack), rounded angles (0.5° of seat angle ≈ 5.5 mm of reach) and brand-specific definitions of seat angle and top tube. Chart values, when entered, are used directly.
 
@@ -41,7 +43,7 @@ Code: `src/engine.js` holds everything below; `test/engine.test.js` checks it.
 - Handlebar reach 0 is read as a flat bar.
 
 ## Drawings
-- Side view of the target bike (blue, solid) over the reference bike (yellow, dashed), aligned at the BB on a 50 mm grid; fit points in red. A personal fit has no bike to draw; its BB to saddle tip line is drawn in yellow instead. A flat bar (reach 0) is drawn end-on. Dimensions: saddle height along the seat tube, setback, hand X/Y, drop, personal reach. Close-ups of the front end and saddle on 10 mm grids. Layers for reference, dimensions and grid.
+- Side view of the target bike (blue, solid) over the reference bike (yellow, dashed), aligned at the BB on a 50 mm grid; fit points in red. A personal fit has no bike to draw; its BB to saddle tip line is drawn in yellow instead. A flat bar (reach 0) is drawn end-on. Dimensions: saddle height along the seat tube, setback, hand X/Y, drop, personal reach. The top tube is drawn to the seat tube c-c point when one is given, otherwise to the top of the seat tube. Close-ups of the front end and saddle on 10 mm grids. Layers for reference, dimensions and grid.
 
 ## Saving
 - Saved shape stays v3; new fields are only added with defaults, so older saves keep loading. References are a list (`refs`, each with `kind` 'bike' (bike fit) or 'fit' (personal fit) and its own `fit`; a personal fit's saddle line is `fit.saddleLine`; `lastRef` remembers the one last open in each tab, and a missing kind gets an empty one on load). A reference without `kind` is a bike fit; default names from earlier versions ("Reference bike 2", "Fit reference 1") are renamed to "Bike fit 2", "Personal fit 1"; if it gave the hands by personal reach and drop, the stem those imply is filled in (0.1 mm, 0.1°) and flagged until edited. a save from before that held a single `ref` + `fit` loads as the first reference. Target bikes may still carry an old `refId`; it is ignored. A target bike without `barWidth` uses the reference width.
