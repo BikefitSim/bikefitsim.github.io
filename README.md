@@ -1,4 +1,4 @@
-<img src="assets/logo.svg" alt="Bikefit Simulator logo: B and S in the wheels of a bike" width="144">
+<img src="assets/logo.svg" alt="Bikefit Simulator logo: B and S in the wheels of a bike" width="112">
 
 # Bikefit Simulator
 
@@ -77,6 +77,6 @@ The saved shape is version 3 and only ever gains fields, so older saves and file
 
 ## Credits and contact
 
-Made by José Miguel Moreira, under the [MIT License](LICENSE). Type: IBM Plex Sans, IBM Plex Mono and Saira Condensed (SIL Open Font License).
+Made by José Miguel Moreira, under the MIT License. Type: IBM Plex Sans, IBM Plex Mono and Saira Condensed (SIL Open Font License).
 
-Questions, wrong numbers or ideas: [open an issue](https://github.com/zemiguelmoreira/geobike/issues).
+Questions, wrong numbers or ideas: zmdmoreira@gmail.com
