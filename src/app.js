@@ -602,7 +602,7 @@
           <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle tip'}</span>
           <span class="lg"><i class="tg"></i>Saddle tip and hand position</span>
         </div>
-        <div class="toggles">${hasBike ? tog('ref', 'Reference bike') + tog('ground', 'Align to ground') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
+        <div class="toggles">${hasBike ? `<button class="btn" type="button" id="alignBtn" title="Line the reference bike up on the BB or on the ground">${layers.ground ? 'Align ground' : 'Align BB'}</button>` + tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
       <div class="viz">
         <figure class="draw">${svg.main}<figcaption>Side view on the BB grid. Squares are 50 mm; labels every 200 mm.${hasBike && layers.ref && layers.ground ? ' Reference bike moved to stand on the same ground.' : ''}</figcaption></figure>
@@ -618,6 +618,13 @@
   }
   document.addEventListener('mouseover', (e) => { const t = e.target.closest && e.target.closest('[data-hl]'); if (t) highlight(t.dataset.hl, true); });
   document.addEventListener('mouseout', (e) => { const t = e.target.closest && e.target.closest('[data-hl]'); if (t && !t.contains(e.relatedTarget)) highlight(t.dataset.hl, false); });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest || !e.target.closest('#alignBtn')) return;
+    layers.ground = !layers.ground;
+    try { localStorage.setItem(LAYER_KEY, JSON.stringify(layers)); } catch (err) { /* per-browser only */ }
+    renderViz();
+    const again = $('alignBtn'); if (again) again.focus();
+  });
   document.addEventListener('change', (e) => {
     const box = e.target.closest && e.target.closest('[data-layer]');
     if (!box) return;
