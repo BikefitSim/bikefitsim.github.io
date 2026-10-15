@@ -257,7 +257,7 @@ table.data input[type="radio"] { accent-color: var(--frame); margin: 0; cursor: 
 }
 
 /* dark mode switch */
-.top-right { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+.top-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .theme-btn { position: relative; display: inline-flex; align-items: center; gap: 4px; width: 50px; height: 26px; padding: 0 4px; border: 1px solid var(--rule); background: var(--well); border-radius: 999px; cursor: pointer; flex: none; }
 .theme-btn:hover { border-color: var(--ink-2); }
 .theme-btn .ic { position: relative; width: 18px; height: 18px; padding: 2px; fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
