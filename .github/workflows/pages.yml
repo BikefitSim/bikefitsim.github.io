@@ -28,7 +28,7 @@ jobs:
         run: |
           python3 build.py
           mkdir -p _site
-          cp dist/geobike-local.html _site/index.html
+          cp dist/bikefitsim-local.html _site/index.html
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4

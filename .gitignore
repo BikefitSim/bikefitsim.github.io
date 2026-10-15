@@ -6,3 +6,4 @@ Thumbs.db
 # your own bike and fit numbers stay out of git
 data/
 *.geobike.json
+*.bikefitsim.json
