@@ -922,19 +922,6 @@
       renderAll(); scheduleSave();
       return;
     }
-    const reset = e.target.closest('#resetBtn');
-    if (reset) {
-      if (!armed(reset, 'Click again to replace everything', 'Start over with the example')) return;
-      reset.classList.remove('armed'); reset.textContent = 'Start over with the example';
-      state = EXAMPLE();
-      lastEdit = Date.now();
-      importNote = '';
-      renderAll(); renderImport();
-      clearTimeout(saveTimer);
-      setSave('saving');
-      saveTimer = setTimeout(flush, 300);
-      return;
-    }
     const row = e.target.closest('tr.opt');
     if (row) {
       const b = curBike(); const r = model.res[b.id];
