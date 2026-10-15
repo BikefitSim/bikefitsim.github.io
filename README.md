@@ -7,7 +7,7 @@ the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in m
 
 1. **Reference**, in two tabs, each holding as many as you need:
    - **Bike fit**: a frame that fits you and how it is set up (saddle height and setback, spacers, stem length and angle, handlebar reach and width). Personal reach and drop are worked out from it.
-   - **Personal fit**: just your numbers, with no bike: saddle height (straight line from the BB centre to the saddle tip), setback, personal reach, handlebar drop and bar width.
+   - **Personal fit**: just your numbers, with no bike: saddle height (straight line from the BB centre to the top of the saddle at its centre), setback and personal reach from that centre, handlebar drop and bar width. Saddle length plays no part.
 2. **Target bikes**: frames to set up like the bike fit or personal fit open in step 1.
 3. **Changes**: saddle height along the new seat tube, setback, rail position, stem and spacers.
 

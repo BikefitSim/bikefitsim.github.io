@@ -51,9 +51,10 @@ const GB = (() => {
     return { Q, B: { x: Q.x + length * Math.cos(th), y: Q.y + length * Math.sin(th) } };
   }
 
-  /* Personal fit: no bike, only the rider's numbers. Saddle height is the straight line from
-     the BB centre to the saddle tip, so with the setback it fixes the tip; personal reach and
-     drop fix the hands from there. */
+  /* Personal fit: no bike, only the rider's numbers, all taken at the saddle centre (on top,
+     halfway between tip and tail) so the saddle's length plays no part. Saddle height is the
+     straight line from the BB centre to that point, so with the setback it fixes the point;
+     personal reach and drop fix the hands from there. */
   function bodyPoints(fit) {
     const yy = fit.saddleLine ** 2 - fit.setback ** 2;
     if (!(yy > 0)) return { ok: false, error: 'Saddle setback has to be shorter than the saddle height line. Check both.' };
@@ -64,16 +65,17 @@ const GB = (() => {
     if (sq <= 0) return { ok: false, error: 'Personal reach is too short for this drop and handlebar width. Check the three numbers.' };
     const reachH = Math.sqrt(sq);
     return {
-      ok: true, kind: 'fit',
+      ok: true, kind: 'fit', saddleAt: 'centre',
       bike: null, geo: null, stem: null, reachH, half, riderReach: fit.riderReach, drop: fit.drop,
       saddle: { x: xs, y: ys },
       hand: { x: xs + reachH, y: ys - fit.drop },
       noseAhead: null, // no seat tube to measure from
+      centre: { x: xs, y: ys }, centreReach: fit.riderReach,
       spacers: null,
     };
   }
 
-  /* Saddle tip and hand position for a reference.
+  /* Saddle point (tip on a bike fit, centre on a personal fit) and hand position for a reference.
      A bike fit places the hands from the stem fitted on it; personal reach and drop are
      worked out from that. Saves from before stems were entered gave personal reach and drop
      instead (handFrom 'reach'), and the stem is worked out from those. */
@@ -111,10 +113,14 @@ const GB = (() => {
       const vy = B.y - Q.y;
       stem = { length: Math.hypot(vx, vy), angle: deg(Math.atan2(vy, vx)) - (90 - ref.hta), Q, B };
     }
+    // The saddle centre, as a personal fit measures it, is known only with the saddle's length.
+    const centre = fin(fit.saddleLength) && fit.saddleLength > 0 ? { x: xs - fit.saddleLength / 2, y: ys } : null;
     return {
-      ok: true, kind: 'bike',
+      ok: true, kind: 'bike', saddleAt: 'tip',
       bike, geo, stem, reachH, half, riderReach, drop,
       saddle: { x: xs, y: ys },
+      centre,
+      centreReach: centre ? Math.sqrt((hand.x - centre.x) ** 2 + drop ** 2 + half ** 2) : null,
       hand,
       noseAhead: xs + ys / Math.tan(S), // saddle tip ahead of the seat-tube line at saddle height
       spacers: fit.spacers,
@@ -189,7 +195,7 @@ const GB = (() => {
     return { T, rear, front, htBottom, crown: htBottom, stTop, ssJoin, wheelR: WHEEL_R, groundY: bike.bbDrop - WHEEL_R };
   }
 
-  /* One target bike: what to change so saddle tip and hand position match the reference. */
+  /* One target bike: what to change so the saddle point and hand position match the reference. */
   function solveBike(bikeIn, fp, fit, opts) {
     const geo = frameGeometry(bikeIn);
     const bike = Object.assign({}, bikeIn, { stack: geo.stack, reach: geo.reach });
@@ -207,7 +213,7 @@ const GB = (() => {
     }
     const handShift = hand.x - fp.hand.x;
     const heightAlong = y / Math.sin(S);
-    const noseAhead = x + y / Math.tan(S); // saddle tip ahead of this seat tube's line at saddle height
+    const noseAhead = x + y / Math.tan(S); // saddle point ahead of this seat tube's line at saddle height
     // + = saddle further forward on its rails than on the reference bike; none for a personal fit
     const railMove = fin(fp.noseAhead) ? noseAhead - fp.noseAhead : null;
     const exposed = (y - RAIL_H) / Math.sin(S) - bike.seatTube;

@@ -83,11 +83,17 @@ test('the stem fitted on the reference bike gives the same hand position as the 
 
 test('a fit reference taken from a bike reference puts saddle and hands in the same place', () => {
   const bikeRef = Object.assign({ kind: 'bike' }, ref);
-  const byStem = GB.fitPoints(bikeRef, { saddleHeight: 745, setback: 65, handFrom: 'stem', stemLength: 110, stemAngle: -6, barWidth: 400, spacers: 20, barReach: 80 });
-  const body = { saddleLine: Math.hypot(byStem.saddle.x, byStem.saddle.y), setback: 65, riderReach: byStem.riderReach, drop: byStem.drop, barWidth: 400 };
-  near(body.saddleLine, 717.3, 0.1, 'straight line to the tip reads less than along the seat tube');
+  const byStem = GB.fitPoints(bikeRef, { saddleHeight: 745, setback: 65, handFrom: 'stem', stemLength: 110, stemAngle: -6, barWidth: 400, spacers: 20, barReach: 80, saddleLength: 270 });
+  // a personal fit is taken at the saddle centre, 135 mm behind the tip of a 270 mm saddle
+  near(byStem.centre.x, byStem.saddle.x - 135, 1e-9, 'centre behind the tip');
+  const body = { saddleLine: Math.hypot(byStem.centre.x, byStem.centre.y), setback: -byStem.centre.x, riderReach: byStem.centreReach, drop: byStem.drop, barWidth: 400 };
+  near(body.setback, 200, 1e-9, 'setback to the centre');
+  near(body.saddleLine, 741.8, 0.1, 'straight line to the centre');
+  near(body.riderReach - byStem.riderReach, 129.2, 0.1, 'personal reach from the centre is longer');
   const fp = GB.fitPoints({ kind: 'fit' }, body);
+  assert.strictEqual(fp.saddleAt, 'centre');
   near(fp.saddle.y, byStem.saddle.y, 1e-9, 'saddle y');
+  near(fp.saddle.x, byStem.centre.x, 1e-9, 'saddle centre x');
   near(fp.hand.x, byStem.hand.x, 1e-9, 'hand x');
   near(fp.hand.y, byStem.hand.y, 1e-9, 'hand y');
   const target = Object.assign({}, ref, { sta: 74.5, hta: 73, barReach: 75 });
@@ -101,6 +107,12 @@ test('a fit reference taken from a bike reference puts saddle and hands in the s
 test('a fit reference with more setback than saddle height is refused', () => {
   const fp = GB.fitPoints({ kind: 'fit' }, { saddleLine: 60, setback: 65, riderReach: 650, drop: 60, barWidth: 400 });
   assert.strictEqual(fp.ok, false);
+});
+
+test('a bike fit without a saddle length has no saddle centre', () => {
+  const fp = GB.fitPoints(Object.assign({ kind: 'bike' }, ref), { saddleHeight: 745, setback: 65, handFrom: 'stem', stemLength: 110, stemAngle: -6, barWidth: 400, spacers: 20, barReach: 80, saddleLength: null });
+  assert.strictEqual(fp.centre, null);
+  assert.strictEqual(fp.centreReach, null);
 });
 
 console.log(`\n${passed} checks passed`);
