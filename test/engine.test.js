@@ -68,4 +68,39 @@ test('a wider bar on the target bike puts the hands further back', () => {
   assert.ok(shift(480) < shift(440), 'wider still, further back');
 });
 
+test('the stem fitted on the reference bike gives the same hand position as the tape', () => {
+  const rb = Object.assign({}, ref, GB.frameGeometry(ref));
+  const B = GB.barFor(rb, -6, 110, 20).B;
+  const byStem = GB.fitPoints(ref, { saddleHeight: 745, setback: 65, handFrom: 'stem', stemLength: 110, stemAngle: -6, barWidth: 400, spacers: 20, barReach: 80 });
+  near(byStem.hand.x, B.x + 80, 1e-9, 'hand x');
+  near(byStem.hand.y, B.y + GB.BAR_R, 1e-9, 'hand y');
+  const byTape = GB.fitPoints(ref, { saddleHeight: 745, setback: 65, riderReach: byStem.riderReach, drop: byStem.drop, barWidth: 400, spacers: 20, barReach: 80 });
+  near(byTape.hand.x, byStem.hand.x, 1e-9, 'same hand x');
+  near(byTape.stem.length, 110, 1e-9, 'stem length back');
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80, barWidth: 440 }), byStem, { barWidth: 400 }, opts);
+  near(r.handShift, GB.solveBike(Object.assign({}, ref, { barReach: 80, barWidth: 440 }), byTape, { barWidth: 400 }, opts).handShift, 1e-9, 'bar width works the same');
+});
+
+test('a fit reference taken from a bike reference puts saddle and hands in the same place', () => {
+  const bikeRef = Object.assign({ kind: 'bike' }, ref);
+  const byStem = GB.fitPoints(bikeRef, { saddleHeight: 745, setback: 65, handFrom: 'stem', stemLength: 110, stemAngle: -6, barWidth: 400, spacers: 20, barReach: 80 });
+  const body = { saddleLine: Math.hypot(byStem.saddle.x, byStem.saddle.y), setback: 65, riderReach: byStem.riderReach, drop: byStem.drop, barWidth: 400 };
+  near(body.saddleLine, 717.3, 0.1, 'straight line to the tip reads less than along the seat tube');
+  const fp = GB.fitPoints({ kind: 'fit' }, body);
+  near(fp.saddle.y, byStem.saddle.y, 1e-9, 'saddle y');
+  near(fp.hand.x, byStem.hand.x, 1e-9, 'hand x');
+  near(fp.hand.y, byStem.hand.y, 1e-9, 'hand y');
+  const target = Object.assign({}, ref, { sta: 74.5, hta: 73, barReach: 75 });
+  const a = GB.solveBike(target, byStem, { barWidth: 400 }, opts);
+  const b = GB.solveBike(target, fp, body, opts);
+  near(b.heightAlong, a.heightAlong, 1e-9, 'saddle height');
+  assert.strictEqual(b.railMove, null, 'no rail move without a reference seatpost');
+  assert.deepStrictEqual([b.cockpit.best.angle, b.cockpit.best.length, b.cockpit.best.spacers], [a.cockpit.best.angle, a.cockpit.best.length, a.cockpit.best.spacers]);
+});
+
+test('a fit reference with more setback than saddle height is refused', () => {
+  const fp = GB.fitPoints({ kind: 'fit' }, { saddleLine: 60, setback: 65, riderReach: 650, drop: 60, barWidth: 400 });
+  assert.strictEqual(fp.ok, false);
+});
+
 console.log(`\n${passed} checks passed`);

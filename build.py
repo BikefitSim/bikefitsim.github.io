@@ -1,4 +1,4 @@
-"""Build Geobike from src/ into dist/.
+"""Build Bikefit Simulator from src/ into dist/.
 
     python3 build.py
 
@@ -6,21 +6,29 @@ dist/geobike.html        page body for publishing as the Claude artifact (no <ht
 dist/geobike-local.html  full document to open straight in a browser for local testing
 """
 import os
+from urllib.parse import quote
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, 'src')
 DIST = os.path.join(ROOT, 'dist')
 
-HEAD = '''<title>Geobike</title>
+HEAD = '''<title>Bikefit Simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@500;600;700&display=swap">
 '''
 
-# the same small reset the artifact host adds around the page
+def favicon():
+    with open(os.path.join(ROOT, 'assets', 'logo.svg'), encoding='utf-8') as f:
+        svg = ' '.join(f.read().split())
+    return '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' + quote(svg, safe=' =:/,;()-.') + '">'
+
+
+# the same small reset the artifact host adds around the page, plus the logo as the tab icon
 SKELETON = ('<!doctype html><html><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+            + favicon() +
             '<style>:root{color-scheme:light}body{margin:0;font:14px system-ui}img{max-width:100%}'
             '[hidden]{display:none!important}</style></head><body>')
 

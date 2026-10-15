@@ -1,4 +1,4 @@
-/* Geobike data file: a copy of your bikes and fits in a JSON file on your computer.
+/* Bikefit Simulator data file: a copy of your bikes and fits in a JSON file on your computer.
    Where the browser allows it (Chrome or Edge opening the page directly), a file is linked
    once and every change is written to it; the link is remembered and reconnected with one
    click on the next visit. Elsewhere the page offers a download and an open-file button. */
@@ -6,7 +6,7 @@ const GBFile = (() => {
   const DB = 'geobike-files';
   const STORE = 'handles';
   const KEY = 'data';
-  const TYPES = [{ description: 'Geobike data', accept: { 'application/json': ['.json'] } }];
+  const TYPES = [{ description: 'Bikefit Simulator data', accept: { 'application/json': ['.json'] } }];
   let handle = null;
 
   const topLevel = () => { try { return window.self === window.top; } catch (e) { return false; } };
@@ -51,7 +51,7 @@ const GBFile = (() => {
     try { j = JSON.parse(text); } catch (e) { throw new Error('That file is not valid JSON.'); }
     if (j && j.app === 'geobike' && j.state) return { state: j.state, savedAt: Date.parse(j.savedAt) || 0 };
     if (j && j.v === 3 && (j.refs || j.ref)) return { state: j, savedAt: 0 };
-    throw new Error('That file is not a Geobike data file.');
+    throw new Error('That file is not a Bikefit Simulator data file.');
   }
   async function readFrom(h) {
     const f = await h.getFile();

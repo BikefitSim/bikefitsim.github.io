@@ -1,11 +1,21 @@
-# Geobike
+<img src="assets/logo.svg" alt="Bikefit Simulator logo: B and S in the wheels of a bike" width="112">
 
-Carries a bike fit from a reference bike to other frames. Everything sits on one grid:
+# Bikefit Simulator
+
+Carries a bike fit from a reference to other frames. Everything sits on one grid:
 the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in mm.
 
-1. **Reference bikes**: a frame that fits you plus the fit measured on it.
-2. **Target bikes**: frames to set up like the reference selected in step 1.
+1. **Reference**, in two tabs, each holding as many as you need:
+   - **Bike fit**: a frame that fits you and how it is set up (saddle height and setback, spacers, stem length and angle, handlebar reach and width). Personal reach and drop are worked out from it.
+   - **Personal fit**: just your numbers, with no bike: saddle height (straight line from the BB centre to the saddle tip), setback, personal reach, handlebar drop and bar width.
+2. **Target bikes**: frames to set up like the bike fit or personal fit open in step 1.
 3. **Changes**: saddle height along the new seat tube, setback, rail position, stem and spacers.
+
+## Limitations
+
+- The hand position is the base of the hoods, level with the top of the bar. Measure personal reach to there, or to where your hands sit on a bar without hoods.
+- Handlebar reach 0 is read as a flat bar, with the hands over the bar centre.
+- Handlebar rise and drop are not calculated yet: the base of the hoods is taken as level with the top of the bar at the clamp.
 
 ## Folders
 
@@ -48,17 +58,25 @@ so use the data file to move your bikes between it and the published Claude page
 
 ## Where your data is saved
 
-Every change is saved in up to three places, and on load the newest copy wins:
+The app starts with one empty bike fit, one empty personal fit and one empty target bike. What happens to your numbers depends on where it runs:
 
-1. **This browser** (always).
-2. **Your account**, when the page runs as the published Claude artifact.
-3. **A data file on your computer**, a plain JSON file such as `data/geobike-data.json`.
+- **Opened from your computer** (`dist/geobike-local.html`, or a local server): every change is saved in this browser and comes back next time.
+- **The Claude page:** saved in this browser and in your Claude account.
+- **The public web copy** (GitHub Pages): nothing is kept between visits, so each visitor starts empty. Use the data file to keep your bikes.
 
-The bar under the header handles the data file:
+The bar under the header handles the data file, a plain JSON file such as `data/bikefit-data.json`:
 
-- **Chrome or Edge, opening `dist/geobike-local.html` directly:** "Save to a file" links a file once and every change is written to it. On the next visit, one click on "Reconnect" lets the page keep saving there. "Open data file" loads another file after asking to replace what is on screen.
-- **Anywhere else, including the published page:** "Download data file" saves a copy and "Open data file" loads one.
+- **Chrome or Edge:** "Save to a file" links a file once and every change is written to it. On the next visit, one click on "Reconnect" picks it up again. "Open data file" loads another file after asking to replace what is on screen.
+- **Other browsers:** "Download data file" saves a copy and "Open data file" loads one.
+
+When more than one copy exists, the newest wins on load.
 
 `data/` and `*.geobike.json` are in `.gitignore`, so your own measurements stay out of the repository.
 
 The saved shape is version 3 and only ever gains fields, so older saves and files keep loading.
+
+## Credits and contact
+
+Made by José Miguel Moreira, under the MIT License. Type: IBM Plex Sans, IBM Plex Mono and Saira Condensed (SIL Open Font License).
+
+Questions, wrong numbers or ideas: zmdmoreira@gmail.com
