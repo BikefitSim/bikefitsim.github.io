@@ -502,6 +502,7 @@
   async function flush() {
     if (!loaded) return;
     const localOk = saveLocal();
+    writeFile();
     if (!docRef || remote !== 'on') { setSave(localOk ? 'local' : 'error'); return; }
     if (writing) { again = true; return; }
     writing = true;
@@ -567,7 +568,137 @@
     renderImport();
     if (push) flush();
     else setSave(state.example ? 'example' : remote === 'on' ? 'saved' : 'local');
+    initFile();
   }
+
+
+  /* ---------- data file on this computer ---------- */
+  let fileState = 'none'; // none | linked | prompt
+  let fileMsg = '';
+  let pendingOpen = null; // a file picked to open, waiting for the replace confirmation
+  let fileWriting = false; let fileAgain = false;
+  const timeNow = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  function summarize(s) {
+    const n = normalize(s);
+    return `${n.refs.length} reference bike${n.refs.length === 1 ? '' : 's'} and ${n.bikes.length} target bike${n.bikes.length === 1 ? '' : 's'}`;
+  }
+  async function writeFile() {
+    if (fileState !== 'linked') return;
+    if (fileWriting) { fileAgain = true; return; }
+    fileWriting = true;
+    try { await GBFile.write(state, lastEdit || Date.now()); fileMsg = `saved ${timeNow()}`; }
+    catch (e) { fileState = 'prompt'; fileMsg = 'Could not write to the file.'; }
+    finally {
+      fileWriting = false; renderFileBar();
+      if (fileAgain) { fileAgain = false; writeFile(); }
+    }
+  }
+  // the newest copy wins between this page and the linked file
+  async function syncWithFile() {
+    try {
+      const d = await GBFile.read();
+      if (d && d.savedAt > (state.example ? 0 : lastEdit)) {
+        state = normalize(d.state); lastEdit = d.savedAt;
+        renderAll(); renderImport();
+        fileMsg = `loaded ${timeNow()}`;
+        flush();
+      } else {
+        await GBFile.write(state, lastEdit || Date.now());
+        fileMsg = `saved ${timeNow()}`;
+      }
+    } catch (e) { fileMsg = (e && e.message) || 'Could not read the file.'; }
+  }
+  async function initFile() {
+    let st = 'none';
+    try { st = await GBFile.restore(); } catch (e) { st = 'none'; }
+    if (st === 'granted') { fileState = 'linked'; await syncWithFile(); }
+    else if (st === 'prompt') fileState = 'prompt';
+    renderFileBar();
+  }
+  async function downloadData() {
+    const text = GBFile.pack(state, lastEdit || Date.now());
+    const name = 'geobike-data.json';
+    if (window.claude && typeof window.claude.use === 'function') {
+      const dl = await window.claude.use('downloads');
+      if (!dl) { fileMsg = 'Downloads are not available here.'; return; }
+      try { await dl.save({ filename: name, data: text }); fileMsg = `Downloaded ${name}.`; }
+      catch (err) { fileMsg = err && err.code === 'declined' ? 'Download cancelled.' : 'The download could not start here.'; }
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    fileMsg = `Downloaded ${name}.`;
+  }
+  function renderFileBar() {
+    const el = $('fileBar');
+    if (!el) return;
+    if (!loaded) { el.innerHTML = ''; return; }
+    const btn = (id, label) => `<button class="btn" type="button" id="${id}">${label}</button>`;
+    let html;
+    if (pendingOpen) {
+      html = `<span class="file-status"><b>${esc(pendingOpen.name)}</b> holds ${esc(pendingOpen.summary)}. Replace what is on this page with it?</span>${btn('fileReplace', 'Replace')}${btn('fileCancel', 'Cancel')}`;
+    } else if (GBFile.canLink() && fileState === 'linked') {
+      html = `<span class="file-status ok">Saving to <b>${esc(GBFile.name)}</b>${fileMsg ? `, ${esc(fileMsg)}` : ''}</span>${btn('fileOpen', 'Open another file')}${btn('fileUnlink', 'Stop saving to file')}`;
+    } else if (GBFile.canLink() && fileState === 'prompt') {
+      html = `<span class="file-status warn">${fileMsg ? `${esc(fileMsg)} ` : ''}<b>${esc(GBFile.name)}</b> needs your permission again to keep saving.</span>${btn('fileReconnect', 'Reconnect')}${btn('fileUnlink', 'Forget this file')}`;
+    } else if (GBFile.canLink()) {
+      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : 'Keep your bikes in a file on this computer as well.'}</span>${btn('fileCreate', 'Save to a file')}${btn('fileOpen', 'Open data file')}`;
+    } else {
+      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : 'Keep a copy of your bikes in a file on this computer.'}</span>${btn('fileDownload', 'Download data file')}${btn('fileOpen', 'Open data file')}`;
+    }
+    el.innerHTML = html;
+  }
+  async function fileAction(id) {
+    try {
+      if (id === 'fileCreate') {
+        await GBFile.create('geobike-data.json');
+        fileState = 'linked';
+        await GBFile.write(state, lastEdit || Date.now());
+        fileMsg = `saved ${timeNow()}`;
+      } else if (id === 'fileReconnect') {
+        if (await GBFile.reconnect()) { fileState = 'linked'; fileMsg = ''; await syncWithFile(); }
+        else fileMsg = 'Permission was not given, so the file is not being updated.';
+      } else if (id === 'fileUnlink') {
+        await GBFile.unlink(); fileState = 'none';
+        fileMsg = 'No longer saving to a file. Your bikes are still saved on this page.';
+      } else if (id === 'fileOpen') {
+        if (!GBFile.canLink()) { $('fileInput').click(); return; }
+        const pk = await GBFile.pick();
+        if (!pk.data) { // an empty file: start saving to it
+          await GBFile.adopt(pk.handle); fileState = 'linked';
+          await GBFile.write(state, lastEdit || Date.now());
+          fileMsg = `saved ${timeNow()}`;
+        } else pendingOpen = { name: pk.name, handle: pk.handle, data: pk.data, summary: summarize(pk.data.state) };
+      } else if (id === 'fileReplace' && pendingOpen) {
+        const po = pendingOpen; pendingOpen = null;
+        if (po.handle) { await GBFile.adopt(po.handle); fileState = 'linked'; }
+        state = normalize(po.data.state);
+        renderAll(); renderImport();
+        scheduleSave(); // the opened data is now the newest copy everywhere
+        fileMsg = `opened ${po.name}`;
+      } else if (id === 'fileCancel') {
+        pendingOpen = null; fileMsg = '';
+      } else if (id === 'fileDownload') {
+        await downloadData();
+      }
+    } catch (err) {
+      if (!(err && err.name === 'AbortError')) fileMsg = (err && err.message) || 'Something went wrong with the file.';
+    }
+    renderFileBar();
+  }
+  document.addEventListener('change', (e) => {
+    if (!e.target || e.target.id !== 'fileInput') return;
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    f.text().then((t) => {
+      try { const d = GBFile.unpack(t); pendingOpen = { name: f.name, handle: null, data: d, summary: summarize(d.state) }; }
+      catch (err) { fileMsg = err.message; }
+      renderFileBar();
+    });
+  });
 
   /* ---------- bikes saved by the earlier hoods-based version ---------- */
   function mapOldBike(b) {
@@ -727,6 +858,8 @@
 
   document.addEventListener('click', (e) => {
     if (!loaded) return;
+    const fb = e.target.closest('#fileBar button');
+    if (fb) { fileAction(fb.id); return; }
     const imp = e.target.closest('[data-import]');
     if (imp) {
       const act = imp.dataset.import;
