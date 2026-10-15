@@ -22,6 +22,11 @@ body.loading .f-in { opacity: .55; }
 .out-sub { font-size: 13.5px; color: var(--ink-2); margin-top: -10px; }
 .cmp tr.match td { font-size: 13px; color: var(--ink-2); }
 .cmp th.refcol .tab { color: var(--ink-2); }
+.tab .kind { font: 500 10.5px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); margin-left: 6px; vertical-align: 1px; }
+.limits { border-top: 1px solid var(--rule-2); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.limits h4 { font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.limits ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.limits li { font-size: 13.5px; color: var(--ink-2); max-width: 90ch; }
 
 /* technical drawings */
 .viz-wrap { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--rule-2); padding-top: 18px; }
@@ -105,7 +110,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
       </svg>
       <div>
         <h1>Bikefit Simulator</h1>
-        <p class="tag">Simulate your bikefit on any bike</p>
+        <p class="tag">Simulate the perfect bikefit on any bike</p>
       </div>
     </div>
     <div class="top-right">
@@ -121,13 +126,13 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
 
   <section class="sheet" aria-labelledby="refTitle">
     <div class="sec-head">
-      <span class="step">1</span><h2 id="refTitle">Reference bike</h2>
-      <p>A bike that fits you now and the fit measured on it, as one unit. Add one for each position you want to copy, like a road and a gravel fit. Pick one, and every target bike below is set up to match it.</p>
+      <span class="step">1</span><h2 id="refTitle">Reference</h2>
+      <p>Where you sit. A bike reference is a bike that fits you now: its geometry and how it is set up. A fit reference is just your numbers, saddle and hands around the BB, with no bike. Add one for each position you want to copy, like a road and a gravel fit. Pick one, and every target bike below is set up to match it.</p>
     </div>
-    <div class="tabs" id="refTabs" role="tablist" aria-label="Reference bikes"></div>
+    <div class="tabs" id="refTabs" role="tablist" aria-label="References"></div>
     <div class="ref-grid">
       <div class="grp" id="refForm"></div>
-      <div class="grp" id="fitGroup"><h4>Fit on this bike</h4><div class="fields two" id="fitFields"></div></div>
+      <div class="grp" id="fitGroup"><h4 id="fitHead">Saddle and cockpit on this bike</h4><div class="fields two" id="fitFields"></div></div>
       <aside class="cp" id="cpCard" aria-live="polite"></aside>
     </div>
     <div class="row-actions" id="refActions"></div>
@@ -136,7 +141,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
   <section class="sheet" aria-labelledby="bikeTitle">
     <div class="sec-head">
       <span class="step">2</span><h2 id="bikeTitle">Target bike</h2>
-      <p>Frames you want to set up like the reference bike selected above, from their geometry charts, plus the reach of the handlebar each will use.</p>
+      <p>Frames you want to set up like the reference selected above, from their geometry charts, plus the reach of the handlebar each will use.</p>
     </div>
     <details class="parts" id="partsBox">
       <summary>Stems and spacers you can use <span>lengths, angles, spacer sizes</span></summary>
@@ -157,7 +162,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
   <section class="sheet" aria-labelledby="cmpTitle">
     <div class="sec-head">
       <h2 id="cmpTitle">Summary</h2>
-      <p>The selected reference bike as set up today, next to every target bike and the changes it needs. Pick a name to open it.</p>
+      <p>The selected reference next to every target bike and the setup it needs. Pick a name to open it.</p>
     </div>
     <div class="tbl-wrap" id="cmp"></div>
   </section>
@@ -165,13 +170,23 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
   <section class="sheet" aria-labelledby="howTitle">
     <div class="sec-head"><h2 id="howTitle">How to measure</h2></div>
     <div class="how">
-      <div><h4>Saddle height</h4><p>From the BB centre to the top of the saddle, following the seat tube line.</p></div>
+      <div><h4>Saddle height</h4><p>On a bike reference: from the BB centre to the top of the saddle, following the seat tube line.</p></div>
+      <div><h4>Saddle height on a fit reference</h4><p>A straight tape from the BB centre to the saddle tip. With the setback it places the tip without knowing the seat angle. It reads less than along the seat tube, about 30 mm on a typical road fit.</p></div>
       <div><h4>Saddle setback</h4><p>Hang a plumb line (a string with a small weight) from the saddle tip so it hangs straight down. Setback is the horizontal distance from the string back to the BB centre. Keep the bike level.</p></div>
-      <div><h4>Personal reach and bar width</h4><p>A straight tape line from the saddle tip to your hand position: the front of the handlebar's reach, level with the top of the bar. That line runs out to the side, so the calculator takes away half the bar width (and the drop) to get the side-view distance. Bar width is centre to centre at the hoods.</p></div>
-      <div><h4>Or give the stem</h4><p>Instead of personal reach and drop, choose "Fitted stem" and enter the stem fitted on the reference bike. With the frame, spacers and handlebar reach, that places your hands, and the panel shows the personal reach and drop it works out to.</p></div>
+      <div><h4>Personal reach and bar width</h4><p>A straight tape from the saddle tip to the base of the hoods, where the hood meets the bar. On a bar without hoods, tape to where your hands sit. That line runs out to the side, so the calculator takes away half the bar width (and the drop) to get the side-view distance. Bar width is centre to centre at the hoods.</p></div>
+      <div><h4>Stem on a bike reference</h4><p>A bike reference takes the stem fitted on it instead of personal reach and drop. With the frame, spacers and handlebar reach, that places your hands, and the panel shows the personal reach and drop it works out to. "Copy as fit reference" keeps those numbers without the bike.</p></div>
+      <div><h4>Handlebar reach</h4><p>From the bar's clamp centre forward to the base of the hoods, from the bar's spec. 0 means a flat bar: hands right over the bar.</p></div>
       <div><h4>Handlebar drop</h4><p>Vertical, from the top of the saddle down to the top of the handlebar. Use a level from the saddle. Negative if the bar is higher than the saddle.</p></div>
       <div><h4>Spacers</h4><p>Everything between the top of the head tube and the bottom of the stem, headset top cap included. On target bikes the result is measured the same way.</p></div>
       <div><h4>Stack from the tubes</h4><p>Stack = BB drop + (fork length + head tube length) × sin(head angle) − fork offset × cos(head angle). Reach = top tube − stack ÷ tan(seat angle). Chart stack and reach, when filled in, are used instead.</p></div>
+    </div>
+    <div class="limits">
+      <h4>Limitations</h4>
+      <ul>
+        <li>The hand position is the base of the hoods, level with the top of the bar. Personal reach has to be measured to that point, or to where your hands sit on a bar without hoods. Hands on the drops or the tops are not modelled.</li>
+        <li>Handlebar reach 0 is read as a flat bar, with the hands over the bar centre.</li>
+        <li>Handlebar rise and drop are not calculated yet. The base of the hoods is taken as level with the top of the bar at the clamp, so a riser bar, or a bar whose hoods sit higher or lower than that, puts the hands off by that much.</li>
+      </ul>
     </div>
     <div class="foot">
       <span>All lengths in mm, angles in degrees. Grid: X forward of the BB centre, Y above it. Assumes a 40 mm tall stem and a 31.8 mm bar.</span>

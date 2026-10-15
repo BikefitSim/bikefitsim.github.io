@@ -1,11 +1,19 @@
 # Bikefit Simulator
 
-Carries a bike fit from a reference bike to other frames. Everything sits on one grid:
+Carries a bike fit from a reference to other frames. Everything sits on one grid:
 the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in mm.
 
-1. **Reference bikes**: a frame that fits you plus the fit measured on it. The hand position comes from your personal reach and drop, or from the stem fitted on that bike.
+1. **Reference**, of two kinds:
+   - **Bike reference**: a frame that fits you and how it is set up (saddle height and setback, spacers, stem length and angle, handlebar reach and width). Personal reach and drop are worked out from it.
+   - **Fit reference**: just your numbers, with no bike: saddle height (straight line from the BB centre to the saddle tip), setback, personal reach, handlebar drop and bar width.
 2. **Target bikes**: frames to set up like the reference selected in step 1.
 3. **Changes**: saddle height along the new seat tube, setback, rail position, stem and spacers.
+
+## Limitations
+
+- The hand position is the base of the hoods, level with the top of the bar. Measure personal reach to there, or to where your hands sit on a bar without hoods.
+- Handlebar reach 0 is read as a flat bar, with the hands over the bar centre.
+- Handlebar rise and drop are not calculated yet: the base of the hoods is taken as level with the top of the bar at the clamp.
 
 ## Folders
 
@@ -48,7 +56,7 @@ so use the data file to move your bikes between it and the published Claude page
 
 ## Where your data is saved
 
-The app starts with one empty reference bike and one empty target bike. What happens to your numbers depends on where it runs:
+The app starts with one empty bike reference and one empty target bike. What happens to your numbers depends on where it runs:
 
 - **Opened from your computer** (`dist/geobike-local.html`, or a local server): every change is saved in this browser and comes back next time.
 - **The Claude page:** saved in this browser and in your Claude account.
