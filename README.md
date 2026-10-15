@@ -1,6 +1,6 @@
-<img src="assets/logo.svg" alt="Bikefit Simulator logo: B and S in the wheels of a bike" width="112">
+<img src="assets/logo.svg" alt="BikefitSim logo: B and S in the wheels of a bike" width="112">
 
-# Bikefit Simulator
+# BikefitSim
 
 Carries a bike fit from a reference to other frames. Everything sits on one grid:
 the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in mm.
@@ -34,33 +34,34 @@ the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in m
 ## Build and test
 
 ```
-python3 build.py            # writes dist/geobike.html and dist/geobike-local.html
+python3 build.py            # writes dist/bikefitsim.html and dist/bikefitsim-local.html
 node test/engine.test.js    # runs the engine checks
 ```
 
-Open `dist/geobike-local.html` in a browser to try changes. It saves in that browser only.
+Open `dist/bikefitsim-local.html` in a browser to try changes. It saves in that browser only.
 
-`dist/geobike.html` is the version published as the Claude artifact (the host adds `<html>` and `<head>`).
+`dist/bikefitsim.html` is the version published as the Claude artifact (the host adds `<html>` and `<head>`).
 To publish a change, ask Claude in the linked chat to republish from this folder; the link stays the same.
 
 ## GitHub Pages
 
 Branches: `dev` is where work happens; `master` holds releases.
 
+The repository lives in the `bikefitsim` organization as `bikefitsim.github.io`, so the site sits at the root of that address.
 Every push to `master` runs `.github/workflows/pages.yml`: it runs the engine checks, builds the page and publishes it at
-**https://zemiguelmoreira.github.io/geobike/**.
+**https://bikefitsim.github.io/**.
 
 One-time setup on GitHub: **Settings > Pages > Build and deployment > Source: GitHub Actions**.
 Pages is free for public repositories; a private one needs a paid plan.
 
-The Pages copy saves in the browser and, in Chrome or Edge, to a linked data file. It has no account saving,
-so use the data file to move your bikes between it and the published Claude page.
+The Pages copy keeps nothing between visits. In Chrome or Edge it can save to a linked data file; elsewhere,
+download and open one. The same file moves your bikes between it, a local copy and the published Claude page.
 
 ## Where your data is saved
 
 The app starts with one empty bike fit, one empty personal fit and one empty target bike. What happens to your numbers depends on where it runs:
 
-- **Opened from your computer** (`dist/geobike-local.html`, or a local server): every change is saved in this browser and comes back next time.
+- **Opened from your computer** (`dist/bikefitsim-local.html`, or a local server): every change is saved in this browser and comes back next time.
 - **The Claude page:** saved in this browser and in your Claude account.
 - **The public web copy** (GitHub Pages): nothing is kept between visits, so each visitor starts empty. Use the data file to keep your bikes.
 
@@ -71,7 +72,7 @@ The bar under the header handles the data file, a plain JSON file such as `data/
 
 When more than one copy exists, the newest wins on load.
 
-`data/` and `*.geobike.json` are in `.gitignore`, so your own measurements stay out of the repository.
+`data/` and `*.bikefitsim.json` (and the older `*.geobike.json`) are in `.gitignore`, so your own measurements stay out of the repository.
 
 The saved shape is version 3 and only ever gains fields, so older saves and files keep loading.
 

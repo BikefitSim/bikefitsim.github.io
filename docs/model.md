@@ -1,4 +1,4 @@
-# Bikefit Simulator calculation model
+# BikefitSim calculation model
 
 Grid: BB centre at (0, 0), X forward, Y up. Lengths in mm, angles in degrees.
 
@@ -46,6 +46,6 @@ Code: `src/engine.js` holds everything below; `test/engine.test.js` checks it.
 ## Saving
 - Saved shape stays v3; new fields are only added with defaults, so older saves keep loading. References are a list (`refs`, each with `kind` 'bike' (bike fit) or 'fit' (personal fit) and its own `fit`; a personal fit's saddle line is `fit.saddleLine`; `lastRef` remembers the one last open in each tab, and a missing kind gets an empty one on load). A reference without `kind` is a bike fit; default names from earlier versions ("Reference bike 2", "Fit reference 1") are renamed to "Bike fit 2", "Personal fit 1"; if it gave the hands by personal reach and drop, the stem those imply is filled in (0.1 mm, 0.1°) and flagged until edited. a save from before that held a single `ref` + `fit` loads as the first reference. Target bikes may still carry an old `refId`; it is ignored. A target bike without `barWidth` uses the reference width.
 - `fit.barWidth` missing in older saves is loaded as 0 (personal reach read in side view), so their results don't shift; the page asks for the width.
-- Start: one empty bike fit ("Bike fit 1"), one empty personal fit ("Personal fit 1") and one empty target bike ("Target bike 1"). Opened from disk or localhost, and inside Claude, bikes are kept in the browser; on any other web address (GitHub Pages) nothing is kept between visits unless a data file is used.
-- Edits are locked until saved data has loaded. Copies: browser, account (published page) and an optional data file on the computer (`{app: 'geobike', format: 3, savedAt, state}`); each carries the time of the last edit and the newest wins.
+- Start: one empty bike fit ("Reference bike 1"), one empty personal fit ("Personal fit 1") and one empty target bike ("Target bike 1"). Opened from disk or localhost, and inside Claude, bikes are kept in the browser; on any other web address (GitHub Pages) nothing is kept between visits unless a data file is used.
+- Edits are locked until saved data has loaded. Copies: browser, account (published page) and an optional data file on the computer (`{app: 'bikefitsim', format: 3, savedAt, state}`); each carries the time of the last edit and the newest wins.
 - Data from the earlier hoods-based version can be brought in from a banner: frames map directly (lower headset added to fork length); personal reach and drop are converted from the hood measurements; spacers are estimated and flagged for checking.
