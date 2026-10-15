@@ -20,7 +20,7 @@
     v: 3,
     example: true, // nothing entered yet
     refs: [Object.assign({ id: 'r1', name: 'Reference bike 1' }, BLANK_GEO, {
-      fit: { saddleHeight: null, setback: null, riderReach: null, drop: null, barWidth: null, spacers: null, barReach: null },
+      fit: { saddleHeight: null, setback: null, handFrom: 'reach', riderReach: null, drop: null, stemLength: null, stemAngle: null, barWidth: null, spacers: null, barReach: null },
     })],
     opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, maxSpacers: 40 },
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' })],
@@ -42,7 +42,7 @@
     out.refs = refsIn.map((r) => {
       const fitIn = isObj(r.fit) ? r.fit : {};
       const fit = Object.assign({}, refT.fit, fitIn);
-      // saves made before handlebar width existed read rider reach as a side-view distance
+      // saves made before handlebar width existed read personal reach as a side-view distance
       if (!('barWidth' in fitIn)) fit.barWidth = 0;
       return Object.assign({}, refT, r, { id: String(r.id || uid('r')), fit });
     });
@@ -111,12 +111,16 @@
     { k: 'stack', l: 'Stack', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'reach', l: 'Reach', u: 'mm', opt: true, h: 'Optional, from the chart' },
   ];
+  const byStem = (f) => f.handFrom === 'stem';
   const FIT_FIELDS = [
     { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
     { k: 'setback', l: 'Saddle setback', u: 'mm', h: 'Plumb line from the saddle tip back to the BB centre', neg: true },
-    { k: 'riderReach', l: 'Rider reach', u: 'mm', h: 'Saddle tip to hand position, straight line' },
-    { k: 'drop', l: 'Handlebar drop', u: 'mm', h: 'Saddle top to top of the bar, vertical. Negative if the bar is higher.', neg: true },
-    { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods. 0 if you measured rider reach in side view.' },
+    { k: 'handFrom', l: 'Hand position from', type: 'select', opts: [['reach', 'Personal reach'], ['stem', 'Fitted stem']] },
+    { k: 'riderReach', l: 'Personal reach', u: 'mm', h: 'Saddle tip to hand position, straight line', hide: byStem },
+    { k: 'drop', l: 'Handlebar drop', u: 'mm', h: 'Saddle top to top of the bar, vertical. Negative if the bar is higher.', neg: true, hide: byStem },
+    { k: 'stemLength', l: 'Stem length', u: 'mm', h: 'The stem fitted on this bike', hide: (f) => !byStem(f) },
+    { k: 'stemAngle', l: 'Stem angle', u: '°', h: 'Negative points down, for example −6', neg: true, hide: (f) => !byStem(f) },
+    { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: (f) => (byStem(f) ? 'Centre to centre at the hoods' : 'Centre to centre at the hoods. 0 if you measured personal reach in side view.') },
     { k: 'spacers', l: 'Spacers under stem', u: 'mm', h: 'Head tube top to stem, top cap included' },
     { k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar on this bike. Your hand position sits here.' },
   ];
@@ -130,9 +134,16 @@
   function fieldHTML(f, scope, obj, placeholder) {
     const id = `${scope}-${f.k}`;
     const v = obj[f.k];
-    const numAttrs = f.type === 'list' ? '' : ` data-num="1" inputmode="${f.neg ? 'text' : 'decimal'}"${f.opt ? ' data-opt="1"' : ''}`;
-    const control = `<input id="${id}" data-bind="${scope}.${f.k}" type="text"${numAttrs} autocomplete="off" spellcheck="false" value="${esc(v ?? '')}"${placeholder ? ` placeholder="${esc(placeholder)}"` : ''}>`;
-    return `<label class="f" for="${id}"><span class="f-l">${esc(f.l)}</span><span class="f-in">${control}${f.u ? `<span class="u">${esc(f.u)}</span>` : ''}</span>${f.h ? `<span class="f-h">${esc(f.h)}</span>` : ''}</label>`;
+    const hidden = f.hide && f.hide(obj) ? ' hidden' : '';
+    const hint = typeof f.h === 'function' ? f.h(obj) : f.h;
+    let control;
+    if (f.type === 'select') {
+      control = `<select id="${id}" data-bind="${scope}.${f.k}">${f.opts.map(([val, txt]) => `<option value="${esc(val)}"${String(v) === val ? ' selected' : ''}>${esc(txt)}</option>`).join('')}</select>`;
+    } else {
+      const numAttrs = f.type === 'list' ? '' : ` data-num="1" inputmode="${f.neg ? 'text' : 'decimal'}"${f.opt ? ' data-opt="1"' : ''}`;
+      control = `<input id="${id}" data-bind="${scope}.${f.k}" type="text"${numAttrs} autocomplete="off" spellcheck="false" value="${esc(v ?? '')}"${placeholder ? ` placeholder="${esc(placeholder)}"` : ''}>`;
+    }
+    return `<label class="f" for="${id}"${hidden}><span class="f-l">${esc(f.l)}</span><span class="f-in">${control}${f.u ? `<span class="u">${esc(f.u)}</span>` : ''}</span>${hint ? `<span class="f-h">${esc(hint)}</span>` : ''}</label>`;
   }
   function nameHTML(scope, value) {
     return `<label class="f" for="${scope}-name"><span class="f-l">Name</span><span class="f-in"><input id="${scope}-name" data-bind="${scope}.name" type="text" autocomplete="off" value="${esc(value)}"></span></label>`;
@@ -225,7 +236,8 @@
   function fitErrors(f) {
     const c = checker(f, 'The fit');
     c.chk('saddleHeight', 450, 1000, 'Saddle height', ' mm'); c.chk('setback', -100, 200, 'Saddle setback', ' mm');
-    c.chk('riderReach', 300, 900, 'Rider reach', ' mm'); c.chk('drop', -300, 300, 'Handlebar drop', ' mm');
+    if (byStem(f)) { c.chk('stemLength', 20, 200, 'Stem length', ' mm'); c.chk('stemAngle', -45, 45, 'Stem angle', '°'); }
+    else { c.chk('riderReach', 300, 900, 'Personal reach', ' mm'); c.chk('drop', -300, 300, 'Handlebar drop', ' mm'); }
     c.chk('barWidth', 0, 600, 'Handlebar width', ' mm'); c.chk('spacers', 0, 120, 'Spacers', ' mm');
     c.chk('barReach', 0, 150, 'Handlebar reach', ' mm');
     return c.done();
@@ -333,9 +345,12 @@
           <tr><td><span class="pt"></span>Hand position</td><td class="num">${n0(hand.x)}</td><td class="num">${n0(hand.y)}</td></tr>
         </tbody>
       </table>
-      <p>${halfW > 0 ? `Rider reach ${n1(r.fit.riderReach)} mm, taped out to the side of a ${n0(r.fit.barWidth)} mm bar, is <b>${n1(reachH)} mm</b> in side view.` : `Handlebar width is 0, so rider reach is read as a side-view distance (${n1(reachH)} mm horizontal). If you taped it to your hand at the side of the bar, enter the bar width.`}</p>
+      ${byStem(r.fit)
+        ? `<p class="implied">This ${n0(stem.length)} mm stem at ${angTxt(stem.angle)} with ${n1(r.fit.spacers)} mm of spacers puts your hands <b>${n0(reachH)} mm</b> ahead of the saddle tip and <b>${n0(Math.abs(m.fp.drop))} mm</b> ${m.fp.drop >= 0 ? 'below' : 'above'} the saddle top.</p>
+           <p>That is a personal reach of <b>${n1(m.fp.riderReach)} mm</b>${halfW > 0 ? `, measured to your hand at the side of a ${n0(r.fit.barWidth)} mm bar` : ''}, and a handlebar drop of <b>${n1(m.fp.drop)} mm</b>.</p>`
+        : `<p>${halfW > 0 ? `Personal reach ${n1(r.fit.riderReach)} mm, taped out to the side of a ${n0(r.fit.barWidth)} mm bar, is <b>${n1(reachH)} mm</b> in side view.` : `Handlebar width is 0, so personal reach is read as a side-view distance (${n1(reachH)} mm horizontal). If you taped it to your hand at the side of the bar, enter the bar width.`}</p>
       <p class="implied">With ${n1(r.fit.spacers)} mm of spacers, these numbers mean a <b>${n0(stem.length)} mm</b> stem at <b>${angTxt(half(stem.angle))}</b> on this bike.</p>
-      <p class="${odd ? 'warn' : ''}">${odd ? 'That doesn\'t look like a real stem. Check rider reach, drop and spacers.' : 'If that isn\'t the stem fitted, check rider reach, drop and spacers before trusting the results.'}</p>
+      <p class="${odd ? 'warn' : ''}">${odd ? 'That doesn\'t look like a real stem. Check personal reach, drop and spacers.' : 'If that isn\'t the stem fitted, check personal reach, drop and spacers before trusting the results.'}</p>`}
       <p>Selected: every target bike in step 2 is set up to match this one.</p>`;
   }
 
@@ -769,7 +784,7 @@
     try { fit = convertOldFit(old, refB, newRef); } catch (e) { fit = null; }
     if (fit) {
       newRef.fit = fit;
-      notes.push(`${newRef.name} is now a reference bike. Rider reach and drop were converted from the old hood measurements, and spacers were set to ${n1(fit.spacers)} mm, the closest match. Check these three against the bike.`);
+      notes.push(`${newRef.name} is now a reference bike. Personal reach and drop were converted from the old hood measurements, and spacers were set to ${n1(fit.spacers)} mm, the closest match. Check these three against the bike.`);
     } else notes.push(`${newRef.name} is now a reference bike, but its fit could not be converted. Enter it again in step 1.`);
     const rest = oldBikes.filter((b) => b !== refB).map((b) => Object.assign(mapOldBike(b), { id: uid(), refId: newRef.id, barReach: finite(b.barReach) ? b.barReach : newRef.fit.barReach, pick: '' }));
     if (replace) {
@@ -856,6 +871,13 @@
       if (sel) { const opt = [...sel.options].find((x) => x.value === obj.id); if (opt) opt.textContent = v || 'Untitled reference'; }
     }
     if (scope === 'bike' || scope === 'ref') refreshPlaceholders(scope, obj);
+    if (scope === 'fit' && key === 'handFrom') {
+      const prev = model && model.refs[curRef().id] && model.refs[curRef().id].fp;
+      if (prev && v === 'stem' && obj.stemLength == null && obj.stemAngle == null) { obj.stemLength = Math.round(prev.stem.length); obj.stemAngle = half(prev.stem.angle); }
+      if (prev && v === 'reach' && obj.riderReach == null && obj.drop == null) { obj.riderReach = r1(prev.riderReach); obj.drop = r1(prev.drop); }
+      $('fitFields').innerHTML = FIT_FIELDS.map((f) => fieldHTML(f, 'fit', obj)).join('');
+      $('fit-handFrom').focus();
+    }
     if (scope === 'fit' && key === 'barWidth') { const w = $('bike-barWidth'); if (w) w.placeholder = finite(v) && v > 0 ? `same: ${v}` : 'same as reference'; }
     renderOutputs();
     scheduleSave();

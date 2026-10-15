@@ -158,7 +158,7 @@ const GBDraw = (() => {
     m += v.target(sad) + v.target(hand);
     if (show.dims) {
       const hl = fp.half > 0 ? ` (${n0(r.reachH)} side view)` : '';
-      m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text({ x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 }, `Rider reach ${n0(r.ref.fit.riderReach)}${hl}`, 'dt', { dy: -7, rot: Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI })}</g>`;
+      m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text({ x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 }, `Personal reach ${n0(fp.riderReach)}${hl}`, 'dt', { dy: -7, rot: Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI })}</g>`;
       // saddle height along this bike's seat tube, offset behind it
       m += v.dim({ x: 0, y: 0 }, pb.axisAt(sad.y), 30, `Saddle height ${n0(r.heightAlong)}`, { key: 'height' });
       // setback: plumb line from the saddle tip, measured at BB height
