@@ -19,11 +19,12 @@
   const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, seatTube: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null };
   /* Two kinds of reference, each with its own tab. A bike fit (kind 'bike') is a frame plus how
      it is set up (saddle, spacers, stem, bar); a personal fit (kind 'fit') is only the rider's
-     numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
+     numbers (saddle height as a straight line to the saddle centre, setback and personal reach
+     from that centre, drop,
      bar width). Both keep their numbers in `fit`. There is always at least one of each. */
   const BLANK_FIT = () => ({
     saddleHeight: null, saddleLine: null, setback: null, handFrom: 'stem', riderReach: null, drop: null,
-    stemLength: null, stemAngle: null, barWidth: null, spacers: null, barReach: null,
+    stemLength: null, stemAngle: null, barWidth: null, spacers: null, barReach: null, saddleLength: null,
   });
   const blankRef = (kind, id, name) => Object.assign({ id, name, kind }, BLANK_GEO, { fit: BLANK_FIT() });
   const isFitRef = (r) => r.kind === 'fit';
@@ -168,9 +169,11 @@
   ];
   const FF = {
     saddleHeight: { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
-    saddleLine: { k: 'saddleLine', l: 'Saddle height', u: 'mm', h: 'Straight line from the BB centre to the saddle tip, not along the seat tube' },
+    saddleLine: { k: 'saddleLine', l: 'Saddle height', u: 'mm', h: 'Straight line from the BB centre to the top of the saddle at its centre, not along the seat tube' },
     setback: { k: 'setback', l: 'Saddle setback', u: 'mm', h: 'Plumb line from the saddle tip back to the BB centre', neg: true },
-    riderReach: { k: 'riderReach', l: 'Personal reach', u: 'mm', h: 'Saddle tip to the base of the hoods, straight line. No hoods: to where your hands sit.' },
+    setbackFit: { k: 'setback', l: 'Saddle setback', u: 'mm', h: 'Plumb line from the saddle centre back to the BB centre', neg: true },
+    saddleLength: { k: 'saddleLength', l: 'Saddle length', u: 'mm', h: 'Optional. Tip to tail, to find the saddle centre a personal fit uses.' },
+    riderReach: { k: 'riderReach', l: 'Personal reach', u: 'mm', h: 'Saddle centre to the base of the hoods, straight line. No hoods: to where your hands sit.' },
     drop: { k: 'drop', l: 'Handlebar drop', u: 'mm', h: 'Saddle top to top of the bar, vertical. Negative if the bar is higher.', neg: true },
     stemLength: { k: 'stemLength', l: 'Stem length', u: 'mm', h: 'The stem fitted on this bike' },
     stemAngle: { k: 'stemAngle', l: 'Stem angle', u: '°', h: 'Negative points down, for example −6', neg: true },
@@ -179,8 +182,8 @@
     barWidthBike: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods' },
     barWidthFit: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods. 0 if you measured personal reach in side view.' },
   };
-  const BIKE_FIT_FIELDS = [FF.saddleHeight, FF.setback, FF.spacers, FF.stemLength, FF.stemAngle, FF.barReach, FF.barWidthBike];
-  const FIT_SADDLE_FIELDS = [FF.saddleLine, FF.setback];
+  const BIKE_FIT_FIELDS = [FF.saddleHeight, FF.setback, FF.saddleLength, FF.spacers, FF.stemLength, FF.stemAngle, FF.barReach, FF.barWidthBike];
+  const FIT_SADDLE_FIELDS = [FF.saddleLine, FF.setbackFit];
   const FIT_HAND_FIELDS = [FF.riderReach, FF.drop, FF.barWidthFit];
   const OPT_FIELDS = [
     { k: 'stemLengths', l: 'Stem lengths', type: 'list', u: 'mm', h: 'Separate with commas' },
@@ -320,7 +323,7 @@
     const f = r.fit;
     if (isFitRef(r)) {
       const c = checker(f, 'The fit');
-      c.chk('saddleLine', 400, 1000, 'Saddle height', ' mm'); c.chk('setback', -100, 200, 'Saddle setback', ' mm');
+      c.chk('saddleLine', 400, 1000, 'Saddle height', ' mm'); c.chk('setback', -100, 400, 'Saddle setback', ' mm');
       c.chk('riderReach', 300, 900, 'Personal reach', ' mm'); c.chk('drop', -300, 300, 'Handlebar drop', ' mm');
       c.chk('barWidth', 0, 600, 'Handlebar width', ' mm');
       return c.done();
@@ -329,6 +332,7 @@
     c.chk('saddleHeight', 450, 1000, 'Saddle height', ' mm'); c.chk('setback', -100, 200, 'Saddle setback', ' mm');
     c.chk('spacers', 0, 120, 'Spacers', ' mm'); c.chk('stemLength', 20, 200, 'Stem length', ' mm'); c.chk('stemAngle', -45, 45, 'Stem angle', '°');
     c.chk('barReach', 0, 150, 'Handlebar reach', ' mm'); c.chk('barWidth', 0, 600, 'Handlebar width', ' mm');
+    if (f.saddleLength != null && f.saddleLength !== '' && !(finite(f.saddleLength) && f.saddleLength >= 150 && f.saddleLength <= 350)) c.wrong.push('Saddle length should be between 150 and 350 mm.');
     return c.done();
   }
   function optErrors() {
@@ -391,11 +395,11 @@
     return `${lenPart}${sameAngle ? ', same angle' : `, ${angTxt(o.angle)} instead of ${angTxt(rs.angle)}`}`;
   }
 
-  // The saddle tip never moves; only its distance along a differently angled seat tube changes.
+  // The saddle point never moves; only its distance along a differently angled seat tube changes.
   function saddleWhy(r) {
     if (!r.fp.bike) {
       const f = r.ref.fit;
-      return `Your saddle tip sits ${n0(r.fp.saddle.y)} mm above the BB (${n1(f.saddleLine)} mm in a straight line, ${n1(f.setback)} mm setback). Along this ${n1(r.bike.sta)}° seat tube, the saddle top reaches that height at ${n1(r.heightAlong)} mm.`;
+      return `Your saddle centre sits ${n0(r.fp.saddle.y)} mm above the BB (${n1(f.saddleLine)} mm in a straight line, ${n1(f.setback)} mm setback). Along this ${n1(r.bike.sta)}° seat tube, the saddle top reaches that height at ${n1(r.heightAlong)} mm.`;
     }
     const dA = r.bike.sta - r.fp.bike.sta;
     const pos = `Saddle top stays at the reference point, ${n0(r.fp.saddle.y)} mm above the BB.`;
@@ -403,7 +407,7 @@
     return `${pos} This seat tube is ${n1(Math.abs(dA))}° ${dA > 0 ? 'steeper' : 'slacker'}, so measured along it the same point reads ${n1(Math.abs(r.heightAlong - r.ref.fit.saddleHeight))} mm ${r.heightAlong < r.ref.fit.saddleHeight ? 'less' : 'more'}.`;
   }
   function railWhy(r) {
-    if (r.railMove == null) return `Plumb line from the saddle tip, ${n1(r.ref.fit.setback)} mm behind the BB. On this frame that puts the tip ${n0(r.noseAhead)} mm ahead of the seat tube line at saddle height.`;
+    if (r.railMove == null) return `Plumb line from the saddle centre, ${n1(r.ref.fit.setback)} mm behind the BB. On this frame that puts the centre ${n0(Math.abs(r.noseAhead))} mm ${r.noseAhead < 0 ? 'behind' : 'ahead of'} the seat tube line at saddle height.`;
     if (Math.abs(r.railMove) < 0.5) return 'Saddle sits in the same place on its rails, same seatpost.';
     const back = r.railMove < 0;
     return `Same point from the BB. At saddle height this seat tube sits ${n0(Math.abs(r.railMove))} mm ${back ? 'further forward' : 'further back'}, so slide the saddle ${n0(Math.abs(r.railMove))} mm ${back ? 'back' : 'forward'} on its rails (same seatpost)${Math.abs(r.railMove) > 15 ? ` or use a post with about ${n0(Math.abs(r.railMove))} mm ${back ? 'more' : 'less'} setback` : ''}.`;
@@ -425,7 +429,7 @@
     const m = model.refs[r.id];
     const fitRef = isFitRef(r);
     if (!m.fp) {
-      el.innerHTML = `<h3>Fit points</h3><p>The saddle tip and hand position appear here once ${fitRef ? 'your fit is' : 'this bike\'s frame and setup are'} filled in.</p>${m.errs.map((x) => `<p class="${x.includes('still needs:') ? 'need' : 'err'}">${esc(x)}</p>`).join('')}`;
+      el.innerHTML = `<h3>Fit points</h3><p>The saddle ${fitRef ? 'centre' : 'tip'} and hand position appear here once ${fitRef ? 'your fit is' : 'this bike\'s frame and setup are'} filled in.</p>${m.errs.map((x) => `<p class="${x.includes('still needs:') ? 'need' : 'err'}">${esc(x)}</p>`).join('')}`;
       return;
     }
     const { saddle, hand, reachH, drop, riderReach } = m.fp;
@@ -434,23 +438,24 @@
     let text;
     if (fitRef) {
       text = `
-      <p class="implied">Your saddle tip sits <b>${n0(Math.abs(saddle.x))} mm</b> ${saddle.x <= 0 ? 'behind' : 'ahead of'} and <b>${n0(saddle.y)} mm</b> above the BB.</p>
+      <p class="implied">Your saddle centre sits <b>${n0(Math.abs(saddle.x))} mm</b> ${saddle.x <= 0 ? 'behind' : 'ahead of'} and <b>${n0(saddle.y)} mm</b> above the BB.</p>
       <p>${halfW > 0 ? `Personal reach ${n1(riderReach)} mm, taped out to the side of a ${n0(f.barWidth)} mm bar, is <b>${n1(reachH)} mm</b> in side view` : `Handlebar width is 0, so personal reach is read as a side-view distance, <b>${n1(reachH)} mm</b>. If you taped it to your hand at the side of the bar, enter the bar width`}. With ${n1(drop)} mm of drop, that places your hands.</p>
       <p>No bike here, so each target bike gets its full setup rather than changes from another bike.</p>`;
     } else {
-      const stem = m.fp.stem;
+      const stem = m.fp.stem; const c = m.fp.centre;
       text = `
       <p class="implied">This ${n1(stem.length)} mm stem at ${angTxt(stem.angle)} with ${n1(f.spacers)} mm of spacers puts your hands <b>${n0(reachH)} mm</b> ahead of the saddle tip and <b>${n0(Math.abs(drop))} mm</b> ${drop >= 0 ? 'below' : 'above'} the saddle top.</p>
-      <p>Your fit on this bike: personal reach <b>${n1(riderReach)} mm</b>${halfW > 0 ? ` to the side of a ${n0(f.barWidth)} mm bar` : ''}, handlebar drop <b>${n1(drop)} mm</b>, and the saddle tip <b>${n1(Math.hypot(saddle.x, saddle.y))} mm</b> from the BB in a straight line.</p>
+      ${c ? `<p>Your fit on this bike, measured from the saddle centre like a personal fit: saddle height <b>${n1(Math.hypot(c.x, c.y))} mm</b> in a straight line, setback <b>${n1(-c.x)} mm</b>, personal reach <b>${n1(m.fp.centreReach)} mm</b>${halfW > 0 ? ` to the side of a ${n0(f.barWidth)} mm bar` : ''} and handlebar drop <b>${n1(drop)} mm</b>.</p>`
+        : `<p>Your fit on this bike: personal reach <b>${n1(riderReach)} mm</b> from the saddle tip${halfW > 0 ? ` to the side of a ${n0(f.barWidth)} mm bar` : ''} and handlebar drop <b>${n1(drop)} mm</b>. A personal fit measures from the saddle centre, so enter the saddle length to see it that way and copy it.</p>`}
       ${f.stemImplied ? '<p class="warn">This stem was worked out from the personal reach and drop saved earlier. Enter the stem actually fitted on this bike.</p>' : ''}
-      <div class="row-actions"><button class="btn" type="button" id="toFitRef">Copy as personal fit</button></div>`;
+      <div class="row-actions"><button class="btn" type="button" id="toFitRef"${c ? '' : ' disabled title="Enter the saddle length first"'}>Copy as personal fit</button></div>`;
     }
     el.innerHTML = `
       <h3>Fit points</h3>
       <table>
         <thead><tr><th></th><th class="num">X fwd</th><th class="num">Y up</th></tr></thead>
         <tbody>
-          <tr><td><span class="pt"></span>Saddle tip</td><td class="num">${n0(saddle.x)}</td><td class="num">${n0(saddle.y)}</td></tr>
+          <tr><td><span class="pt"></span>Saddle ${fitRef ? 'centre' : 'tip'}</td><td class="num">${n0(saddle.x)}</td><td class="num">${n0(saddle.y)}</td></tr>
           <tr><td><span class="pt"></span>Hand position</td><td class="num">${n0(hand.x)}</td><td class="num">${n0(hand.y)}</td></tr>
         </tbody>
       </table>
@@ -527,7 +532,7 @@
       return {
         id: ref.id, name: refName(ref), isRef: true,
         vals: fp && !fp.bike ? {
-          match: 'reference', sta: na, stack: na, height: `${n1(f.saddleLine)} mm, straight to tip`, setback: `${n1(f.setback)} mm`, rails: na,
+          match: 'reference', sta: na, stack: na, height: `${n1(f.saddleLine)} mm, straight to centre`, setback: `${n1(f.setback)} mm`, rails: na,
           stem: na, spacers: na, bar: na, width: f.barWidth > 0 ? `${n0(f.barWidth)} mm` : 'not entered', hand: 'target',
         } : fp ? {
           match: 'reference', sta: `${n1(ref.sta)}°`, stack: `${n0(fp.geo.stack)}${mark(fp.geo.stackSrc)} / ${n0(fp.geo.reach)}${mark(fp.geo.reachSrc)}`,
@@ -546,7 +551,7 @@
           match: esc(refName(r.ref)), sta: `${n1(b.sta)}°${r.fp.bike ? ` <span class="calc-mark">${sgn(b.sta - r.fp.bike.sta, 1)}</span>` : ''}`, stack: `${n0(r.geo.stack)}${mark(r.geo.stackSrc)} / ${n0(r.geo.reach)}${mark(r.geo.reachSrc)}`,
           height: `${n1(r.heightAlong)} mm${r.fp.bike ? ` <span class="calc-mark">${sgn(r.heightAlong - f.saddleHeight, 1)}</span>` : ''}`,
           setback: `${n1(f.setback)} mm`,
-          rails: r.railMove == null ? `tip ${n0(r.noseAhead)} mm ahead of seat tube` : Math.abs(r.railMove) < 0.5 ? 'same' : `${Math.abs(Math.round(r.railMove))} mm ${r.railMove > 0 ? 'forward' : 'back'}`,
+          rails: r.railMove == null ? `centre ${n0(Math.abs(r.noseAhead))} mm ${r.noseAhead < 0 ? 'behind' : 'ahead of'} seat tube` : Math.abs(r.railMove) < 0.5 ? 'same' : `${Math.abs(Math.round(r.railMove))} mm ${r.railMove > 0 ? 'forward' : 'back'}`,
           stem: o ? esc(stemTxt(o)) : na,
           spacers: o ? `${n1(o.spacers)} mm${r.fp.bike ? ` <span class="calc-mark">${sgn(o.spacers - f.spacers, 1)}</span>` : ''}` : na,
           bar: `${n1(b.barReach)} mm`, width: r.barWidth > 0 ? `${n0(r.barWidth)} mm${Math.abs(r.handShift) >= 0.5 ? ` <span class="calc-mark">hands ${sgn(r.handShift, 1)}</span>` : ''}` : na,
@@ -586,8 +591,8 @@
       <div class="viz-bar">
         <div class="legend">
           <span class="lg"><i class="sw bk"></i>${esc(b.name || 'This bike')}</span>
-          <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle tip'}</span>
-          <span class="lg"><i class="tg"></i>Saddle tip and hand position</span>
+          <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle centre'}</span>
+          <span class="lg"><i class="tg"></i>Saddle ${hasBike ? 'tip' : 'centre'} and hand position</span>
         </div>
         <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
@@ -1054,10 +1059,11 @@
         made = Object.assign(clone(src), { id: uid('r'), name: `${refName(src)} copy` });
       } else {
         // the fit this bike gives, kept as the rider's own numbers
+        // a personal fit is taken at the saddle centre, which needs the saddle length
         const fp = model && model.refs[src.id] && model.refs[src.id].fp;
-        if (!fp) return;
+        if (!fp || !fp.centre) return;
         made = blankRef('fit', uid('r'), `From ${refName(src)}`);
-        Object.assign(made.fit, { saddleLine: r1(Math.hypot(fp.saddle.x, fp.saddle.y)), setback: src.fit.setback, riderReach: r1(fp.riderReach), drop: r1(fp.drop), barWidth: src.fit.barWidth });
+        Object.assign(made.fit, { saddleLine: r1(Math.hypot(fp.centre.x, fp.centre.y)), setback: r1(-fp.centre.x), riderReach: r1(fp.centreReach), drop: r1(fp.drop), barWidth: src.fit.barWidth });
       }
       state.refs.push(made); selectRef(made.id);
       renderAll(); scheduleSave();
