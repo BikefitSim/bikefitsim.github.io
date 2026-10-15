@@ -30,10 +30,10 @@ body.loading .f-in { opacity: .55; }
 .kind-tab .n { font: 500 11px var(--mono); color: var(--ink-2); margin-left: 7px; vertical-align: 2px; }
 .kind-note { font-size: 13px; color: var(--ink-2); max-width: 70ch; }
 @media (prefers-reduced-motion: no-preference) { .kind-tab { transition: color .15s, background-color .15s; } }
-.credits { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 26px; padding: 4px 4px 0; }
+.credits { padding: 4px 4px 0; }
+.credits p + p { margin-top: 4px; }
 .credits h2 { font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
 .credits p { font-size: 13px; color: var(--ink-2); max-width: 62ch; }
-.credits a { color: var(--frame); }
 .limits { border-top: 1px solid var(--rule-2); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; }
 .limits h4 { font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .limits ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
@@ -112,7 +112,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
 <div class="page">
   <header class="top">
     <div class="brand">
-      <svg class="mark" viewBox="0 0 72 44" role="img" aria-label="Bikefit Simulator logo: B and S in the wheels of a bike"><circle class="m-wheel" cx="15.0" cy="26.0" r="12.5"></circle><circle class="m-wheel" cx="57.0" cy="26.0" r="12.5"></circle><path class="m-tube" d="M27.5 27.0 L34.0 27.5 L28.0 9.0 M23.8 17.2 L29.0 12.0 M28.0 9.0 L48.0 9.5 L50.2 15.2 L34.0 27.5 M50.2 15.2 L50.3 15.4 M23.8 7.4 H31.4 M48.0 9.5 L53.2 8.5"></path><path class="m-letter" d="M11.4 19.5 V32.5 M11.4 19.5 H15.4 a3.05 3.05 0 0 1 0 6.1 H11.4 M11.4 25.6 H15.9 a3.45 3.45 0 0 1 0 6.9 H11.4"></path><path class="m-letter" d="M60.9 21.4 C60.1 19.9 58.6 19.4 57.1 19.4 C54.8 19.4 53.3 20.8 53.3 22.6 C53.3 26.6 61.0 25.0 61.0 29.3 C61.0 31.3 59.3 32.6 56.9 32.6 C55.1 32.6 53.6 31.9 52.8 30.4"></path><circle class="m-pt" cx="31.4" cy="7.4" r="2.4"></circle><circle class="m-pt" cx="53.2" cy="8.5" r="2.4"></circle></svg>
+      <svg class="mark" viewBox="0 0 56 44" role="img" aria-label="Bikefit Simulator logo: B and S in the wheels of a bike"><circle class="m-wheel" cx="14" cy="29" r="12.5"></circle><circle class="m-wheel" cx="42" cy="29" r="12.5"></circle><path class="m-tube" d="M28.5 30.5 L22.5 7.0 M22.5 7.0 L39.9 16.7 M39.9 16.7 L28.5 30.5 M26.4 30.3 L28.5 30.5 M22.5 7.0 L18.5 17.3 M39.9 16.7 L39.9 16.7"></path><path class="m-letter" d="M10.4 22.5 V35.5 M10.4 22.5 H14.4 a3.05 3.05 0 0 1 0 6.1 H10.4 M10.4 28.6 H14.9 a3.45 3.45 0 0 1 0 6.9 H10.4"></path><path class="m-letter" d="M45.9 24.4 C45.1 22.9 43.6 22.4 42.1 22.4 C39.8 22.4 38.3 23.8 38.3 25.6 C38.3 29.6 46.0 28.0 46.0 32.3 C46.0 34.3 44.3 35.6 41.9 35.6 C40.1 35.6 38.6 34.9 37.8 33.4"></path><circle class="m-pt" cx="22.5" cy="7.0" r="2.4"></circle><circle class="m-pt" cx="39.9" cy="16.7" r="2.4"></circle></svg>
       <div>
         <h1>Bikefit Simulator</h1>
         <p class="tag">Achieve the perfect fit on any bike</p>
@@ -202,14 +202,11 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
     </div>
   </section>
 
-  <footer class="credits" aria-label="Credits and contact">
+  <footer class="credits" aria-labelledby="creditsTitle">
     <div>
-      <h2>Credits</h2>
-      <p>Bikefit Simulator is made by José Miguel Moreira and released under the <a href="https://github.com/zemiguelmoreira/geobike/blob/master/LICENSE" target="_blank" rel="noopener">MIT License</a>. Type set in IBM Plex Sans, IBM Plex Mono and Saira Condensed, under the SIL Open Font License.</p>
-    </div>
-    <div>
-      <h2>Contact</h2>
-      <p>Found a wrong number, or want a feature? <a href="https://github.com/zemiguelmoreira/geobike/issues" target="_blank" rel="noopener">Open an issue on GitHub</a>, or find me at <a href="https://github.com/zemiguelmoreira" target="_blank" rel="noopener">github.com/zemiguelmoreira</a>. The code is at <a href="https://github.com/zemiguelmoreira/geobike" target="_blank" rel="noopener">github.com/zemiguelmoreira/geobike</a>.</p>
+      <h2 id="creditsTitle">Credits and contact</h2>
+      <p>Bikefit Simulator is made by José Miguel Moreira and released under the MIT License. Type set in IBM Plex Sans, IBM Plex Mono and Saira Condensed, under the SIL Open Font License.</p>
+      <p>Found a wrong number, or want a feature? Write to zmdmoreira@gmail.com.</p>
     </div>
   </footer>
 </div>
