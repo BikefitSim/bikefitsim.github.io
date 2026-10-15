@@ -68,4 +68,17 @@ test('a wider bar on the target bike puts the hands further back', () => {
   assert.ok(shift(480) < shift(440), 'wider still, further back');
 });
 
+test('the stem fitted on the reference bike gives the same hand position as the tape', () => {
+  const rb = Object.assign({}, ref, GB.frameGeometry(ref));
+  const B = GB.barFor(rb, -6, 110, 20).B;
+  const byStem = GB.fitPoints(ref, { saddleHeight: 745, setback: 65, handFrom: 'stem', stemLength: 110, stemAngle: -6, barWidth: 400, spacers: 20, barReach: 80 });
+  near(byStem.hand.x, B.x + 80, 1e-9, 'hand x');
+  near(byStem.hand.y, B.y + GB.BAR_R, 1e-9, 'hand y');
+  const byTape = GB.fitPoints(ref, { saddleHeight: 745, setback: 65, riderReach: byStem.riderReach, drop: byStem.drop, barWidth: 400, spacers: 20, barReach: 80 });
+  near(byTape.hand.x, byStem.hand.x, 1e-9, 'same hand x');
+  near(byTape.stem.length, 110, 1e-9, 'stem length back');
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80, barWidth: 440 }), byStem, { barWidth: 400 }, opts);
+  near(r.handShift, GB.solveBike(Object.assign({}, ref, { barReach: 80, barWidth: 440 }), byTape, { barWidth: 400 }, opts).handShift, 1e-9, 'bar width works the same');
+});
+
 console.log(`\n${passed} checks passed`);

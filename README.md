@@ -3,7 +3,7 @@
 Carries a bike fit from a reference bike to other frames. Everything sits on one grid:
 the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in mm.
 
-1. **Reference bikes**: a frame that fits you plus the fit measured on it.
+1. **Reference bikes**: a frame that fits you plus the fit measured on it. The hand position comes from your personal reach and drop, or from the stem fitted on that bike.
 2. **Target bikes**: frames to set up like the reference selected in step 1.
 3. **Changes**: saddle height along the new seat tube, setback, rail position, stem and spacers.
 

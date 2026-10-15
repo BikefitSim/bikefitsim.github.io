@@ -50,30 +50,45 @@ const GB = (() => {
     return { Q, B: { x: Q.x + length * Math.cos(th), y: Q.y + length * Math.sin(th) } };
   }
 
-  /* Fit on the reference bike: saddle tip, hand position, and the stem the numbers imply. */
+  /* Fit on the reference bike: saddle tip and hand position.
+     The hands come either from personal reach and drop (a tape from the saddle tip) or from
+     the stem fitted on the reference bike; the other set is worked out from the first. */
   function fitPoints(ref, fit) {
     const geo = frameGeometry(ref);
     const S = rad(ref.sta);
     const ys = fit.saddleHeight * Math.sin(S);
     const xs = -fit.setback;
-    // The tape from the saddle tip to the hand runs out to the side of the bar, so take away
-    // the sideways part (half the bar width) and the drop to get the side-view distance.
+    // The tape from the saddle tip to the hand runs out to the side of the bar, so half the
+    // bar width is sideways and only the rest shows in side view.
     const half = fin(fit.barWidth) ? fit.barWidth / 2 : 0;
-    const sq = fit.riderReach ** 2 - fit.drop ** 2 - half ** 2;
-    if (sq <= 0) return { ok: false, error: 'Rider reach is too short for this drop and handlebar width. Check the three numbers.' };
-    const reachH = Math.sqrt(sq);
-    const hand = { x: xs + reachH, y: ys - fit.drop }; // at the bar's reach point, level with the top of the bar
     const bike = Object.assign({}, ref, { stack: geo.stack, reach: geo.reach });
-    const B = { x: hand.x - fit.barReach, y: hand.y - BAR_R };
     const { d } = steerer(ref.hta);
     const k = fit.spacers + STEM_CLAMP / 2;
     const Q = { x: bike.reach + k * d.x, y: bike.stack + k * d.y };
-    const vx = B.x - Q.x;
-    const vy = B.y - Q.y;
-    const stem = { length: Math.hypot(vx, vy), angle: deg(Math.atan2(vy, vx)) - (90 - ref.hta), Q, B };
+    let hand; let reachH; let drop; let riderReach; let stem;
+    if (fit.handFrom === 'stem') {
+      const B = barFor(bike, fit.stemAngle, fit.stemLength, fit.spacers).B;
+      hand = { x: B.x + fit.barReach, y: B.y + BAR_R }; // the bar's reach point, level with the top of the bar
+      reachH = hand.x - xs;
+      if (reachH <= 0) return { ok: false, error: 'With this stem the hands would sit behind the saddle tip. Check the stem and the setback.' };
+      drop = ys - hand.y;
+      riderReach = Math.sqrt(reachH ** 2 + drop ** 2 + half ** 2);
+      stem = { length: fit.stemLength, angle: fit.stemAngle, Q, B };
+    } else {
+      const sq = fit.riderReach ** 2 - fit.drop ** 2 - half ** 2;
+      if (sq <= 0) return { ok: false, error: 'Personal reach is too short for this drop and handlebar width. Check the three numbers.' };
+      reachH = Math.sqrt(sq);
+      drop = fit.drop;
+      riderReach = fit.riderReach;
+      hand = { x: xs + reachH, y: ys - drop };
+      const B = { x: hand.x - fit.barReach, y: hand.y - BAR_R };
+      const vx = B.x - Q.x;
+      const vy = B.y - Q.y;
+      stem = { length: Math.hypot(vx, vy), angle: deg(Math.atan2(vy, vx)) - (90 - ref.hta), Q, B };
+    }
     return {
       ok: true,
-      bike, geo, stem, reachH, half,
+      bike, geo, stem, reachH, half, riderReach, drop,
       saddle: { x: xs, y: ys },
       hand,
       noseAhead: xs + ys / Math.tan(S), // saddle tip ahead of the seat-tube line at saddle height
@@ -155,14 +170,14 @@ const GB = (() => {
     const bike = Object.assign({}, bikeIn, { stack: geo.stack, reach: geo.reach });
     const S = rad(bike.sta);
     const { y, x } = fp.saddle;
-    // Rider reach is the tape length to keep. A different bar width on this bike changes how
+    // Personal reach is the tape length to keep. A different bar width on this bike changes how
     // much of that tape runs sideways, so the hands move forward or back in side view.
     const wRef = fin(fit.barWidth) ? fit.barWidth : 0;
     const wBike = fin(bikeIn.barWidth) && bikeIn.barWidth > 0 ? bikeIn.barWidth : wRef;
     let hand = fp.hand;
     let reachH = fp.reachH;
     if (wRef > 0 && wBike !== wRef) {
-      const sq = fit.riderReach ** 2 - fit.drop ** 2 - (wBike / 2) ** 2;
+      const sq = fp.riderReach ** 2 - fp.drop ** 2 - (wBike / 2) ** 2;
       if (sq > 0) { reachH = Math.sqrt(sq); hand = { x: x + reachH, y: fp.hand.y }; }
     }
     const handShift = hand.x - fp.hand.x;
@@ -181,7 +196,7 @@ const GB = (() => {
       checks.push({ level: 'warn', text: `Top tube and seat angle give a reach of ${geo.reachCalc.toFixed(0)} mm, but the chart says ${geo.reach} mm. The chart value is used.` });
     }
     if (Math.abs(handShift) >= 0.5) {
-      checks.push({ level: 'info', text: `The bar is ${Math.abs(wBike - wRef).toFixed(0)} mm ${wBike > wRef ? 'wider' : 'narrower'} than on the reference. With the arms angled ${wBike > wRef ? 'further out' : 'less'}, the same rider reach puts the hands ${Math.abs(handShift).toFixed(1)} mm ${handShift < 0 ? 'further back' : 'further forward'}.` });
+      checks.push({ level: 'info', text: `The bar is ${Math.abs(wBike - wRef).toFixed(0)} mm ${wBike > wRef ? 'wider' : 'narrower'} than on the reference. With the arms angled ${wBike > wRef ? 'further out' : 'less'}, the same personal reach puts the hands ${Math.abs(handShift).toFixed(1)} mm ${handShift < 0 ? 'further back' : 'further forward'}.` });
     }
     if (wRef === 0 && fin(bikeIn.barWidth) && bikeIn.barWidth > 0) {
       checks.push({ level: 'warn', text: 'Enter the reference bike\'s handlebar width in step 1, so this bar width can be compared with it.' });
