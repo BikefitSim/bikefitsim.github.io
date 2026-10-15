@@ -509,10 +509,10 @@
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
       <div>
-        <div class="sub-h"><h4>Stem and spacer options</h4><p>Closest combinations from your stems. Pick one to see it drawn.</p></div>
+        <div class="sub-h"><h4>Stem and spacer options</h4><p>Closest combinations from your stems. Hand fwd and hand up are how far each one puts your hands from the target (+ is further forward or higher), and miss is the straight-line distance. Pick one to see it drawn.</p></div>
         <div class="tbl-wrap">
           <table class="data" id="optTable">
-            <thead><tr><th></th><th>Stem</th><th class="num">Spacers</th><th class="num">Hand fwd</th><th class="num">Hand up</th><th class="num">Miss</th></tr></thead>
+            <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
             <tbody>${r.cockpit.options.concat(o && !r.cockpit.options.includes(o) ? [o] : []).map((x, i) => {
               const sel = o && optKey(x) === optKey(o);
               return `<tr class="opt${sel ? ' pick' : ''}" data-opt="${esc(optKey(x))}">
