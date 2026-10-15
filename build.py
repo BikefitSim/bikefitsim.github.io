@@ -33,7 +33,7 @@ def read(name):
 def build_page():
     engine = read('engine.js').replace("if (typeof module !== 'undefined') module.exports = GB;\n", '')
     return (HEAD + read('base.css') + '\n' + read('body.html') + '\n'
-            + '<script>\n' + engine + '\n' + read('draw.js') + '</script>\n'
+            + '<script>\n' + engine + '\n' + read('draw.js') + '\n' + read('datafile.js') + '</script>\n'
             + '<script>\n' + read('app.js') + '</script>\n')
 
 

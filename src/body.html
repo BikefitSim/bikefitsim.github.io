@@ -81,6 +81,13 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
   svg.geo.main text.dt, svg.geo.main text.bbl { font-size: calc(var(--k) * 19px); }
   svg.geo.main .gl { font-size: calc(var(--k) * 16px); }
 }
+.filebar { display: flex; gap: 8px 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: -8px; min-height: 0; }
+.filebar:empty { display: none; }
+.file-status { font-size: 13px; color: var(--ink-2); display: inline-flex; gap: 7px; align-items: center; }
+.file-status b { color: var(--ink); font-weight: 600; }
+.file-status.ok::before, .file-status.warn::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex: none; }
+.file-status.warn::before { background: var(--part); }
+.filebar .btn { padding: 5px 11px; font-size: 13px; }
 </style>
 
 <div class="page">
@@ -103,6 +110,9 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
       <span class="save" id="saveState" data-state="example" role="status" aria-live="polite">Example numbers</span>
     </div>
   </header>
+
+  <div class="filebar" id="fileBar" aria-live="polite"></div>
+  <input type="file" id="fileInput" accept=".json,application/json" hidden>
 
   <div class="banner" id="exampleBanner">
     <span><strong>These are example numbers.</strong> Type your own bikes and fit over them. Your changes are saved as you go.</span>
