@@ -32,8 +32,6 @@ body.loading .f-in { opacity: .55; }
 .kind-note { font-size: 13px; color: var(--ink-2); max-width: 70ch; }
 @media (prefers-reduced-motion: no-preference) { .kind-tab { transition: color .15s, background-color .15s; } }
 .credits { padding: 4px 4px 0; }
-.credits p + p { margin-top: 4px; }
-.credits h2 { font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
 .credits p { font-size: 13px; color: var(--ink-2); max-width: 62ch; }
 .credits a { color: inherit; }
 .limits { border-top: 1px solid var(--rule-2); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; }
@@ -117,7 +115,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
       <svg class="mark" viewBox="0 0 56 44" role="img" aria-label="BikefitSim logo: B and S in the wheels of a bike"><circle class="m-wheel" cx="14" cy="29" r="12.5"></circle><circle class="m-wheel" cx="42" cy="29" r="12.5"></circle><path class="m-tube" d="M28.5 30.5 L22.5 7.0 M22.5 7.0 L39.9 16.7 M26.4 30.3 L28.5 30.5 M22.5 7.0 L18.5 17.3 M39.9 16.7 L39.9 16.7"></path><path class="m-letter" d="M10.4 22.5 V35.5 M10.4 22.5 H14.4 a3.05 3.05 0 0 1 0 6.1 H10.4 M10.4 28.6 H14.9 a3.45 3.45 0 0 1 0 6.9 H10.4"></path><path class="m-letter" d="M45.9 24.4 C45.1 22.9 43.6 22.4 42.1 22.4 C39.8 22.4 38.3 23.8 38.3 25.6 C38.3 29.6 46.0 28.0 46.0 32.3 C46.0 34.3 44.3 35.6 41.9 35.6 C40.1 35.6 38.6 34.9 37.8 33.4"></path><circle class="m-pt" cx="22.5" cy="7.0" r="2.4"></circle><circle class="m-pt" cx="39.9" cy="16.7" r="2.4"></circle><circle class="m-pt" cx="28.5" cy="30.5" r="2.4"></circle></svg>
       <div>
         <h1>BikefitSim</h1>
-        <p class="tag">Carry your bike fit to any frame</p>
+        <p class="tag">Simulate your bike fit on any frame</p>
       </div>
     </div>
     <div class="top-right">
@@ -131,7 +129,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
 
   <div class="banner" id="importBanner" role="status" hidden></div>
 
-  <section class="sheet" aria-labelledby="refTitle">
+  <section class="sheet s1" aria-labelledby="refTitle">
     <div class="sec-head">
       <span class="step">1</span><h2 id="refTitle">Reference</h2>
       <p>Your position, as a bike fit (a bike that fits you and its setup) or a personal fit (your measurements only). Add as many as you need. Every target bike is set up to match the one open here.</p>
@@ -150,7 +148,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
     <div class="row-actions" id="refActions"></div>
   </section>
 
-  <section class="sheet" aria-labelledby="bikeTitle">
+  <section class="sheet s2" aria-labelledby="bikeTitle">
     <div class="sec-head">
       <span class="step">2</span><h2 id="bikeTitle">Target bike</h2>
       <p>Frames to set up like the reference open in step 1. Enter each one's geometry chart and handlebar.</p>
@@ -162,7 +160,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
     <div class="tabs" id="tabs" role="tablist" aria-label="Target bikes"></div>
     <div class="bike-grid">
       <div class="bike-form" id="bikeForm"></div>
-      <div class="bike-out">
+      <div class="bike-out s3">
         <div class="out-head"><span class="step">3</span><h3 id="outTitle">Changes</h3></div>
         <p class="out-sub" id="outSub"></p>
         <div class="bike-out" id="bikeOut" aria-live="polite"></div>
@@ -193,8 +191,10 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
       <div><h4>Stack from the tubes</h4><p>Stack = BB drop + (fork length + head tube length) × sin(head angle) − fork offset × cos(head angle). Reach = top tube − stack ÷ tan(seat angle). Chart stack and reach take priority when given.</p></div>
     </div>
     <div class="limits">
-      <h4>Limitations</h4>
+      <h4>Known limitations</h4>
       <ul>
+        <li>You need frame geometry charts and a few measurements, so some knowledge of bike geometry helps.</li>
+        <li id="dataNote">Nothing you enter is sent to a server.</li>
         <li>Hands sit at the base of the hoods, level with the bar top. Drops and tops are not modelled.</li>
         <li>Handlebar reach 0 means a flat bar, hands over the bar centre.</li>
         <li>Bar rise and drop are not modelled. A riser bar, or hoods above or below the bar top, moves the hands by that amount.</li>
@@ -207,12 +207,9 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
     </div>
   </section>
 
-  <footer class="credits" aria-labelledby="creditsTitle">
+  <footer class="credits">
     <div>
-      <h2 id="creditsTitle">Before you start</h2>
-      <p>You'll need frame geometry charts and a few measurements, so some knowledge of bike geometry helps.</p>
-      <p id="dataNote">Nothing you enter is sent to a server.</p>
-      <p>MIT License · Contact: <a href="https://github.com/zemiguelmoreira">github.com/zemiguelmoreira</a></p>
+      <p>© 2026 José Miguel Moreira · <a href="https://zemiguelmoreira.github.io/">zemiguelmoreira.github.io</a></p>
     </div>
   </footer>
 </div>
