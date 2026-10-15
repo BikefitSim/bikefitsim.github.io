@@ -10,7 +10,7 @@ const GB = (() => {
   const WHEEL_R = 340;    // drawing only
   const CHAINSTAY = 410;  // drawing only
   const ANGLE_COST = 0.15; // mm of miss traded per degree away from the reference stem angle
-  const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a fit reference)
+  const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a personal fit)
 
   function parseList(str, { min = -Infinity, max = Infinity } = {}) {
     const out = String(str || '')
@@ -51,7 +51,7 @@ const GB = (() => {
     return { Q, B: { x: Q.x + length * Math.cos(th), y: Q.y + length * Math.sin(th) } };
   }
 
-  /* Fit reference: no bike, only the rider's numbers. Saddle height is the straight line from
+  /* Personal fit: no bike, only the rider's numbers. Saddle height is the straight line from
      the BB centre to the saddle tip, so with the setback it fixes the tip; personal reach and
      drop fix the hands from there. */
   function bodyPoints(fit) {
@@ -74,7 +74,7 @@ const GB = (() => {
   }
 
   /* Saddle tip and hand position for a reference.
-     A bike reference places the hands from the stem fitted on it; personal reach and drop are
+     A bike fit places the hands from the stem fitted on it; personal reach and drop are
      worked out from that. Saves from before stems were entered gave personal reach and drop
      instead (handFrom 'reach'), and the stem is worked out from those. */
   function fitPoints(ref, fit) {
@@ -208,7 +208,7 @@ const GB = (() => {
     const handShift = hand.x - fp.hand.x;
     const heightAlong = y / Math.sin(S);
     const noseAhead = x + y / Math.tan(S); // saddle tip ahead of this seat tube's line at saddle height
-    // + = saddle further forward on its rails than on the reference bike; none for a fit reference
+    // + = saddle further forward on its rails than on the reference bike; none for a personal fit
     const railMove = fin(fp.noseAhead) ? noseAhead - fp.noseAhead : null;
     const exposed = (y - RAIL_H) / Math.sin(S) - bike.seatTube;
     const target = { x: hand.x - bike.barReach, y: hand.y - BAR_R };
