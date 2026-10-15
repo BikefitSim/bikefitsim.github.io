@@ -281,9 +281,9 @@
   function renderBikeForm() {
     const b = curBike();
     $('bikeForm').innerHTML = `
-      <div class="grp">${nameHTML('bike', b.name)}</div>
-      <div class="grp"><h4>Frame geometry</h4><div class="fields two">${geoFieldsHTML('bike', b)}</div></div>
-      <div class="grp"><h4>Handlebar</h4><div class="fields two">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar this bike will use. 0 for a flat bar.' }, 'bike', b)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, finite(curRef().fit.barWidth) && curRef().fit.barWidth > 0 ? `same: ${curRef().fit.barWidth}` : 'same as reference')}</div></div>
+      <div class="grp ref-name">${nameHTML('bike', b.name)}</div>
+      <div class="grp"><h4>Frame geometry</h4><div class="fields">${geoFieldsHTML('bike', b)}</div></div>
+      <div class="grp"><h4>Handlebar</h4><div class="fields">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar this bike will use. 0 for a flat bar.' }, 'bike', b)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, finite(curRef().fit.barWidth) && curRef().fit.barWidth > 0 ? `same: ${curRef().fit.barWidth}` : 'same as reference')}</div></div>
       <div class="row-actions">
         <button class="btn" type="button" id="dupBike">Copy as new target bike</button>
         <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' disabled title="Keep at least one target bike"' : ''}>Delete target bike</button>

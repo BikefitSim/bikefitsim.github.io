@@ -21,7 +21,7 @@
   --warn-bg: #FBF0D8;
   --bad-bg: #FBE3E3;
   --info-bg: #E2EBF8;
-  --s1: #FBF7EA; --s2: #F0F5FC; --s3: #EEF6F0; /* step backgrounds: reference, target bike, changes */
+  --sheet-alt: #E3E9F0; /* every other section, to tell them apart */
   --display: 'Saira Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
   --body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
@@ -31,7 +31,7 @@
     --paper: #0C1016; --sheet: #141A22; --well: #1A222D; --ink: #E5EAF1; --ink-2: #95A2B4;
     --rule: #2B3542; --rule-2: #212A35; --frame: #6AA6FF; --part: #F4C430; --part-ink: #F4C430; --laser: #FF5B53; --focus: #6AA6FF;
     --good: #4FCB83; --warn: #F2A64A; --bad: #FF6B70; --good-bg: #13291C; --warn-bg: #30260F; --bad-bg: #36191B; --info-bg: #15233A;
-    --s1: #1A1912; --s2: #131B27; --s3: #121E18;
+    --sheet-alt: #0F141A;
     color-scheme: dark;
   }
 }
@@ -39,7 +39,7 @@
   --paper: #0C1016; --sheet: #141A22; --well: #1A222D; --ink: #E5EAF1; --ink-2: #95A2B4;
   --rule: #2B3542; --rule-2: #212A35; --frame: #6AA6FF; --part: #F4C430; --part-ink: #F4C430; --laser: #FF5B53; --focus: #6AA6FF;
   --good: #4FCB83; --warn: #F2A64A; --bad: #FF6B70; --good-bg: #13291C; --warn-bg: #30260F; --bad-bg: #36191B; --info-bg: #15233A;
-  --s1: #1A1912; --s2: #131B27; --s3: #121E18;
+  --sheet-alt: #0F141A;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -58,7 +58,9 @@ button { font: inherit; color: inherit; }
 
 /* header */
 .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.brand { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 0; }
+.brand { display: grid; grid-template-columns: auto 1fr; gap: 0 12px; align-items: center; min-width: 0; }
+.brand-text { display: contents; }
+.brand .tag { grid-column: 1 / -1; margin-top: 6px; }
 .mark { width: 56px; height: 44px; flex: none; }
 .mark .m-tube { stroke: var(--part); stroke-width: 2.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .mark .m-wheel { stroke: var(--frame); stroke-width: 2.2; fill: none; }
@@ -78,9 +80,7 @@ h1 { font-size: 40px; font-weight: 700; letter-spacing: .01em; line-height: 1; }
 
 /* sections */
 .sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.sheet.s1 { background: var(--s1); }
-.sheet.s2 { background: var(--s2); }
-.bike-out.s3 { background: var(--s3); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; }
+.sheet.alt { background: var(--sheet-alt); }
 .sec-head { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
 .step { font: 600 13px var(--mono); color: var(--sheet); background: var(--frame); width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; transform: translateY(-3px); }
 .sec-head h2 { font-size: 26px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
