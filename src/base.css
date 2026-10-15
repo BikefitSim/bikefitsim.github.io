@@ -24,6 +24,7 @@
   --sheet-alt: #E3E9F0; /* every other section, to tell them apart */
   --draw-bg: #EEF2F6;   /* behind the drawings, so the grid shows */
   --grid-1: #CDD5E0; --grid-2: #AEB9C8; /* drawing grid: minor, major */
+  --gl-halo: #FFFFFF;   /* outline around the grid values */
   --display: 'Saira Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
   --body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
@@ -33,7 +34,7 @@
     --paper: #0C1016; --sheet: #141A22; --well: #1A222D; --ink: #E5EAF1; --ink-2: #95A2B4;
     --rule: #2B3542; --rule-2: #212A35; --frame: #6AA6FF; --part: #F4C430; --part-ink: #F4C430; --laser: #FF5B53; --focus: #6AA6FF;
     --good: #4FCB83; --warn: #F2A64A; --bad: #FF6B70; --good-bg: #13291C; --warn-bg: #30260F; --bad-bg: #36191B; --info-bg: #15233A;
-    --sheet-alt: #0F141A; --draw-bg: #0B0F14; --grid-1: #1C242F; --grid-2: #2C3746;
+    --sheet-alt: #0F141A; --draw-bg: #0B0F14; --grid-1: #1C242F; --grid-2: #2C3746; --gl-halo: #000;
     color-scheme: dark;
   }
 }
@@ -41,7 +42,7 @@
   --paper: #0C1016; --sheet: #141A22; --well: #1A222D; --ink: #E5EAF1; --ink-2: #95A2B4;
   --rule: #2B3542; --rule-2: #212A35; --frame: #6AA6FF; --part: #F4C430; --part-ink: #F4C430; --laser: #FF5B53; --focus: #6AA6FF;
   --good: #4FCB83; --warn: #F2A64A; --bad: #FF6B70; --good-bg: #13291C; --warn-bg: #30260F; --bad-bg: #36191B; --info-bg: #15233A;
-  --sheet-alt: #0F141A; --draw-bg: #0B0F14; --grid-1: #1C242F; --grid-2: #2C3746;
+  --sheet-alt: #0F141A; --draw-bg: #0B0F14; --grid-1: #1C242F; --grid-2: #2C3746; --gl-halo: #000;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
