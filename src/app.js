@@ -15,8 +15,8 @@
   const finite = (v) => typeof v === 'number' && Number.isFinite(v);
   const isObj = (o) => o && typeof o === 'object';
 
-  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'seatTube', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach'];
-  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, seatTube: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null };
+  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach'];
+  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null };
   /* Two kinds of reference, each with its own tab. A bike fit (kind 'bike') is a frame plus how
      it is set up (saddle, spacers, stem, bar); a personal fit (kind 'fit') is only the rider's
      numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
@@ -158,9 +158,11 @@
     { k: 'sta', l: 'Seat tube angle', u: '°' },
     { k: 'hta', l: 'Head tube angle', u: '°' },
     { k: 'htLength', l: 'Head tube length', u: 'mm' },
-    { k: 'ett', l: 'Top tube (eff.)', u: 'mm', opt: true },
-    { k: 'seatTube', l: 'Seat tube (c-t)', u: 'mm' },
     { k: 'bbDrop', l: 'BB drop', u: 'mm', neg: true },
+    { k: 'ett', l: 'Top tube (eff.)', u: 'mm', opt: true, h: 'Horizontal. Either top tube will do.' },
+    { k: 'att', l: 'Top tube (actual)', u: 'mm', opt: true, h: 'Centre to centre, along the tube' },
+    { k: 'seatTube', l: 'Seat tube (c-t)', u: 'mm', opt: true, h: 'BB centre to the top of the tube. Either seat tube will do.' },
+    { k: 'seatTubeCC', l: 'Seat tube (c-c)', u: 'mm', opt: true, h: 'BB centre to the top tube centre' },
     { k: 'forkA2C', l: 'Fork length', u: 'mm', h: 'Axle to crown, plus any lower headset cup' },
     { k: 'forkOffset', l: 'Fork offset', u: 'mm', h: 'Also called rake' },
     { k: 'stack', l: 'Stack', u: 'mm', opt: true, h: 'Optional, from the chart' },
@@ -304,12 +306,19 @@
   function geoErrors(b, withBar) {
     const c = checker(b, 'The frame');
     c.chk('sta', 60, 85, 'Seat tube angle'); c.chk('hta', 60, 80, 'Head tube angle');
-    c.chk('htLength', 50, 300, 'Head tube length'); c.chk('seatTube', 200, 750, 'Seat tube length');
+    c.chk('htLength', 50, 300, 'Head tube length');
+    if (b.seatTube == null && b.seatTubeCC == null) c.missing.push('seat tube, c-t or c-c');
+    if (b.seatTube != null) c.chk('seatTube', 200, 750, 'Seat tube (c-t)');
+    if (b.seatTubeCC != null) c.chk('seatTubeCC', 200, 750, 'Seat tube (c-c)');
     c.chk('bbDrop', -40, 110, 'BB drop'); c.chk('forkA2C', 300, 600, 'Fork length'); c.chk('forkOffset', 0, 80, 'Fork offset');
     const hasReach = finite(b.reach) && b.reach > 0;
     if (!hasReach) {
-      if (b.ett == null) c.missing.push('top tube (or reach from the chart)');
-      else if (!(finite(b.ett) && b.ett > 350)) c.wrong.push('Top tube should be over 350.');
+      if (b.ett == null && b.att == null) c.missing.push('top tube, effective or actual (or reach from the chart)');
+      if (b.ett != null && !(finite(b.ett) && b.ett > 350)) c.wrong.push('Effective top tube should be over 350.');
+      if (b.att != null && !(finite(b.att) && b.att > 350)) c.wrong.push('Actual top tube should be over 350.');
+      if (b.ett == null && b.att != null && !c.missing.length && !c.wrong.length && GB.frameGeometry(b).reach == null) {
+        c.wrong.push('The actual top tube is too short to reach the head tube from this seat tube. Check both.');
+      }
     }
     if (finite(b.stack) && (b.stack < 300 || b.stack > 800)) c.wrong.push('Stack should be between 300 and 800.');
     if (hasReach && (b.reach < 250 || b.reach > 600)) c.wrong.push('Reach should be between 250 and 600.');
@@ -500,10 +509,10 @@
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
       <div>
-        <div class="sub-h"><h4>Stem and spacer options</h4><p>Closest combinations from your stems. Pick one to see it drawn.</p></div>
+        <div class="sub-h"><h4>Stem and spacer options</h4><p>Closest combinations from your stems. Hand fwd and hand up are how far each one puts your hands from the target (+ is further forward or higher), and miss is the straight-line distance. Pick one to see it drawn.</p></div>
         <div class="tbl-wrap">
           <table class="data" id="optTable">
-            <thead><tr><th></th><th>Stem</th><th class="num">Spacers</th><th class="num">Hand fwd</th><th class="num">Hand up</th><th class="num">Miss</th></tr></thead>
+            <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
             <tbody>${r.cockpit.options.concat(o && !r.cockpit.options.includes(o) ? [o] : []).map((x, i) => {
               const sel = o && optKey(x) === optKey(o);
               return `<tr class="opt${sel ? ' pick' : ''}" data-opt="${esc(optKey(x))}">

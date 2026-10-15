@@ -113,7 +113,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
 <div class="page">
   <header class="top">
     <div class="brand">
-      <svg class="mark" viewBox="0 0 56 44" role="img" aria-label="BikefitSim logo: B and S in the wheels of a bike"><circle class="m-wheel" cx="14" cy="29" r="12.5"></circle><circle class="m-wheel" cx="42" cy="29" r="12.5"></circle><path class="m-tube" d="M28.5 30.5 L22.5 7.0 M22.5 7.0 L39.9 16.7 M39.9 16.7 L28.5 30.5 M26.4 30.3 L28.5 30.5 M22.5 7.0 L18.5 17.3 M39.9 16.7 L39.9 16.7"></path><path class="m-letter" d="M10.4 22.5 V35.5 M10.4 22.5 H14.4 a3.05 3.05 0 0 1 0 6.1 H10.4 M10.4 28.6 H14.9 a3.45 3.45 0 0 1 0 6.9 H10.4"></path><path class="m-letter" d="M45.9 24.4 C45.1 22.9 43.6 22.4 42.1 22.4 C39.8 22.4 38.3 23.8 38.3 25.6 C38.3 29.6 46.0 28.0 46.0 32.3 C46.0 34.3 44.3 35.6 41.9 35.6 C40.1 35.6 38.6 34.9 37.8 33.4"></path><circle class="m-pt" cx="22.5" cy="7.0" r="2.4"></circle><circle class="m-pt" cx="39.9" cy="16.7" r="2.4"></circle><circle class="m-pt" cx="28.5" cy="30.5" r="2.4"></circle></svg>
+      <svg class="mark" viewBox="0 0 56 44" role="img" aria-label="BikefitSim logo: B and S in the wheels of a bike"><circle class="m-wheel" cx="14" cy="29" r="12.5"></circle><circle class="m-wheel" cx="42" cy="29" r="12.5"></circle><path class="m-tube" d="M28.5 30.5 L22.5 7.0 M22.5 7.0 L39.9 16.7 M26.4 30.3 L28.5 30.5 M22.5 7.0 L18.5 17.3 M39.9 16.7 L39.9 16.7"></path><path class="m-letter" d="M10.4 22.5 V35.5 M10.4 22.5 H14.4 a3.05 3.05 0 0 1 0 6.1 H10.4 M10.4 28.6 H14.9 a3.45 3.45 0 0 1 0 6.9 H10.4"></path><path class="m-letter" d="M45.9 24.4 C45.1 22.9 43.6 22.4 42.1 22.4 C39.8 22.4 38.3 23.8 38.3 25.6 C38.3 29.6 46.0 28.0 46.0 32.3 C46.0 34.3 44.3 35.6 41.9 35.6 C40.1 35.6 38.6 34.9 37.8 33.4"></path><circle class="m-pt" cx="22.5" cy="7.0" r="2.4"></circle><circle class="m-pt" cx="39.9" cy="16.7" r="2.4"></circle><circle class="m-pt" cx="28.5" cy="30.5" r="2.4"></circle></svg>
       <div>
         <h1>BikefitSim</h1>
         <p class="tag">Achieve the perfect fit on any bike</p>
@@ -197,6 +197,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
         <li>The hand position is the base of the hoods, level with the top of the bar. Personal reach has to be measured to that point, or to where your hands sit on a bar without hoods. Hands on the drops or the tops are not modelled.</li>
         <li>Handlebar reach 0 is read as a flat bar, with the hands over the bar centre.</li>
         <li>Handlebar rise and drop are not calculated yet. The base of the hoods is taken as level with the top of the bar at the clamp, so a riser bar, or a bar whose hoods sit higher or lower than that, puts the hands off by that much.</li>
+        <li>Everything is measured to the saddle tip, so the results assume the same saddle on every bike. A saddle of a different length moves where you sit by the difference: one 20 mm shorter with its tip in the same place puts you 20 mm further forward, so slide it back that much on its rails.</li>
       </ul>
     </div>
     <div class="foot">
