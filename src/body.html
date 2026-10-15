@@ -49,9 +49,9 @@ body.loading .f-in { opacity: .55; }
 @media (max-width: 980px) { .viz { grid-template-columns: minmax(0, 1fr); } .viz-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
 svg.geo { display: block; width: 100%; height: auto; max-width: 100%; background: var(--draw-bg); }
 svg.geo * { vector-effect: non-scaling-stroke; }
-svg.geo .grid .minor { stroke: var(--rule); stroke-opacity: .5; stroke-width: .6px; }
-svg.geo .grid .major { stroke: var(--rule); stroke-width: 1.1px; }
-svg.geo .grid .axis0 { stroke: var(--rule); stroke-width: 1.4px; }
+svg.geo .grid .minor { stroke: var(--grid-1); stroke-width: .7px; }
+svg.geo .grid .major { stroke: var(--grid-2); stroke-width: 1.1px; }
+svg.geo .grid .axis0 { stroke: var(--grid-2); stroke-width: 1.6px; }
 svg.geo .gl { font: 400 calc(var(--k) * 10px) var(--mono); fill: var(--ink-2); opacity: .8; }
 svg.geo .ground { stroke: var(--rule); stroke-width: 1.2px; stroke-dasharray: 6 5; }
 svg.geo .saxis { stroke: var(--frame); stroke-opacity: .5; stroke-width: 1px; stroke-dasharray: 2 4; fill: none; }

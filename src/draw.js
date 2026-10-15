@@ -155,7 +155,9 @@ const GBDraw = (() => {
     if (show.grid) m += grid(v, 50);
     m += v.line({ x: minX + 10, y: g.groundY }, { x: maxX - 10, y: g.groundY }, 'ground');
     m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -(bike.forkA2C + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
-    if (showRef) m += drawBike(v, 'rf', rg, pr, sad);
+    // the reference sits on the same BB, or with ground alignment on the same ground line
+    const lift = show.ground && rg ? g.groundY - rg.groundY : 0;
+    if (showRef) m += `<g transform="translate(0 ${f1(-lift)})">${drawBike(v, 'rf', rg, pr, sad)}</g>`;
     m += drawBike(v, 'bk', g, pb, sad);
     // a personal fit's saddle height: the straight line from the BB to the saddle tip
     if (!ref) m += v.dim({ x: 0, y: 0 }, sad, 0, `BB to saddle tip ${n0(Math.hypot(sad.x, sad.y))}`, { key: 'height', cls: 'dim rfd', ext: false, labelOff: 8 });
