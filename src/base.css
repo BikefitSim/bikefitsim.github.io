@@ -305,7 +305,7 @@ body::before {
 .top .mark .m-tube { stroke: #FFE11A; }
 .top .mark .m-letter { stroke: #fff; }
 .top .mark .m-pt { fill: #FF3355; }
-h1 { font-size: 66px; font-weight: 700; letter-spacing: .01em; line-height: .92; color: #fff; display: inline-block; transform: skewX(-10deg); transform-origin: 0 100%; text-shadow: -3px 0 rgba(0,200,255,.45), 3px 0 rgba(255,30,60,.45); }
+h1 { font-family: 'Racing Sans One', var(--display); font-size: 72px; font-weight: 400; letter-spacing: .005em; line-height: .95; color: #fff; display: inline-block; transform: skewX(-4deg); transform-origin: 0 100%; text-shadow: -3px 0 rgba(0,200,255,.45), 3px 0 rgba(255,30,60,.45); }
 h1 .sim { background: linear-gradient(100deg, #FFE11A, #FF8A1E 55%, #FF3355); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; padding-right: .05em; }
 .top .tag { color: #C9D2EA; font-size: 16px; margin-top: 10px; font-weight: 500; letter-spacing: .01em; }
 .chev { display: block; width: 150px; height: 10px; margin-top: 12px; background: repeating-linear-gradient(115deg, #FFE11A 0 8px, transparent 8px 16px); }
@@ -421,7 +421,7 @@ table.data th { font-weight: 700; }
 @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.5); } }
 @keyframes live { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 70%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
 @keyframes slamin { from { opacity: 0; transform: translateX(-60px) skewX(-6deg); } to { opacity: 1; transform: none; } }
-@keyframes pop { 0% { opacity: 0; transform: translateX(-40px) skewX(-14deg); } 100% { opacity: 1; transform: skewX(-10deg); } }
+@keyframes pop { 0% { opacity: 0; transform: translateX(-40px) skewX(-14deg); } 100% { opacity: 1; transform: skewX(-4deg); } }
 
 @media (prefers-reduced-motion: no-preference) {
   .streaks i { animation: streak 1.15s linear infinite; }
@@ -452,10 +452,10 @@ table.data th { font-weight: 700; }
   .top-right { position: static; }
   .velo { width: 100%; opacity: .45; right: 0; }
   .lap { display: none; }
-  h1 { font-size: 46px; }
+  h1 { font-size: 50px; }
   .top .mark { width: 62px; height: 49px; }
   .sheet { padding: 24px 16px 20px; }
   .sec-head h2 { font-size: 27px; }
 }
-@media (max-width: 520px) { h1 { font-size: 40px; } .t-v { font-size: 32px; } }
+@media (max-width: 520px) { h1 { font-size: 44px; } .t-v { font-size: 32px; } }
 </style>
