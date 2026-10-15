@@ -57,7 +57,8 @@ const GBDraw = (() => {
     };
     const target = (p, size = 14) => {
       const s = size * k;
-      return `<g class="target">${circle(p, s * 0.55, 'tg')}${line({ x: p.x - s, y: p.y }, { x: p.x + s, y: p.y }, 'tg')}${line({ x: p.x, y: p.y - s }, { x: p.x, y: p.y + s }, 'tg')}${circle(p, 1.8 * k, 'tgdot')}</g>`;
+      const d = s * 0.55; // a red X
+      return `<g class="target">${line({ x: p.x - d, y: p.y - d }, { x: p.x + d, y: p.y + d }, 'tg')}${line({ x: p.x - d, y: p.y + d }, { x: p.x + d, y: p.y - d }, 'tg')}</g>`;
     };
     const open = (cls, extra = '') => `<svg class="geo ${cls}" viewBox="${f1(vb.x)} ${f1(-(vb.y + vb.h))} ${f1(vb.w)} ${f1(vb.h)}" style="--k:${k.toFixed(4)}" ${extra}>`;
     return { k, vb, P, line, circle, path, poly, text, dim, target, open };
@@ -81,7 +82,7 @@ const GBDraw = (() => {
     const g = frame;
     let s = `<g class="bike ${cls}">`;
     if (wheels) {
-      for (const w of [g.rear, g.front]) s += v.circle(w, TYRE_R, 'tyre') + v.circle(w, RIM_R, 'rim') + v.circle(w, 3.2 * v.k, 'hub');
+      for (const w of [g.rear, g.front]) s += v.circle(w, RIM_R, 'rim');
     }
     const ttEnd = add(g.T, p.d, -18);
     const dtEnd = add(g.htBottom, p.d, 25);
@@ -167,10 +168,8 @@ const GBDraw = (() => {
       // setback: plumb line from the saddle tip, measured at BB height
       m += `<g class="dim" data-dim="setback">${v.line(sad, { x: sad.x, y: -44 * v.k }, 'plumb')}</g>`;
       m += v.dim({ x: sad.x, y: 0 }, { x: 0, y: 0 }, -40, `Setback ${n0(-sad.x)}`, { key: 'setback', ext: false });
-      // hand position on the grid
-      m += `<g class="dim" data-dim="hand">${v.line(hand, { x: hand.x, y: -44 * v.k }, 'plumb')}</g>`;
-      m += v.dim({ x: 0, y: 0 }, { x: hand.x, y: 0 }, -40, `Hand X ${n0(hand.x)}`, { key: 'hand', ext: false });
-      m += v.dim({ x: hand.x, y: 0 }, hand, -40, `Hand Y ${n0(hand.y)}`, { key: 'hand' });
+      // hand position on the grid, next to its X
+      m += v.text(hand, `Hand ${n0(hand.x)}, ${n0(hand.y)}`, 'dt tl', { dx: 12, dy: 18, anchor: 'start', key: 'hand' });
       // drop from saddle top to the top of the bar
       m += v.dim({ x: hand.x + 70, y: sad.y }, { x: hand.x + 70, y: hand.y }, 0, `Drop ${n0(sad.y - hand.y)}`, { key: 'drop', anchor: 'middle', labelOff: 14 });
       m += `<g class="dim" data-dim="drop">${v.line({ x: sad.x + 10, y: sad.y }, { x: hand.x + 80, y: sad.y }, 'ext lvl')}</g>`;

@@ -173,7 +173,7 @@ figure.draw figcaption { display: flex; gap: 16px; flex-wrap: wrap; padding: 8px
 .lg { display: inline-flex; gap: 6px; align-items: center; }
 .lg i { width: 16px; height: 4px; border-radius: 2px; display: inline-block; }
 .lg i.fr { background: var(--frame); } .lg i.pa { background: var(--part); }
-.lg i.tg { width: 10px; height: 10px; border: 2px solid var(--laser); border-radius: 50%; background: none; }
+.lg i.tg { width: 10px; height: 10px; border-radius: 0; background: linear-gradient(45deg, transparent 42%, var(--laser) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--laser) 42% 58%, transparent 58%); }
 .lg i.ax { height: 0; border-top: 2px dashed var(--rule); border-radius: 0; }
 svg .grid { stroke: var(--rule-2); stroke-width: 1.5; }
 svg .ground { stroke: var(--rule); stroke-width: 3; stroke-dasharray: 14 10; }
@@ -254,12 +254,14 @@ table.data input[type="radio"] { accent-color: var(--frame); margin: 0; cursor: 
 }
 
 /* dark mode switch */
-.top-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.theme-btn { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--rule); background: var(--sheet); border-radius: 999px; padding: 4px 12px 4px 5px; cursor: pointer; font: 500 13px var(--body); color: var(--ink); }
+.top-right { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+.theme-btn { position: relative; display: inline-flex; align-items: center; gap: 4px; width: 50px; height: 26px; padding: 0 4px; border: 1px solid var(--rule); background: var(--well); border-radius: 999px; cursor: pointer; flex: none; }
 .theme-btn:hover { border-color: var(--ink-2); }
-.sw-track { width: 30px; height: 18px; border-radius: 999px; background: var(--rule); position: relative; flex: none; }
-.sw-knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--part); }
-.theme-btn[aria-pressed="true"] .sw-track { background: var(--frame); }
-.theme-btn[aria-pressed="true"] .sw-knob { left: 14px; background: var(--sheet); }
-@media (prefers-reduced-motion: no-preference) { .sw-knob, .sw-track { transition: left .15s, background-color .15s; } }
+.theme-btn .ic { position: relative; width: 18px; height: 18px; padding: 2px; fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.theme-btn .ic.moon path { fill: var(--ink-2); stroke: none; }
+.sw-knob { position: absolute; top: 2px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--sheet); box-shadow: 0 0 0 1px var(--rule); }
+.theme-btn[aria-pressed="false"] .ic.sun { stroke: var(--part-ink); }
+.theme-btn[aria-pressed="true"] .sw-knob { left: 25px; }
+.theme-btn[aria-pressed="true"] .ic.moon path { fill: var(--ink); }
+@media (prefers-reduced-motion: no-preference) { .sw-knob { transition: left .15s; } }
 </style>

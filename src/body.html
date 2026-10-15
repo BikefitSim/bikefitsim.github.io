@@ -49,10 +49,11 @@ body.loading .f-in { opacity: .55; }
 @media (max-width: 980px) { .viz { grid-template-columns: minmax(0, 1fr); } .viz-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
 svg.geo { display: block; width: 100%; height: auto; max-width: 100%; background: var(--sheet); }
 svg.geo * { vector-effect: non-scaling-stroke; }
+svg.geo .grid { opacity: .55; }
 svg.geo .grid .minor { stroke: var(--rule-2); stroke-width: .6px; }
 svg.geo .grid .major { stroke: var(--rule-2); stroke-width: 1.2px; }
 svg.geo .grid .axis0 { stroke: var(--rule); stroke-width: 1.4px; }
-svg.geo .gl { font: 400 calc(var(--k) * 10px) var(--mono); fill: var(--ink-2); }
+svg.geo .gl { font: 400 calc(var(--k) * 10px) var(--mono); fill: var(--ink-2); opacity: .6; }
 svg.geo .ground { stroke: var(--rule); stroke-width: 1.2px; stroke-dasharray: 6 5; }
 svg.geo .saxis { stroke: var(--frame); stroke-opacity: .5; stroke-width: 1px; stroke-dasharray: 2 4; fill: none; }
 svg.geo .saxis.rfa { stroke: var(--part); }
@@ -64,7 +65,7 @@ svg.geo .bike .ht { stroke-width: 4.5px; }
 svg.geo .bike .cs, svg.geo .bike .ss, svg.geo .bike .fork { stroke-width: 1.8px; }
 svg.geo .bike.rf .tube { stroke-dasharray: 9 4; stroke-linecap: butt; }
 svg.geo .bike .tyre { stroke: var(--c); stroke-opacity: .32; stroke-width: 1.3px; fill: none; }
-svg.geo .bike .rim { stroke: var(--c); stroke-opacity: .22; stroke-width: 1px; fill: none; }
+svg.geo .bike .rim { stroke: var(--c); stroke-opacity: .4; stroke-width: 1.3px; fill: none; }
 svg.geo .bike .hub { fill: var(--c); stroke: none; }
 svg.geo .bike .spacer { fill: var(--c); fill-opacity: .14; stroke: var(--c); stroke-width: 1.2px; }
 svg.geo .bike .part { fill: var(--c); fill-opacity: .32; stroke: var(--c); stroke-width: 1.2px; }
@@ -77,14 +78,13 @@ svg.geo .bike .saddle { fill: var(--c); fill-opacity: .14; stroke: var(--c); str
 svg.geo .bike .rail { fill: none; stroke: var(--c); stroke-opacity: .7; stroke-width: 1px; }
 svg.geo .bike .clamp { fill: var(--c); stroke: none; }
 svg.geo .bike .joint { fill: var(--sheet); stroke: var(--c); stroke-width: 1.4px; }
-svg.geo .target .tg { stroke: var(--laser); stroke-width: 1.6px; fill: none; }
-svg.geo .target .tgdot { fill: var(--laser); }
-svg.geo .dim .dl, svg.geo .dim .tk { stroke: var(--ink-2); stroke-width: 1px; }
-svg.geo .dim .ext { stroke: var(--ink-2); stroke-opacity: .55; stroke-width: .8px; }
-svg.geo .dim .plumb, svg.geo .rr { stroke: var(--ink-2); stroke-width: 1px; stroke-dasharray: 3 3; }
+svg.geo .target .tg { stroke: var(--laser); stroke-width: 2.2px; stroke-linecap: round; fill: none; }
+svg.geo .dim .dl, svg.geo .dim .tk { stroke: var(--ink-2); stroke-opacity: .55; stroke-width: 1px; }
+svg.geo .dim .ext { stroke: var(--ink-2); stroke-opacity: .35; stroke-width: .8px; }
+svg.geo .dim .plumb, svg.geo .rr { stroke: var(--ink-2); stroke-opacity: .55; stroke-width: 1px; stroke-dasharray: 3 3; }
 svg.geo .dim .lvl { stroke-dasharray: 2 3; stroke-opacity: .6; }
 svg.geo .dim.rfd .dl, svg.geo .dim.rfd .tk, svg.geo .dim.rfd .ext { stroke: var(--part); }
-svg.geo text.dt { font: 500 calc(var(--k) * 11px) var(--mono); fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 3px; stroke-linejoin: round; }
+svg.geo text.dt { font: 400 calc(var(--k) * 11px) var(--mono); fill: var(--ink-2); paint-order: stroke; stroke: var(--sheet); stroke-width: 3px; stroke-linejoin: round; }
 svg.geo .dim.rfd text.dt, svg.geo text.dt.rft { fill: var(--part-ink); }
 svg.geo text.dt.bkt { fill: var(--frame); }
 svg.geo text.dt.tl { fill: var(--laser); }
@@ -116,11 +116,12 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
       </div>
     </div>
     <div class="top-right">
-      <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false"><span class="sw-track" aria-hidden="true"><span class="sw-knob"></span></span>Dark mode</button>
+      <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="Dark mode" title="Dark mode"><span class="sw-knob" aria-hidden="true"></span><svg class="ic sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"></circle><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"></path></svg><svg class="ic moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.2 10.1A5.6 5.6 0 0 1 5.9 2.8a5.6 5.6 0 1 0 7.3 7.3Z"></path></svg></button>
       <span class="save" id="saveState" data-state="example" role="status" aria-live="polite">Nothing saved yet</span>
     </div>
   </header>
 
+  <p class="banner" id="saveNotice" hidden>This website doesn't save data. Keep a copy of your bikes and fits on your computer.</p>
   <div class="filebar" id="fileBar" aria-live="polite"></div>
   <input type="file" id="fileInput" accept=".json,application/json" hidden>
 
