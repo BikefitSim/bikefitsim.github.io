@@ -16,6 +16,7 @@ the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in m
 - The hand position is the base of the hoods, level with the top of the bar. Measure personal reach to there, or to where your hands sit on a bar without hoods.
 - Handlebar reach 0 is read as a flat bar, with the hands over the bar centre.
 - Handlebar rise and drop are not calculated yet: the base of the hoods is taken as level with the top of the bar at the clamp.
+- Everything is measured to the saddle tip, so the results assume the same saddle on every bike. A saddle of a different length moves where you sit by the difference (20 mm shorter with the tip in the same place puts you 20 mm further forward).
 
 ## Folders
 

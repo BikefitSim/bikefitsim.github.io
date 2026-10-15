@@ -41,6 +41,7 @@ Code: `src/engine.js` holds everything below; `test/engine.test.js` checks it.
 - Hands only at the base of the hoods (level with the top of the bar); the drops and the tops are not modelled.
 - Handlebar rise and drop are not calculated yet: the base of the hoods is taken as level with the top of the bar at the clamp, so a riser bar or a bar whose hoods sit higher or lower puts the hands off by that much.
 - Handlebar reach 0 is read as a flat bar.
+- Saddle length is not used: everything is placed by the saddle tip, which assumes the same saddle on every bike. A saddle of a different length with its tip at the same point moves the sit bones by the difference (20 mm shorter = 20 mm further forward).
 
 ## Drawings
 - Side view of the target bike (blue, solid) over the reference bike (yellow, dashed), aligned at the BB on a 50 mm grid; fit points in red. A personal fit has no bike to draw; its BB to saddle tip line is drawn in yellow instead. A flat bar (reach 0) is drawn end-on. Dimensions: saddle height along the seat tube, setback, hand X/Y, drop, personal reach. The top tube is drawn to the seat tube c-c point when one is given, otherwise to the top of the seat tube. Close-ups of the front end and saddle on 10 mm grids. Layers for reference, dimensions and grid.
