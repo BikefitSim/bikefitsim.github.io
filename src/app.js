@@ -16,12 +16,19 @@
 
   const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'seatTube', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach'];
   const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, seatTube: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null };
+  /* Two kinds of reference. A bike reference is a frame plus how it is set up (saddle, spacers,
+     stem, bar); a fit reference is only the rider's numbers (saddle height as a straight line to
+     the saddle tip, setback, personal reach, drop, bar width). Both keep their numbers in `fit`. */
+  const BLANK_FIT = () => ({
+    saddleHeight: null, saddleLine: null, setback: null, handFrom: 'stem', riderReach: null, drop: null,
+    stemLength: null, stemAngle: null, barWidth: null, spacers: null, barReach: null,
+  });
+  const blankRef = (kind, id, name) => Object.assign({ id, name, kind }, BLANK_GEO, { fit: BLANK_FIT() });
+  const isFitRef = (r) => r.kind === 'fit';
   const BLANK = () => ({
     v: 3,
     example: true, // nothing entered yet
-    refs: [Object.assign({ id: 'r1', name: 'Reference bike 1' }, BLANK_GEO, {
-      fit: { saddleHeight: null, setback: null, handFrom: 'reach', riderReach: null, drop: null, stemLength: null, stemAngle: null, barWidth: null, spacers: null, barReach: null },
-    })],
+    refs: [blankRef('bike', 'r1', 'Bike reference 1')],
     opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, maxSpacers: 40 },
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' })],
     selected: 'b1',
@@ -41,10 +48,15 @@
     const out = { v: 3, example: !!s.example, importV2Done: !!s.importV2Done };
     out.refs = refsIn.map((r) => {
       const fitIn = isObj(r.fit) ? r.fit : {};
-      const fit = Object.assign({}, refT.fit, fitIn);
+      const fit = Object.assign(BLANK_FIT(), fitIn);
       // saves made before handlebar width existed read personal reach as a side-view distance
       if (!('barWidth' in fitIn)) fit.barWidth = 0;
-      return Object.assign({}, refT, r, { id: String(r.id || uid('r')), fit });
+      // and before the stem could be entered, the hands always came from personal reach and drop
+      if (!('handFrom' in fitIn)) fit.handFrom = 'reach';
+      const known = r.kind === 'bike' || r.kind === 'fit';
+      const o = Object.assign({}, refT, r, { id: String(r.id || uid('r')), kind: known ? r.kind : 'bike', fit });
+      if (!known) stemFromReach(o);
+      return o;
     });
     out.opts = Object.assign({}, base.opts, isObj(s.opts) ? s.opts : {});
     const ids = new Set(out.refs.map((r) => r.id));
@@ -58,6 +70,25 @@
     out.selected = out.bikes.some((b) => b.id === s.selected) ? s.selected : out.bikes[0].id;
     out.selectedRef = ids.has(s.selectedRef) ? s.selectedRef : out.refs[0].id;
     return out;
+  }
+  /* References saved before the two kinds existed are bike references. Those that gave the hands
+     by personal reach and drop get the stem those numbers imply on their frame (to 0.1 mm and
+     0.1°, so the hands stay put), flagged until the stem actually fitted is entered. */
+  function stemFromReach(o) {
+    const f = o.fit;
+    if (f.handFrom === 'stem') return;
+    f.handFrom = 'stem';
+    if (f.stemLength != null || f.stemAngle != null) return;
+    const need = [o.sta, o.hta, f.saddleHeight, f.setback, f.riderReach, f.drop, f.spacers, f.barReach, f.barWidth];
+    if (!need.every(finite)) return;
+    try {
+      const g = GB.frameGeometry(o);
+      if (!finite(g.stack) || !finite(g.reach)) return;
+      const fp = GB.fitPoints(Object.assign({}, o, { kind: 'bike' }), Object.assign({}, f, { handFrom: 'reach' }));
+      if (fp.ok && finite(fp.stem.length) && finite(fp.stem.angle)) {
+        f.stemLength = r1(fp.stem.length); f.stemAngle = r1(fp.stem.angle); f.stemImplied = true;
+      }
+    } catch (e) { /* left empty for the user to fill in */ }
   }
   function newBikeFrom(ref, name) {
     const b = { id: uid(), name, refId: ref.id, barReach: ref.fit.barReach, barWidth: null, pick: '' };
@@ -111,19 +142,22 @@
     { k: 'stack', l: 'Stack', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'reach', l: 'Reach', u: 'mm', opt: true, h: 'Optional, from the chart' },
   ];
-  const byStem = (f) => f.handFrom === 'stem';
-  const FIT_FIELDS = [
-    { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
-    { k: 'setback', l: 'Saddle setback', u: 'mm', h: 'Plumb line from the saddle tip back to the BB centre', neg: true },
-    { k: 'handFrom', l: 'Hand position from', type: 'select', opts: [['reach', 'Personal reach'], ['stem', 'Fitted stem']] },
-    { k: 'riderReach', l: 'Personal reach', u: 'mm', h: 'Saddle tip to hand position, straight line', hide: byStem },
-    { k: 'drop', l: 'Handlebar drop', u: 'mm', h: 'Saddle top to top of the bar, vertical. Negative if the bar is higher.', neg: true, hide: byStem },
-    { k: 'stemLength', l: 'Stem length', u: 'mm', h: 'The stem fitted on this bike', hide: (f) => !byStem(f) },
-    { k: 'stemAngle', l: 'Stem angle', u: '°', h: 'Negative points down, for example −6', neg: true, hide: (f) => !byStem(f) },
-    { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: (f) => (byStem(f) ? 'Centre to centre at the hoods' : 'Centre to centre at the hoods. 0 if you measured personal reach in side view.') },
-    { k: 'spacers', l: 'Spacers under stem', u: 'mm', h: 'Head tube top to stem, top cap included' },
-    { k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar on this bike. Your hand position sits here.' },
-  ];
+  const FF = {
+    saddleHeight: { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
+    saddleLine: { k: 'saddleLine', l: 'Saddle height', u: 'mm', h: 'Straight line from the BB centre to the saddle tip, not along the seat tube' },
+    setback: { k: 'setback', l: 'Saddle setback', u: 'mm', h: 'Plumb line from the saddle tip back to the BB centre', neg: true },
+    riderReach: { k: 'riderReach', l: 'Personal reach', u: 'mm', h: 'Saddle tip to the base of the hoods, straight line. No hoods: to where your hands sit.' },
+    drop: { k: 'drop', l: 'Handlebar drop', u: 'mm', h: 'Saddle top to top of the bar, vertical. Negative if the bar is higher.', neg: true },
+    stemLength: { k: 'stemLength', l: 'Stem length', u: 'mm', h: 'The stem fitted on this bike' },
+    stemAngle: { k: 'stemAngle', l: 'Stem angle', u: '°', h: 'Negative points down, for example −6', neg: true },
+    spacers: { k: 'spacers', l: 'Spacers under stem', u: 'mm', h: 'Head tube top to stem, top cap included' },
+    barReach: { k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar on this bike. 0 for a flat bar.' },
+    barWidthBike: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods' },
+    barWidthFit: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods. 0 if you measured personal reach in side view.' },
+  };
+  const BIKE_FIT_FIELDS = [FF.saddleHeight, FF.setback, FF.spacers, FF.stemLength, FF.stemAngle, FF.barReach, FF.barWidthBike];
+  const FIT_SADDLE_FIELDS = [FF.saddleLine, FF.setback];
+  const FIT_HAND_FIELDS = [FF.riderReach, FF.drop, FF.barWidthFit];
   const OPT_FIELDS = [
     { k: 'stemLengths', l: 'Stem lengths', type: 'list', u: 'mm', h: 'Separate with commas' },
     { k: 'stemAngles', l: 'Stem angles', type: 'list', u: '°', h: 'Negative points down. Remove the positives if you won\'t flip a stem.' },
@@ -167,21 +201,35 @@
   const refOf = (b) => state.refs.find((r) => r.id === b.refId) || state.refs[0];
   const refName = (r) => r.name || 'Untitled reference';
 
+  const kindName = (r) => (isFitRef(r) ? 'fit reference' : 'bike reference');
   function renderRefTabs() {
-    $('refTabs').innerHTML = state.refs.map((r) => `<button class="tab" role="tab" type="button" data-reftab="${esc(r.id)}" aria-selected="${r.id === state.selectedRef}">${esc(refName(r))}</button>`).join('')
-      + '<button class="tab add" type="button" id="addRef">+ Add reference bike</button>';
+    $('refTabs').innerHTML = state.refs.map((r) => `<button class="tab" role="tab" type="button" data-reftab="${esc(r.id)}" aria-selected="${r.id === state.selectedRef}">${esc(refName(r))}<span class="kind">${isFitRef(r) ? 'fit' : 'bike'}</span></button>`).join('')
+      + '<button class="tab add" type="button" id="addRef">+ Bike reference</button><button class="tab add" type="button" id="addFitRef">+ Fit reference</button>';
   }
   function renderRefForm() {
     const r = curRef();
-    $('refForm').innerHTML = `
-      <h4>Frame</h4>
-      ${nameHTML('ref', r.name)}
-      <div class="fields two">${geoFieldsHTML('ref', r)}</div>
-      <div class="frame-strip" id="refStrip"></div>`;
-    $('fitFields').innerHTML = FIT_FIELDS.map((f) => fieldHTML(f, 'fit', r.fit)).join('');
+    const fields = (list) => list.map((f) => fieldHTML(f, 'fit', r.fit)).join('');
+    if (isFitRef(r)) {
+      $('refForm').innerHTML = `
+        <h4>Fit reference</h4>
+        ${nameHTML('ref', r.name)}
+        <p class="note">Your position without a bike: where the saddle tip and your hands sit around the BB centre. Use it when you know your numbers but not the bike they came from.</p>
+        <h4>Saddle</h4>
+        <div class="fields two">${fields(FIT_SADDLE_FIELDS)}</div>`;
+      $('fitHead').textContent = 'Hands';
+      $('fitFields').innerHTML = fields(FIT_HAND_FIELDS);
+    } else {
+      $('refForm').innerHTML = `
+        <h4>Frame</h4>
+        ${nameHTML('ref', r.name)}
+        <div class="fields two">${geoFieldsHTML('ref', r)}</div>
+        <div class="frame-strip" id="refStrip"></div>`;
+      $('fitHead').textContent = 'Saddle and cockpit on this bike';
+      $('fitFields').innerHTML = fields(BIKE_FIT_FIELDS);
+    }
     $('refActions').innerHTML = `
-      <button class="btn" type="button" id="dupRef">Copy as new reference bike</button>
-      <button class="btn danger" type="button" id="delRef"${state.refs.length < 2 ? ' disabled title="Keep at least one reference bike"' : ''}>Delete reference bike</button>`;
+      <button class="btn" type="button" id="dupRef">Copy as new ${kindName(r)}</button>
+      <button class="btn danger" type="button" id="delRef"${state.refs.length < 2 ? ' disabled title="Keep at least one reference"' : ''}>Delete ${kindName(r)}</button>`;
   }
   function renderOptFields() {
     $('optFields').innerHTML = OPT_FIELDS.map((f) => fieldHTML(f, 'opts', state.opts)).join('');
@@ -195,7 +243,7 @@
     $('bikeForm').innerHTML = `
       <div class="grp">${nameHTML('bike', b.name)}</div>
       <div class="grp"><h4>Frame geometry</h4><div class="fields two">${geoFieldsHTML('bike', b)}</div></div>
-      <div class="grp"><h4>Handlebar</h4><div class="fields two">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar this bike will use' }, 'bike', b)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, finite(curRef().fit.barWidth) && curRef().fit.barWidth > 0 ? `same: ${curRef().fit.barWidth}` : 'same as reference')}</div></div>
+      <div class="grp"><h4>Handlebar</h4><div class="fields two">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar this bike will use. 0 for a flat bar.' }, 'bike', b)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, finite(curRef().fit.barWidth) && curRef().fit.barWidth > 0 ? `same: ${curRef().fit.barWidth}` : 'same as reference')}</div></div>
       <div class="row-actions">
         <button class="btn" type="button" id="dupBike">Copy as new target bike</button>
         <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' disabled title="Keep at least one target bike"' : ''}>Delete target bike</button>
@@ -233,13 +281,19 @@
     if (withBar) c.chk('barReach', 0, 150, 'Handlebar reach');
     return c.done();
   }
-  function fitErrors(f) {
-    const c = checker(f, 'The fit');
+  function fitErrors(r) {
+    const f = r.fit;
+    if (isFitRef(r)) {
+      const c = checker(f, 'The fit');
+      c.chk('saddleLine', 400, 1000, 'Saddle height', ' mm'); c.chk('setback', -100, 200, 'Saddle setback', ' mm');
+      c.chk('riderReach', 300, 900, 'Personal reach', ' mm'); c.chk('drop', -300, 300, 'Handlebar drop', ' mm');
+      c.chk('barWidth', 0, 600, 'Handlebar width', ' mm');
+      return c.done();
+    }
+    const c = checker(f, 'The setup');
     c.chk('saddleHeight', 450, 1000, 'Saddle height', ' mm'); c.chk('setback', -100, 200, 'Saddle setback', ' mm');
-    if (byStem(f)) { c.chk('stemLength', 20, 200, 'Stem length', ' mm'); c.chk('stemAngle', -45, 45, 'Stem angle', '°'); }
-    else { c.chk('riderReach', 300, 900, 'Personal reach', ' mm'); c.chk('drop', -300, 300, 'Handlebar drop', ' mm'); }
-    c.chk('barWidth', 0, 600, 'Handlebar width', ' mm'); c.chk('spacers', 0, 120, 'Spacers', ' mm');
-    c.chk('barReach', 0, 150, 'Handlebar reach', ' mm');
+    c.chk('spacers', 0, 120, 'Spacers', ' mm'); c.chk('stemLength', 20, 200, 'Stem length', ' mm'); c.chk('stemAngle', -45, 45, 'Stem angle', '°');
+    c.chk('barReach', 0, 150, 'Handlebar reach', ' mm'); c.chk('barWidth', 0, 600, 'Handlebar width', ' mm');
     return c.done();
   }
   function optErrors() {
@@ -256,10 +310,10 @@
     const oe = optErrors();
     const refs = {};
     for (const r of state.refs) {
-      const errs = [...geoErrors(r), ...fitErrors(r.fit), ...oe];
+      const errs = [...(isFitRef(r) ? [] : geoErrors(r)), ...fitErrors(r), ...oe];
       let fp = null;
       if (!errs.length) {
-        fp = GB.fitPoints(r, r.fit);
+        fp = GB.fitPoints(r, isFitRef(r) ? r.fit : Object.assign({}, r.fit, { handFrom: 'stem' }));
         if (!fp.ok) { errs.push(fp.error); fp = null; }
       }
       refs[r.id] = { errs, fp };
@@ -304,12 +358,17 @@
 
   // The saddle tip never moves; only its distance along a differently angled seat tube changes.
   function saddleWhy(r) {
+    if (!r.fp.bike) {
+      const f = r.ref.fit;
+      return `Your saddle tip sits ${n0(r.fp.saddle.y)} mm above the BB (${n1(f.saddleLine)} mm in a straight line, ${n1(f.setback)} mm setback). Along this ${n1(r.bike.sta)}° seat tube, the saddle top reaches that height at ${n1(r.heightAlong)} mm.`;
+    }
     const dA = r.bike.sta - r.fp.bike.sta;
     const pos = `Saddle top stays at the reference point, ${n0(r.fp.saddle.y)} mm above the BB.`;
     if (Math.abs(dA) < 0.05) return `${pos} Same seat angle, so the same reading along the tube.`;
     return `${pos} This seat tube is ${n1(Math.abs(dA))}° ${dA > 0 ? 'steeper' : 'slacker'}, so measured along it the same point reads ${n1(Math.abs(r.heightAlong - r.ref.fit.saddleHeight))} mm ${r.heightAlong < r.ref.fit.saddleHeight ? 'less' : 'more'}.`;
   }
   function railWhy(r) {
+    if (r.railMove == null) return `Plumb line from the saddle tip, ${n1(r.ref.fit.setback)} mm behind the BB. On this frame that puts the tip ${n0(r.noseAhead)} mm ahead of the seat tube line at saddle height.`;
     if (Math.abs(r.railMove) < 0.5) return 'Saddle sits in the same place on its rails, same seatpost.';
     const back = r.railMove < 0;
     return `Same point from the BB. At saddle height this seat tube sits ${n0(Math.abs(r.railMove))} mm ${back ? 'further forward' : 'further back'}, so slide the saddle ${n0(Math.abs(r.railMove))} mm ${back ? 'back' : 'forward'} on its rails (same seatpost)${Math.abs(r.railMove) > 15 ? ` or use a post with about ${n0(Math.abs(r.railMove))} mm ${back ? 'more' : 'less'} setback` : ''}.`;
@@ -329,13 +388,28 @@
     const el = $('cpCard');
     const r = curRef();
     const m = model.refs[r.id];
+    const fitRef = isFitRef(r);
     if (!m.fp) {
-      el.innerHTML = `<h3>Fit points</h3><p>The saddle tip and hand position appear here once this bike's frame and fit are filled in.</p>${m.errs.map((x) => `<p class="${x.includes('still needs:') ? 'need' : 'err'}">${esc(x)}</p>`).join('')}`;
+      el.innerHTML = `<h3>Fit points</h3><p>The saddle tip and hand position appear here once ${fitRef ? 'your fit is' : 'this bike\'s frame and setup are'} filled in.</p>${m.errs.map((x) => `<p class="${x.includes('still needs:') ? 'need' : 'err'}">${esc(x)}</p>`).join('')}`;
       return;
     }
-    const { saddle, hand, stem, reachH } = m.fp;
+    const { saddle, hand, reachH, drop, riderReach } = m.fp;
     const halfW = m.fp.half;
-    const odd = stem.length < 40 || stem.length > 160 || Math.abs(stem.angle) > 30;
+    const f = r.fit;
+    let text;
+    if (fitRef) {
+      text = `
+      <p class="implied">Your saddle tip sits <b>${n0(Math.abs(saddle.x))} mm</b> ${saddle.x <= 0 ? 'behind' : 'ahead of'} and <b>${n0(saddle.y)} mm</b> above the BB.</p>
+      <p>${halfW > 0 ? `Personal reach ${n1(riderReach)} mm, taped out to the side of a ${n0(f.barWidth)} mm bar, is <b>${n1(reachH)} mm</b> in side view` : `Handlebar width is 0, so personal reach is read as a side-view distance, <b>${n1(reachH)} mm</b>. If you taped it to your hand at the side of the bar, enter the bar width`}. With ${n1(drop)} mm of drop, that places your hands.</p>
+      <p>No bike here, so each target bike gets its full setup rather than changes from a reference bike.</p>`;
+    } else {
+      const stem = m.fp.stem;
+      text = `
+      <p class="implied">This ${n1(stem.length)} mm stem at ${angTxt(stem.angle)} with ${n1(f.spacers)} mm of spacers puts your hands <b>${n0(reachH)} mm</b> ahead of the saddle tip and <b>${n0(Math.abs(drop))} mm</b> ${drop >= 0 ? 'below' : 'above'} the saddle top.</p>
+      <p>Your fit on this bike: personal reach <b>${n1(riderReach)} mm</b>${halfW > 0 ? ` to the side of a ${n0(f.barWidth)} mm bar` : ''}, handlebar drop <b>${n1(drop)} mm</b>, and the saddle tip <b>${n1(Math.hypot(saddle.x, saddle.y))} mm</b> from the BB in a straight line.</p>
+      ${f.stemImplied ? '<p class="warn">This stem was worked out from the personal reach and drop saved earlier. Enter the stem actually fitted on this bike.</p>' : ''}
+      <div class="row-actions"><button class="btn" type="button" id="toFitRef">Copy as fit reference</button></div>`;
+    }
     el.innerHTML = `
       <h3>Fit points</h3>
       <table>
@@ -345,12 +419,7 @@
           <tr><td><span class="pt"></span>Hand position</td><td class="num">${n0(hand.x)}</td><td class="num">${n0(hand.y)}</td></tr>
         </tbody>
       </table>
-      ${byStem(r.fit)
-        ? `<p class="implied">This ${n0(stem.length)} mm stem at ${angTxt(stem.angle)} with ${n1(r.fit.spacers)} mm of spacers puts your hands <b>${n0(reachH)} mm</b> ahead of the saddle tip and <b>${n0(Math.abs(m.fp.drop))} mm</b> ${m.fp.drop >= 0 ? 'below' : 'above'} the saddle top.</p>
-           <p>That is a personal reach of <b>${n1(m.fp.riderReach)} mm</b>${halfW > 0 ? `, measured to your hand at the side of a ${n0(r.fit.barWidth)} mm bar` : ''}, and a handlebar drop of <b>${n1(m.fp.drop)} mm</b>.</p>`
-        : `<p>${halfW > 0 ? `Personal reach ${n1(r.fit.riderReach)} mm, taped out to the side of a ${n0(r.fit.barWidth)} mm bar, is <b>${n1(reachH)} mm</b> in side view.` : `Handlebar width is 0, so personal reach is read as a side-view distance (${n1(reachH)} mm horizontal). If you taped it to your hand at the side of the bar, enter the bar width.`}</p>
-      <p class="implied">With ${n1(r.fit.spacers)} mm of spacers, these numbers mean a <b>${n0(stem.length)} mm</b> stem at <b>${angTxt(half(stem.angle))}</b> on this bike.</p>
-      <p class="${odd ? 'warn' : ''}">${odd ? 'That doesn\'t look like a real stem. Check personal reach, drop and spacers.' : 'If that isn\'t the stem fitted, check personal reach, drop and spacers before trusting the results.'}</p>`}
+      ${text}
       <p>Selected: every target bike in step 2 is set up to match this one.</p>`;
   }
 
@@ -358,7 +427,7 @@
     const b = curBike();
     const r = model.res[b.id];
     $('outTitle').textContent = `Changes for ${b.name || 'this bike'}`;
-    $('outSub').textContent = `To match ${refName(r.ref)}, the reference bike selected in step 1.`;
+    $('outSub').textContent = `To match ${refName(r.ref)}, the ${kindName(r.ref)} selected in step 1.`;
     const out = $('bikeOut');
     if (r.refErrors) {
       out.innerHTML = `<div class="empty"><b>Fill in ${esc(refName(r.ref))} in step 1 first.</b><br>${r.refErrors.map(esc).join('<br>')}</div>`;
@@ -370,7 +439,8 @@
     }
     const fit = r.ref.fit;
     const o = chosenFor(b, r);
-    const dH = r.heightAlong - fit.saddleHeight;
+    const hasBike = !!r.fp.bike; // a fit reference has no bike to compare with
+    const dH = hasBike ? r.heightAlong - fit.saddleHeight : 0;
     const checks = r.checks.slice();
     if (o && o.err <= 5 && !checks.some((c) => c.level === 'bad')) checks.unshift({ level: 'ok', text: `This frame can carry the fit of ${refName(r.ref)}. Hand position ${missTxt(o)}${o.err >= 1 ? ' of the target' : ''}.` });
 
@@ -381,16 +451,16 @@
       </div>
       <div class="tiles">
         <div class="tile" data-hl="height"><span class="t-l">Saddle height</span><span class="t-v">${n1(r.heightAlong)}<small>mm</small></span>
-          <span class="t-d${Math.abs(dH) < 0.05 ? ' same' : ''}">${deltaTxt(dH, 1)}</span>
+          <span class="t-d${hasBike && Math.abs(dH) < 0.05 ? ' same' : ''}">${hasBike ? deltaTxt(dH, 1) : 'along this seat tube'}</span>
           <span class="t-s">${saddleWhy(r)}</span></div>
         <div class="tile" data-hl="setback"><span class="t-l">Saddle setback</span><span class="t-v">${n1(fit.setback)}<small>mm</small></span>
           <span class="t-d same">same as reference</span>
           <span class="t-s">${railWhy(r)}</span></div>
         <div class="tile" data-hl="stem"><span class="t-l">Stem</span><span class="t-v">${o ? `${o.length}<small>mm</small> ${angTxt(o.angle)}` : 'n/a'}</span>
-          <span class="t-d${o && stemChange(o, r.fp) === 'Same as reference' ? ' same' : ''}">${o ? esc(stemChange(o, r.fp)) : ''}</span>
-          <span class="t-s">${o ? (() => { const ex = r.cockpit.exactFor(o.angle); return `Exact fit at ${angTxt(o.angle)}: <b>${n1(ex.length)} mm</b> with ${n1(ex.spacers)} mm spacers. `; })() : ''}Reference: ${esc(stemTxt(refStem(r.fp)))}</span></div>
+          <span class="t-d${o && hasBike && stemChange(o, r.fp) === 'Same as reference' ? ' same' : ''}">${o && hasBike ? esc(stemChange(o, r.fp)) : o ? 'closest from your stems' : ''}</span>
+          <span class="t-s">${o ? (() => { const ex = r.cockpit.exactFor(o.angle); return `Exact fit at ${angTxt(o.angle)}: <b>${n1(ex.length)} mm</b> with ${n1(ex.spacers)} mm spacers. `; })() : ''}${hasBike ? `Reference: ${esc(stemTxt(refStem(r.fp)))}` : ''}</span></div>
         <div class="tile" data-hl="spacers"><span class="t-l">Spacers</span><span class="t-v">${o ? n1(o.spacers) : 'n/a'}<small>mm</small></span>
-          <span class="t-d${o && Math.abs(o.spacers - fit.spacers) < 0.05 ? ' same' : ''}">${o ? deltaTxt(o.spacers - fit.spacers, 1) : ''}</span>
+          <span class="t-d${o && hasBike && Math.abs(o.spacers - fit.spacers) < 0.05 ? ' same' : ''}">${o && hasBike ? deltaTxt(o.spacers - fit.spacers, 1) : ''}</span>
           <span class="t-s">Hand position <b>${o ? missTxt(o) : 'n/a'}</b></span></div>
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
@@ -415,13 +485,16 @@
     const el = $('cmp');
     const mark = (src) => (src === 'chart' ? '' : '<span class="calc-mark">calc</span>');
     const na = 'n/a';
-    // reference columns: each reference bike as set up today
+    // reference column: the selected reference as set up today
     const refCols = [curRef()].map((ref) => {
       const fp = model.refs[ref.id].fp;
       const f = ref.fit;
       return {
         id: ref.id, name: refName(ref), isRef: true,
-        vals: fp ? {
+        vals: fp && !fp.bike ? {
+          match: 'reference', sta: na, stack: na, height: `${n1(f.saddleLine)} mm, straight to tip`, setback: `${n1(f.setback)} mm`, rails: na,
+          stem: na, spacers: na, bar: na, width: f.barWidth > 0 ? `${n0(f.barWidth)} mm` : 'not entered', hand: 'target',
+        } : fp ? {
           match: 'reference', sta: `${n1(ref.sta)}°`, stack: `${n0(fp.geo.stack)}${mark(fp.geo.stackSrc)} / ${n0(fp.geo.reach)}${mark(fp.geo.reachSrc)}`,
           height: `${n1(f.saddleHeight)} mm`, setback: `${n1(f.setback)} mm`, rails: 'as measured',
           stem: esc(stemTxt(refStem(fp))), spacers: `${n1(f.spacers)} mm`, bar: `${n1(f.barReach)} mm`, width: f.barWidth > 0 ? `${n0(f.barWidth)} mm` : 'not entered', hand: 'target',
@@ -435,12 +508,12 @@
       return {
         id: b.id, name: b.name || 'Untitled bike',
         vals: {
-          match: esc(refName(r.ref)), sta: `${n1(b.sta)}° <span class="calc-mark">${sgn(b.sta - r.fp.bike.sta, 1)}</span>`, stack: `${n0(r.geo.stack)}${mark(r.geo.stackSrc)} / ${n0(r.geo.reach)}${mark(r.geo.reachSrc)}`,
-          height: `${n1(r.heightAlong)} mm <span class="calc-mark">${sgn(r.heightAlong - f.saddleHeight, 1)}</span>`,
+          match: esc(refName(r.ref)), sta: `${n1(b.sta)}°${r.fp.bike ? ` <span class="calc-mark">${sgn(b.sta - r.fp.bike.sta, 1)}</span>` : ''}`, stack: `${n0(r.geo.stack)}${mark(r.geo.stackSrc)} / ${n0(r.geo.reach)}${mark(r.geo.reachSrc)}`,
+          height: `${n1(r.heightAlong)} mm${r.fp.bike ? ` <span class="calc-mark">${sgn(r.heightAlong - f.saddleHeight, 1)}</span>` : ''}`,
           setback: `${n1(f.setback)} mm`,
-          rails: Math.abs(r.railMove) < 0.5 ? 'same' : `${Math.abs(Math.round(r.railMove))} mm ${r.railMove > 0 ? 'forward' : 'back'}`,
+          rails: r.railMove == null ? `tip ${n0(r.noseAhead)} mm ahead of seat tube` : Math.abs(r.railMove) < 0.5 ? 'same' : `${Math.abs(Math.round(r.railMove))} mm ${r.railMove > 0 ? 'forward' : 'back'}`,
           stem: o ? esc(stemTxt(o)) : na,
-          spacers: o ? `${n1(o.spacers)} mm <span class="calc-mark">${sgn(o.spacers - f.spacers, 1)}</span>` : na,
+          spacers: o ? `${n1(o.spacers)} mm${r.fp.bike ? ` <span class="calc-mark">${sgn(o.spacers - f.spacers, 1)}</span>` : ''}` : na,
           bar: `${n1(b.barReach)} mm`, width: r.barWidth > 0 ? `${n0(r.barWidth)} mm${Math.abs(r.handShift) >= 0.5 ? ` <span class="calc-mark">hands ${sgn(r.handShift, 1)}</span>` : ''}` : na,
           hand: o ? `<span class="${o.err > 5 ? 'miss-bad' : 'miss-ok'}">${esc(missTxt(o))}</span>` : na,
         },
@@ -469,18 +542,19 @@
     const el = $('vizWrap');
     const b = curBike();
     const r = model.res[b.id];
-    if (!r || !r.fp || r.errors) { el.innerHTML = '<div class="empty">The side view appears once the reference bike and this frame are complete.</div>'; return; }
+    if (!r || !r.fp || r.errors) { el.innerHTML = '<div class="empty">The side view appears once the reference and this frame are complete.</div>'; return; }
     const o = chosenFor(b, r);
+    const hasBike = !!r.fp.bike;
     const svg = GBDraw.render({ r, o, show: layers, names: { bike: b.name || 'This bike', ref: refName(r.ref) } });
     const tog = (k, label) => `<label class="tog"><input type="checkbox" data-layer="${k}" id="lay-${k}"${layers[k] ? ' checked' : ''}> ${label}</label>`;
     el.innerHTML = `
       <div class="viz-bar">
         <div class="legend">
           <span class="lg"><i class="sw bk"></i>${esc(b.name || 'This bike')}</span>
-          <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}, reference</span>
+          <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle tip'}</span>
           <span class="lg"><i class="tg"></i>Saddle tip and hand position</span>
         </div>
-        <div class="toggles">${tog('ref', 'Reference bike')}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
+        <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
       <div class="viz">
         <figure class="draw">${svg.main}<figcaption>Side view on the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
@@ -618,7 +692,7 @@
   const timeNow = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   function summarize(s) {
     const n = normalize(s);
-    return `${n.refs.length} reference bike${n.refs.length === 1 ? '' : 's'} and ${n.bikes.length} target bike${n.bikes.length === 1 ? '' : 's'}`;
+    return `${n.refs.length} reference${n.refs.length === 1 ? '' : 's'} and ${n.bikes.length} target bike${n.bikes.length === 1 ? '' : 's'}`;
   }
   async function writeFile() {
     if (fileState !== 'linked') return;
@@ -779,13 +853,15 @@
     const oldBikes = old.bikes.filter(isObj);
     const f = old.fit || {}; const p = old.parts || {};
     const refB = oldBikes.find((b) => b.id === f.measuredOn) || oldBikes[0];
-    const newRef = Object.assign({ id: uid('r'), fit: Object.assign({}, BLANK().refs[0].fit) }, mapOldBike(refB));
+    const newRef = Object.assign({ id: uid('r'), kind: 'bike', fit: BLANK_FIT() }, mapOldBike(refB));
     let fit = null;
     try { fit = convertOldFit(old, refB, newRef); } catch (e) { fit = null; }
     if (fit) {
-      newRef.fit = fit;
-      notes.push(`${newRef.name} is now a reference bike. Personal reach and drop were converted from the old hood measurements, and spacers were set to ${n1(fit.spacers)} mm, the closest match. Check these three against the bike.`);
-    } else notes.push(`${newRef.name} is now a reference bike, but its fit could not be converted. Enter it again in step 1.`);
+      newRef.fit = Object.assign(BLANK_FIT(), fit, { handFrom: 'reach' });
+      stemFromReach(newRef);
+      const nf = newRef.fit;
+      notes.push(`${newRef.name} is now a bike reference. Its hand position was converted from the old hood measurements into ${n1(nf.spacers)} mm of spacers${nf.stemLength != null ? ` and a ${n1(nf.stemLength)} mm stem at ${angTxt(nf.stemAngle)}` : ''}. Replace them with what is fitted on the bike.`);
+    } else notes.push(`${newRef.name} is now a bike reference, but its setup could not be converted. Enter it again in step 1.`);
     const rest = oldBikes.filter((b) => b !== refB).map((b) => Object.assign(mapOldBike(b), { id: uid(), refId: newRef.id, barReach: finite(b.barReach) ? b.barReach : newRef.fit.barReach, pick: '' }));
     if (replace) {
       state.refs = [newRef];
@@ -871,13 +947,7 @@
       if (sel) { const opt = [...sel.options].find((x) => x.value === obj.id); if (opt) opt.textContent = v || 'Untitled reference'; }
     }
     if (scope === 'bike' || scope === 'ref') refreshPlaceholders(scope, obj);
-    if (scope === 'fit' && key === 'handFrom') {
-      const prev = model && model.refs[curRef().id] && model.refs[curRef().id].fp;
-      if (prev && v === 'stem' && obj.stemLength == null && obj.stemAngle == null) { obj.stemLength = Math.round(prev.stem.length); obj.stemAngle = half(prev.stem.angle); }
-      if (prev && v === 'reach' && obj.riderReach == null && obj.drop == null) { obj.riderReach = r1(prev.riderReach); obj.drop = r1(prev.drop); }
-      $('fitFields').innerHTML = FIT_FIELDS.map((f) => fieldHTML(f, 'fit', obj)).join('');
-      $('fit-handFrom').focus();
-    }
+    if (scope === 'fit' && (key === 'stemLength' || key === 'stemAngle')) delete obj.stemImplied;
     if (scope === 'fit' && key === 'barWidth') { const w = $('bike-barWidth'); if (w) w.placeholder = finite(v) && v > 0 ? `same: ${v}` : 'same as reference'; }
     renderOutputs();
     scheduleSave();
@@ -930,18 +1000,31 @@
       saveLocal();
       return;
     }
-    if (e.target.closest('#addRef') || e.target.closest('#dupRef')) {
+    const addKind = e.target.closest('#addRef') ? 'bike' : e.target.closest('#addFitRef') ? 'fit' : '';
+    const dupR = e.target.closest('#dupRef'); const toFit = e.target.closest('#toFitRef');
+    if (addKind || dupR || toFit) {
       const src = curRef();
-      const isDup = !!e.target.closest('#dupRef');
-      const copy = Object.assign(clone(src), { id: uid('r'), name: isDup ? `${refName(src)} copy` : `Reference bike ${state.refs.length + 1}` });
-      state.refs.push(copy); state.selectedRef = copy.id;
+      let made;
+      if (addKind) {
+        const n = state.refs.filter((x) => isFitRef(x) === (addKind === 'fit')).length + 1;
+        made = blankRef(addKind, uid('r'), `${addKind === 'fit' ? 'Fit' : 'Bike'} reference ${n}`);
+      } else if (dupR) {
+        made = Object.assign(clone(src), { id: uid('r'), name: `${refName(src)} copy` });
+      } else {
+        // the fit this bike gives, kept as the rider's own numbers
+        const fp = model && model.refs[src.id] && model.refs[src.id].fp;
+        if (!fp) return;
+        made = blankRef('fit', uid('r'), `${refName(src)} fit`);
+        Object.assign(made.fit, { saddleLine: r1(Math.hypot(fp.saddle.x, fp.saddle.y)), setback: src.fit.setback, riderReach: r1(fp.riderReach), drop: r1(fp.drop), barWidth: src.fit.barWidth });
+      }
+      state.refs.push(made); state.selectedRef = made.id;
       renderAll(); scheduleSave();
       $('ref-name').focus(); $('ref-name').select();
       return;
     }
     const delR = e.target.closest('#delRef');
     if (delR && state.refs.length > 1) {
-      if (!armed(delR, 'Click again to delete', 'Delete reference bike')) return;
+      if (!armed(delR, 'Click again to delete', `Delete ${kindName(curRef())}`)) return;
       const gone = state.selectedRef;
       state.refs = state.refs.filter((r) => r.id !== gone);
       for (const b of state.bikes) if (b.refId === gone) b.refId = state.refs[0].id;

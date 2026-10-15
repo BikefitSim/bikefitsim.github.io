@@ -10,6 +10,7 @@ const GB = (() => {
   const WHEEL_R = 340;    // drawing only
   const CHAINSTAY = 410;  // drawing only
   const ANGLE_COST = 0.15; // mm of miss traded per degree away from the reference stem angle
+  const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a fit reference)
 
   function parseList(str, { min = -Infinity, max = Infinity } = {}) {
     const out = String(str || '')
@@ -50,10 +51,34 @@ const GB = (() => {
     return { Q, B: { x: Q.x + length * Math.cos(th), y: Q.y + length * Math.sin(th) } };
   }
 
-  /* Fit on the reference bike: saddle tip and hand position.
-     The hands come either from personal reach and drop (a tape from the saddle tip) or from
-     the stem fitted on the reference bike; the other set is worked out from the first. */
+  /* Fit reference: no bike, only the rider's numbers. Saddle height is the straight line from
+     the BB centre to the saddle tip, so with the setback it fixes the tip; personal reach and
+     drop fix the hands from there. */
+  function bodyPoints(fit) {
+    const yy = fit.saddleLine ** 2 - fit.setback ** 2;
+    if (!(yy > 0)) return { ok: false, error: 'Saddle setback has to be shorter than the saddle height line. Check both.' };
+    const ys = Math.sqrt(yy);
+    const xs = -fit.setback;
+    const half = fin(fit.barWidth) ? fit.barWidth / 2 : 0;
+    const sq = fit.riderReach ** 2 - fit.drop ** 2 - half ** 2;
+    if (sq <= 0) return { ok: false, error: 'Personal reach is too short for this drop and handlebar width. Check the three numbers.' };
+    const reachH = Math.sqrt(sq);
+    return {
+      ok: true, kind: 'fit',
+      bike: null, geo: null, stem: null, reachH, half, riderReach: fit.riderReach, drop: fit.drop,
+      saddle: { x: xs, y: ys },
+      hand: { x: xs + reachH, y: ys - fit.drop },
+      noseAhead: null, // no seat tube to measure from
+      spacers: null,
+    };
+  }
+
+  /* Saddle tip and hand position for a reference.
+     A bike reference places the hands from the stem fitted on it; personal reach and drop are
+     worked out from that. Saves from before stems were entered gave personal reach and drop
+     instead (handFrom 'reach'), and the stem is worked out from those. */
   function fitPoints(ref, fit) {
+    if (ref.kind === 'fit') return bodyPoints(fit);
     const geo = frameGeometry(ref);
     const S = rad(ref.sta);
     const ys = fit.saddleHeight * Math.sin(S);
@@ -87,7 +112,7 @@ const GB = (() => {
       stem = { length: Math.hypot(vx, vy), angle: deg(Math.atan2(vy, vx)) - (90 - ref.hta), Q, B };
     }
     return {
-      ok: true,
+      ok: true, kind: 'bike',
       bike, geo, stem, reachH, half, riderReach, drop,
       saddle: { x: xs, y: ys },
       hand,
@@ -182,11 +207,12 @@ const GB = (() => {
     }
     const handShift = hand.x - fp.hand.x;
     const heightAlong = y / Math.sin(S);
-    const noseAhead = x + y / Math.tan(S);
-    const railMove = noseAhead - fp.noseAhead; // + = saddle further forward on its rails than on the reference
+    const noseAhead = x + y / Math.tan(S); // saddle tip ahead of this seat tube's line at saddle height
+    // + = saddle further forward on its rails than on the reference bike; none for a fit reference
+    const railMove = fin(fp.noseAhead) ? noseAhead - fp.noseAhead : null;
     const exposed = (y - RAIL_H) / Math.sin(S) - bike.seatTube;
     const target = { x: hand.x - bike.barReach, y: hand.y - BAR_R };
-    const cockpit = solveCockpit(bike, opts, target, fp.stem.angle);
+    const cockpit = solveCockpit(bike, opts, target, fp.stem ? fp.stem.angle : PLAIN_ANGLE);
     const checks = [];
 
     if (geo.stackSrc === 'chart' && geo.stackCalc != null && Math.abs(geo.stackCalc - geo.stack) > 8) {
@@ -199,9 +225,9 @@ const GB = (() => {
       checks.push({ level: 'info', text: `The bar is ${Math.abs(wBike - wRef).toFixed(0)} mm ${wBike > wRef ? 'wider' : 'narrower'} than on the reference. With the arms angled ${wBike > wRef ? 'further out' : 'less'}, the same personal reach puts the hands ${Math.abs(handShift).toFixed(1)} mm ${handShift < 0 ? 'further back' : 'further forward'}.` });
     }
     if (wRef === 0 && fin(bikeIn.barWidth) && bikeIn.barWidth > 0) {
-      checks.push({ level: 'warn', text: 'Enter the reference bike\'s handlebar width in step 1, so this bar width can be compared with it.' });
+      checks.push({ level: 'warn', text: 'Enter the reference\'s handlebar width in step 1, so this bar width can be compared with it.' });
     }
-    if (Math.abs(railMove) > 15) {
+    if (railMove != null && Math.abs(railMove) > 15) {
       checks.push({ level: 'warn', text: `Moving the saddle ${Math.abs(railMove).toFixed(0)} mm on its rails is more than most saddles allow. Use a seatpost with about ${Math.abs(railMove).toFixed(0)} mm ${railMove > 0 ? 'less' : 'more'} offset than the reference bike's.` });
     }
     if (exposed < 40) {
@@ -222,6 +248,6 @@ const GB = (() => {
     return { bike, geo, heightAlong, noseAhead, railMove, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: frameDrawing(bike) };
   }
 
-  return { fitPoints, frameGeometry, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R };
+  return { fitPoints, bodyPoints, frameGeometry, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE };
 })();
 if (typeof module !== 'undefined') module.exports = GB;
