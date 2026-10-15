@@ -109,29 +109,70 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
 .filebar .btn { padding: 5px 11px; font-size: 13px; }
 </style>
 
+<div class="speedbar" id="speedBar" aria-hidden="true"></div>
 <div class="page">
   <header class="top">
-    <svg class="hero-art" viewBox="0 -34 640 274" preserveAspectRatio="xMaxYMax meet" aria-hidden="true" focusable="false">
-      <line class="g" x1="0" y1="226" x2="640" y2="226"></line>
-      <g class="wheelg"><circle class="tyre" cx="250" cy="148" r="78"></circle><circle class="w dr" pathLength="1" cx="250" cy="148" r="78" style="--d:.1s"></circle>
-        <g class="spin"><path class="sp" d="M250 74V222M174 148H326M196 94L304 202M304 94L196 202"></path></g></g>
-      <g class="wheelg"><circle class="tyre" cx="480" cy="148" r="78"></circle><circle class="w dr" pathLength="1" cx="480" cy="148" r="78" style="--d:.3s"></circle>
-        <g class="spin"><path class="sp" d="M480 74V222M404 148H556M426 94L534 202M534 94L426 202"></path></g></g>
-      <path class="t dr" pathLength="1" style="--d:.7s" d="M250 148L344 164M344 164L309 45M309 45L312 52M312 52L433 40M433 40L442 64M442 64L344 164M250 148L312 56M442 64L480 148"></path>
-      <path class="t dr" pathLength="1" style="--d:1.3s" d="M290 38H326M433 40L449 31H466"></path>
-      <path class="ref" d="M296 33H332M437 34L455 24H474"></path>
-      <line class="dm" x1="344" y1="14" x2="433" y2="14"></line><line class="dm" x1="344" y1="10" x2="344" y2="164" opacity=".35"></line><line class="dm" x1="433" y1="10" x2="433" y2="40" opacity=".35"></line>
-      <line class="dm" x1="573" y1="40" x2="573" y2="164"></line><line class="dm" x1="344" y1="164" x2="577" y2="164" opacity=".3"></line><line class="dm" x1="433" y1="40" x2="577" y2="40" opacity=".3"></line>
-      <text x="360" y="9">REACH 385</text><text x="578" y="108" transform="rotate(90 578 108)">STACK 560</text>
-      <circle class="pt" cx="308" cy="38" r="3.4"></circle><circle class="halo" cx="308" cy="38" r="3.4" style="--d:1.8s"></circle>
-      <circle class="pt" cx="449" cy="31" r="3.4"></circle><circle class="halo" cx="449" cy="31" r="3.4" style="--d:2.6s"></circle>
-      <circle class="pt" cx="344" cy="164" r="3.4"></circle><circle class="halo" cx="344" cy="164" r="3.4" style="--d:3.4s"></circle>
-    </svg>
+    <div class="streaks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="velo" aria-hidden="true"><svg viewBox="0 0 360 220" focusable="false">
+      <defs><path id="lane" d="M90 44H270A66 66 0 0 1 270 176H90A66 66 0 0 1 90 44Z"/></defs>
+      <path class="infield" d="M90 65H270A45 45 0 0 1 270 155H90A45 45 0 0 1 90 65Z"/>
+      <path class="pine" d="M90 44H270A66 66 0 0 1 270 176H90A66 66 0 0 1 90 44Z"/>
+      <path class="ln" stroke="#1E6BFF" stroke-width="6" d="M90 61H270A49 49 0 0 1 270 159H90A49 49 0 0 1 90 61Z"/>
+      <path class="ln" stroke="#FF1E3C" stroke-width="2" d="M90 52H270A58 58 0 0 1 270 168H90A58 58 0 0 1 90 52Z"/>
+      <path class="ln" stroke="#fff" stroke-width="1.6" d="M90 38H270A72 72 0 0 1 270 182H90A72 72 0 0 1 90 38Z"/>
+      <path class="ln" stroke="#0A0C14" stroke-width="2" d="M90 30H270A80 80 0 0 1 270 190H90A80 80 0 0 1 90 30Z"/>
+      <path class="ln" stroke="#fff" stroke-width="2" d="M90 24H270A86 86 0 0 1 270 196H90A86 86 0 0 1 90 24Z"/>
+      <path d="M180 24v42M180 154v42" stroke="#fff" stroke-width="3" stroke-dasharray="3 3" fill="none" opacity=".9"/>
+      <g opacity="1"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#FFE11A" transform="scale(1)"/><animateMotion dur="2.3s" begin="0s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.55"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#FFE11A" transform="scale(0.8)"/><animateMotion dur="2.3s" begin="-0.07s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.32"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#FFE11A" transform="scale(0.6)"/><animateMotion dur="2.3s" begin="-0.14s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.16"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#FFE11A" transform="scale(0.45)"/><animateMotion dur="2.3s" begin="-0.21s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="1"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#FF3355" transform="scale(1)"/><animateMotion dur="2.6s" begin="-0.9s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.55"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#FF3355" transform="scale(0.8)"/><animateMotion dur="2.6s" begin="-0.97s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.32"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#FF3355" transform="scale(0.6)"/><animateMotion dur="2.6s" begin="-1.04s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.16"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#FF3355" transform="scale(0.45)"/><animateMotion dur="2.6s" begin="-1.11s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="1"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#00C8FF" transform="scale(1)"/><animateMotion dur="2.9s" begin="-1.7s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.55"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#00C8FF" transform="scale(0.8)"/><animateMotion dur="2.9s" begin="-1.77s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.32"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#00C8FF" transform="scale(0.6)"/><animateMotion dur="2.9s" begin="-1.8399999999999999s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.16"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#00C8FF" transform="scale(0.45)"/><animateMotion dur="2.9s" begin="-1.91s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="1"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#fff" transform="scale(1)"/><animateMotion dur="3.2s" begin="-2.3s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.55"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#fff" transform="scale(0.8)"/><animateMotion dur="3.2s" begin="-2.3699999999999997s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.32"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#fff" transform="scale(0.6)"/><animateMotion dur="3.2s" begin="-2.44s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g><g opacity="0.16"><rect x="-12" y="-4.5" width="24" height="9" rx="4.5" fill="#fff" transform="scale(0.45)"/><animateMotion dur="3.2s" begin="-2.51s" repeatCount="indefinite" rotate="auto"><mpath href="#lane"/></animateMotion></g>
+    </svg></div>
+    <div class="strip" aria-hidden="true">
+      <div class="bike b1"><svg viewBox="0 0 120 56" aria-hidden="true" focusable="false">
+        <path class="rd far" d="M53 8L65.4 22.4L53 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M53 8L65.4 22.4L53 40;M53 8L67.7 20L53.9 36.5;M53 8L69.7 17L56.5 33.9;M53 8L70.9 14.5L60 33;M53 8L71.1 13.8L63.5 33.9;M53 8L70.5 15.5L66.1 36.5;M53 8L68.8 18.6L67 40;M53 8L65.8 22L66.1 43.5;M53 8L62.2 24.6L63.5 46.1;M53 8L60.4 25.5L60 47;M53 8L61.3 25.1L56.5 46.1;M53 8L63.1 24.1L53.9 43.5;M53 8L65.4 22.4L53 40"/></path>
+        <path class="crank far" d="M60 40L53 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M60 40L53 40;M60 40L53.9 36.5;M60 40L56.5 33.9;M60 40L60 33;M60 40L63.5 33.9;M60 40L66.1 36.5;M60 40L67 40;M60 40L66.1 43.5;M60 40L63.5 46.1;M60 40L60 47;M60 40L56.5 46.1;M60 40L53.9 43.5;M60 40L53 40"/></path>
+        <circle class="disc" cx="22" cy="36" r="16"/><g class="whir"><path class="mk" d="M22 25A11 11 0 0 1 32 31"/></g>
+        <circle class="wh" cx="98" cy="36" r="16"/><g class="whir"><path class="blade" d="M98 36V21M98 36L85 43.5M98 36L111 43.5"/></g>
+        <path class="fr" d="M22 36L60 40L54 14M54 14L88 13M60 40L91 22M22 36L54 16M88 13L91 22L98 36"/>
+        <path class="fr thin" d="M54 14V11M47 11H59M88 13L95 12C101 12 101 23 95 23"/>
+        <circle class="ring" cx="60" cy="40" r="5"/>
+        <path class="rd torso" d="M53 8L81 5"/><circle class="hd" cx="89" cy="1.5" r="4.6"/>
+        <path class="rd" d="M81 5L86 14L96 21"/>
+        <path class="rd" d="M53 8L68.8 18.6L67 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M53 8L68.8 18.6L67 40;M53 8L65.8 22L66.1 43.5;M53 8L62.2 24.6L63.5 46.1;M53 8L60.4 25.5L60 47;M53 8L61.3 25.1L56.5 46.1;M53 8L63.1 24.1L53.9 43.5;M53 8L65.4 22.4L53 40;M53 8L67.7 20L53.9 36.5;M53 8L69.7 17L56.5 33.9;M53 8L70.9 14.5L60 33;M53 8L71.1 13.8L63.5 33.9;M53 8L70.5 15.5L66.1 36.5;M53 8L68.8 18.6L67 40"/></path>
+        <path class="crank" d="M60 40L67 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M60 40L67 40;M60 40L66.1 43.5;M60 40L63.5 46.1;M60 40L60 47;M60 40L56.5 46.1;M60 40L53.9 43.5;M60 40L53 40;M60 40L53.9 36.5;M60 40L56.5 33.9;M60 40L60 33;M60 40L63.5 33.9;M60 40L66.1 36.5;M60 40L67 40"/></path>
+      </svg></div>
+      <div class="bike b2"><svg viewBox="0 0 120 56" aria-hidden="true" focusable="false">
+        <path class="rd far" d="M53 8L65.4 22.4L53 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M53 8L65.4 22.4L53 40;M53 8L67.7 20L53.9 36.5;M53 8L69.7 17L56.5 33.9;M53 8L70.9 14.5L60 33;M53 8L71.1 13.8L63.5 33.9;M53 8L70.5 15.5L66.1 36.5;M53 8L68.8 18.6L67 40;M53 8L65.8 22L66.1 43.5;M53 8L62.2 24.6L63.5 46.1;M53 8L60.4 25.5L60 47;M53 8L61.3 25.1L56.5 46.1;M53 8L63.1 24.1L53.9 43.5;M53 8L65.4 22.4L53 40"/></path>
+        <path class="crank far" d="M60 40L53 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M60 40L53 40;M60 40L53.9 36.5;M60 40L56.5 33.9;M60 40L60 33;M60 40L63.5 33.9;M60 40L66.1 36.5;M60 40L67 40;M60 40L66.1 43.5;M60 40L63.5 46.1;M60 40L60 47;M60 40L56.5 46.1;M60 40L53.9 43.5;M60 40L53 40"/></path>
+        <circle class="disc" cx="22" cy="36" r="16"/><g class="whir"><path class="mk" d="M22 25A11 11 0 0 1 32 31"/></g>
+        <circle class="wh" cx="98" cy="36" r="16"/><g class="whir"><path class="blade" d="M98 36V21M98 36L85 43.5M98 36L111 43.5"/></g>
+        <path class="fr" d="M22 36L60 40L54 14M54 14L88 13M60 40L91 22M22 36L54 16M88 13L91 22L98 36"/>
+        <path class="fr thin" d="M54 14V11M47 11H59M88 13L95 12C101 12 101 23 95 23"/>
+        <circle class="ring" cx="60" cy="40" r="5"/>
+        <path class="rd torso" d="M53 8L81 5"/><circle class="hd" cx="89" cy="1.5" r="4.6"/>
+        <path class="rd" d="M81 5L86 14L96 21"/>
+        <path class="rd" d="M53 8L68.8 18.6L67 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M53 8L68.8 18.6L67 40;M53 8L65.8 22L66.1 43.5;M53 8L62.2 24.6L63.5 46.1;M53 8L60.4 25.5L60 47;M53 8L61.3 25.1L56.5 46.1;M53 8L63.1 24.1L53.9 43.5;M53 8L65.4 22.4L53 40;M53 8L67.7 20L53.9 36.5;M53 8L69.7 17L56.5 33.9;M53 8L70.9 14.5L60 33;M53 8L71.1 13.8L63.5 33.9;M53 8L70.5 15.5L66.1 36.5;M53 8L68.8 18.6L67 40"/></path>
+        <path class="crank" d="M60 40L67 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M60 40L67 40;M60 40L66.1 43.5;M60 40L63.5 46.1;M60 40L60 47;M60 40L56.5 46.1;M60 40L53.9 43.5;M60 40L53 40;M60 40L53.9 36.5;M60 40L56.5 33.9;M60 40L60 33;M60 40L63.5 33.9;M60 40L66.1 36.5;M60 40L67 40"/></path>
+      </svg></div>
+      <div class="bike b3"><svg viewBox="0 0 120 56" aria-hidden="true" focusable="false">
+        <path class="rd far" d="M53 8L65.4 22.4L53 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M53 8L65.4 22.4L53 40;M53 8L67.7 20L53.9 36.5;M53 8L69.7 17L56.5 33.9;M53 8L70.9 14.5L60 33;M53 8L71.1 13.8L63.5 33.9;M53 8L70.5 15.5L66.1 36.5;M53 8L68.8 18.6L67 40;M53 8L65.8 22L66.1 43.5;M53 8L62.2 24.6L63.5 46.1;M53 8L60.4 25.5L60 47;M53 8L61.3 25.1L56.5 46.1;M53 8L63.1 24.1L53.9 43.5;M53 8L65.4 22.4L53 40"/></path>
+        <path class="crank far" d="M60 40L53 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M60 40L53 40;M60 40L53.9 36.5;M60 40L56.5 33.9;M60 40L60 33;M60 40L63.5 33.9;M60 40L66.1 36.5;M60 40L67 40;M60 40L66.1 43.5;M60 40L63.5 46.1;M60 40L60 47;M60 40L56.5 46.1;M60 40L53.9 43.5;M60 40L53 40"/></path>
+        <circle class="disc" cx="22" cy="36" r="16"/><g class="whir"><path class="mk" d="M22 25A11 11 0 0 1 32 31"/></g>
+        <circle class="wh" cx="98" cy="36" r="16"/><g class="whir"><path class="blade" d="M98 36V21M98 36L85 43.5M98 36L111 43.5"/></g>
+        <path class="fr" d="M22 36L60 40L54 14M54 14L88 13M60 40L91 22M22 36L54 16M88 13L91 22L98 36"/>
+        <path class="fr thin" d="M54 14V11M47 11H59M88 13L95 12C101 12 101 23 95 23"/>
+        <circle class="ring" cx="60" cy="40" r="5"/>
+        <path class="rd torso" d="M53 8L81 5"/><circle class="hd" cx="89" cy="1.5" r="4.6"/>
+        <path class="rd" d="M81 5L86 14L96 21"/>
+        <path class="rd" d="M53 8L68.8 18.6L67 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M53 8L68.8 18.6L67 40;M53 8L65.8 22L66.1 43.5;M53 8L62.2 24.6L63.5 46.1;M53 8L60.4 25.5L60 47;M53 8L61.3 25.1L56.5 46.1;M53 8L63.1 24.1L53.9 43.5;M53 8L65.4 22.4L53 40;M53 8L67.7 20L53.9 36.5;M53 8L69.7 17L56.5 33.9;M53 8L70.9 14.5L60 33;M53 8L71.1 13.8L63.5 33.9;M53 8L70.5 15.5L66.1 36.5;M53 8L68.8 18.6L67 40"/></path>
+        <path class="crank" d="M60 40L67 40"><animate attributeName="d" dur=".36s" repeatCount="indefinite" values="M60 40L67 40;M60 40L66.1 43.5;M60 40L63.5 46.1;M60 40L60 47;M60 40L56.5 46.1;M60 40L53.9 43.5;M60 40L53 40;M60 40L53.9 36.5;M60 40L56.5 33.9;M60 40L60 33;M60 40L63.5 33.9;M60 40L66.1 36.5;M60 40L67 40"/></path>
+      </svg></div>
+    </div>
+    <div class="lap" aria-hidden="true"><span>LAP <b id="lapN">1</b></span><span class="t" id="lapT">00.000</span></div>
     <div class="brand">
       <svg class="mark" viewBox="0 0 56 44" role="img" aria-label="BikefitSim logo: B and S in the wheels of a bike"><circle class="m-wheel" cx="14" cy="29" r="12.5"></circle><circle class="m-wheel" cx="42" cy="29" r="12.5"></circle><path class="m-tube" d="M28.5 30.5 L22.5 7.0 M22.5 7.0 L39.9 16.7 M39.9 16.7 L28.5 30.5 M26.4 30.3 L28.5 30.5 M22.5 7.0 L18.5 17.3 M39.9 16.7 L39.9 16.7"></path><path class="m-letter" d="M10.4 22.5 V35.5 M10.4 22.5 H14.4 a3.05 3.05 0 0 1 0 6.1 H10.4 M10.4 28.6 H14.9 a3.45 3.45 0 0 1 0 6.9 H10.4"></path><path class="m-letter" d="M45.9 24.4 C45.1 22.9 43.6 22.4 42.1 22.4 C39.8 22.4 38.3 23.8 38.3 25.6 C38.3 29.6 46.0 28.0 46.0 32.3 C46.0 34.3 44.3 35.6 41.9 35.6 C40.1 35.6 38.6 34.9 37.8 33.4"></path><circle class="m-pt" cx="22.5" cy="7.0" r="2.4"></circle><circle class="m-pt" cx="39.9" cy="16.7" r="2.4"></circle><circle class="m-pt" cx="28.5" cy="30.5" r="2.4"></circle></svg>
       <div>
         <h1>Bikefit<span class="sim">Sim</span></h1>
         <p class="tag">Achieve the perfect fit on any bike</p>
+        <span class="chev" aria-hidden="true"></span>
       </div>
     </div>
     <div class="top-right">
