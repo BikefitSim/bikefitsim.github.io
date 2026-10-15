@@ -47,14 +47,15 @@ To publish a change, ask Claude in the linked chat to republish from this folder
 
 Branches: `dev` is where work happens; `master` holds releases.
 
+The repository lives in the `bikefitsim` organization as `bikefitsim.github.io`, so the site sits at the root of that address.
 Every push to `master` runs `.github/workflows/pages.yml`: it runs the engine checks, builds the page and publishes it at
-**https://zemiguelmoreira.github.io/geobike/**.
+**https://bikefitsim.github.io/**.
 
 One-time setup on GitHub: **Settings > Pages > Build and deployment > Source: GitHub Actions**.
 Pages is free for public repositories; a private one needs a paid plan.
 
-The Pages copy saves in the browser and, in Chrome or Edge, to a linked data file. It has no account saving,
-so use the data file to move your bikes between it and the published Claude page.
+The Pages copy keeps nothing between visits. In Chrome or Edge it can save to a linked data file; elsewhere,
+download and open one. The same file moves your bikes between it, a local copy and the published Claude page.
 
 ## Where your data is saved
 
