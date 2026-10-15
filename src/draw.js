@@ -4,7 +4,6 @@
 const GBDraw = (() => {
   const RAIL_DROP = 45;   // saddle top to rails
   const POST_HEAD = 18;   // rails to top of the post shaft
-  const SADDLE_L = 265;   // saddle drawn tip to tail
   const TYRE_R = 340;
   const RIM_R = 311;
 
@@ -108,7 +107,7 @@ const GBDraw = (() => {
     if (saddle) {
       s += v.line(g.stTop, p.postTop, 'post');
       s += v.line(p.postTop, p.clamp, 'post');
-      const sx = sad.x; const sy = sad.y; const L = SADDLE_L;
+      const sx = sad.x; const sy = sad.y; const L = 265;
       const sh = (dx, dy) => v.P({ x: sx + dx, y: sy + dy });
       s += v.path(`M ${sh(2, -7)} Q ${sh(-6, 1)} ${sh(-50, 0)} L ${sh(-L + 45, 5)} Q ${sh(-L + 2, 8)} ${sh(-L, -10)} L ${sh(-L + 28, -26)} L ${sh(-60, -17)} Z`, 'saddle');
       s += v.path(`M ${sh(-48, -15)} L ${v.P({ x: sx - 185, y: p.railY })} L ${v.P({ x: sx - 85, y: p.railY })} Z`, 'rail');
@@ -137,11 +136,6 @@ const GBDraw = (() => {
     const fp = r.fp; const bike = r.bike; const ref = fp.bike; // no ref bike for a personal fit
     const showRef = !!ref && show.ref;
     const sad = fp.saddle; const hand = r.hand || fp.hand;
-    // the saddle is drawn from its tip; a personal fit's point is the saddle centre, so the tip sits
-    // half a typical saddle ahead of it (drawing only, no number depends on it)
-    const centred = fp.saddleAt === 'centre';
-    const nose = centred ? { x: sad.x + SADDLE_L / 2, y: sad.y } : sad;
-    const sadName = centred ? 'Saddle centre' : 'Saddle tip';
     const g = r.drawing; const rg = ref ? GB.frameDrawing(ref) : null;
     const bikeCock = o ? Object.assign(GB.barFor(bike, o.angle, o.length, o.spacers), { spacers: o.spacers, barReach: bike.barReach })
       : { Q: add(g.T, GB.steerer(bike.hta).d, 20), B: r.target, spacers: 0, barReach: bike.barReach };
@@ -160,17 +154,17 @@ const GBDraw = (() => {
     if (show.grid) m += grid(v, 50);
     m += v.line({ x: minX + 10, y: g.groundY }, { x: maxX - 10, y: g.groundY }, 'ground');
     m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -(bike.forkA2C + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
-    if (showRef) m += drawBike(v, 'rf', rg, pr, nose);
-    m += drawBike(v, 'bk', g, pb, nose);
-    // a personal fit's saddle height: the straight line from the BB to the saddle centre
-    if (!ref) m += v.dim({ x: 0, y: 0 }, sad, 0, `BB to saddle centre ${n0(Math.hypot(sad.x, sad.y))}`, { key: 'height', cls: 'dim rfd', ext: false, labelOff: 8 });
+    if (showRef) m += drawBike(v, 'rf', rg, pr, sad);
+    m += drawBike(v, 'bk', g, pb, sad);
+    // a personal fit's saddle height: the straight line from the BB to the saddle tip
+    if (!ref) m += v.dim({ x: 0, y: 0 }, sad, 0, `BB to saddle tip ${n0(Math.hypot(sad.x, sad.y))}`, { key: 'height', cls: 'dim rfd', ext: false, labelOff: 8 });
     m += v.target(sad) + v.target(hand);
     if (show.dims) {
       const hl = fp.half > 0 ? ` (${n0(r.reachH)} side view)` : '';
       m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text({ x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 }, `Personal reach ${n0(fp.riderReach)}${hl}`, 'dt', { dy: -7, rot: Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI })}</g>`;
       // saddle height along this bike's seat tube, offset behind it
       m += v.dim({ x: 0, y: 0 }, pb.axisAt(sad.y), 30, `Saddle height ${n0(r.heightAlong)}`, { key: 'height' });
-      // setback: plumb line from the saddle point, measured at BB height
+      // setback: plumb line from the saddle tip, measured at BB height
       m += `<g class="dim" data-dim="setback">${v.line(sad, { x: sad.x, y: -44 * v.k }, 'plumb')}</g>`;
       m += v.dim({ x: sad.x, y: 0 }, { x: 0, y: 0 }, -40, `Setback ${n0(-sad.x)}`, { key: 'setback', ext: false });
       // hand position on the grid
@@ -229,7 +223,7 @@ const GBDraw = (() => {
     f += '</svg>';
 
     /* ---------- saddle close-up ---------- */
-    const sx0 = nose.x - 300; const sx1 = nose.x + 70;
+    const sx0 = sad.x - 300; const sx1 = sad.x + 70;
     const sy0 = pb.railY - 110; const sy1 = sad.y + 55;
     const sw = Math.max(sx1 - sx0, (sy1 - sy0) * 1.25);
     const svb = { x: (sx0 + sx1) / 2 - sw / 2, y: sy0, w: sw, h: Math.max(sy1 - sy0, sw * 0.62) };
@@ -245,8 +239,8 @@ const GBDraw = (() => {
     };
     s += `<g class="axes">${sv.line(pb.axisAt(pb.railY - 140), pb.axisAt(sad.y + 40), 'saxis')}${showRef ? sv.line(pr.axisAt(pr.railY - 140), pr.axisAt(sad.y + 40), 'saxis rfa') : ''}</g>`;
     {
-      const L = SADDLE_L; const sh = (dx, dy) => sv.P({ x: nose.x + dx, y: nose.y + dy });
-      s += `<g class="bike sdl">${sv.path(`M ${sh(2, -7)} Q ${sh(-6, 1)} ${sh(-50, 0)} L ${sh(-L + 45, 5)} Q ${sh(-L + 2, 8)} ${sh(-L, -10)} L ${sh(-L + 28, -26)} L ${sh(-60, -17)} Z`, 'saddle')}${sv.path(`M ${sh(-48, -15)} L ${sv.P({ x: nose.x - 185, y: pb.railY })} L ${sv.P({ x: nose.x - 85, y: pb.railY })} Z`, 'rail')}</g>`;
+      const L = 265; const sh = (dx, dy) => sv.P({ x: sad.x + dx, y: sad.y + dy });
+      s += `<g class="bike sdl">${sv.path(`M ${sh(2, -7)} Q ${sh(-6, 1)} ${sh(-50, 0)} L ${sh(-L + 45, 5)} Q ${sh(-L + 2, 8)} ${sh(-L, -10)} L ${sh(-L + 28, -26)} L ${sh(-60, -17)} Z`, 'saddle')}${sv.path(`M ${sh(-48, -15)} L ${sv.P({ x: sad.x - 185, y: pb.railY })} L ${sv.P({ x: sad.x - 85, y: pb.railY })} Z`, 'rail')}</g>`;
     }
     if (showRef) s += saddleOnly(sv, 'rf', pr);
     s += saddleOnly(sv, 'bk', pb);
@@ -256,8 +250,8 @@ const GBDraw = (() => {
         const a = { x: pr.clamp.x, y: pb.railY }; const b = { x: pb.clamp.x, y: pb.railY };
         s += sv.dim(a.x < b.x ? a : b, a.x < b.x ? b : a, -28, `${n0(Math.abs(r.railMove))} mm ${r.railMove > 0 ? 'forward' : 'back'} on rails`, { key: 'setback' });
       }
-      s += sv.dim(pb.axisAt(sad.y), sad, 18, `${n0(Math.abs(r.noseAhead))} ${centred && r.noseAhead < 0 ? 'behind' : 'to'} seat-tube line`, { key: 'setback' });
-      s += sv.text(sad, sadName, 'dt tl', { dy: centred ? 26 : -16 });
+      s += sv.dim(pb.axisAt(sad.y), sad, 18, `${n0(Math.abs(r.noseAhead))} to seat-tube line`, { key: 'setback' });
+      s += sv.text(sad, 'Saddle tip', 'dt tl', { dy: -16 });
     }
     s += '</svg>';
     return { main: m, front: f, saddle: s };
