@@ -11,6 +11,8 @@ const GB = (() => {
   const CHAINSTAY = 410;  // drawing only
   const ANGLE_COST = 0.15; // mm of miss traded per degree away from the reference stem angle
   const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a personal fit)
+  const TT_DROP = 18;     // top tube centre below the head tube top, where an actual top tube ends
+  const ST_EXT = 20;      // seat tube top above the top tube centre, when only one seat tube length is given
 
   function parseList(str, { min = -Infinity, max = Infinity } = {}) {
     const out = String(str || '')
@@ -28,7 +30,22 @@ const GB = (() => {
     return { d: { x: -Math.cos(H), y: Math.sin(H) }, n: { x: Math.sin(H), y: Math.cos(H) } };
   }
 
-  /* Stack and reach: from the chart when given, otherwise from head tube, fork and BB drop. */
+  /* Seat tube c-t (BB centre to the top of the tube) and c-c (BB centre to the top tube centre).
+     Either one will do; the other is taken as 20 mm different and flagged as estimated. */
+  function seatTubes(b) {
+    const ct = fin(b.seatTube) && b.seatTube > 0 ? b.seatTube : null;
+    const cc = fin(b.seatTubeCC) && b.seatTubeCC > 0 ? b.seatTubeCC : null;
+    return {
+      ct: ct ?? (cc != null ? cc + ST_EXT : null),
+      cc: cc ?? (ct != null ? ct - ST_EXT : null),
+      ctEst: ct == null && cc != null,
+      ccEst: cc == null && ct != null,
+    };
+  }
+
+  /* Stack and reach: from the chart when given, otherwise from head tube, fork and BB drop, and
+     the effective top tube or, without one, the actual top tube. The actual top tube runs centre
+     to centre from the seat tube, at its c-c length, to the head tube, 18 mm below its top. */
   function frameGeometry(b) {
     const H = rad(b.hta);
     const S = rad(b.sta);
@@ -37,9 +54,23 @@ const GB = (() => {
     const hasStack = fin(b.stack) && b.stack > 0;
     const hasReach = fin(b.reach) && b.reach > 0;
     const stack = hasStack ? b.stack : stackCalc;
-    const reachCalc = fin(b.ett) && b.ett > 0 && stack != null ? b.ett - stack / Math.tan(S) : null;
+    const reachEtt = fin(b.ett) && b.ett > 0 && stack != null ? b.ett - stack / Math.tan(S) : null;
+    const st = seatTubes(b);
+    let reachAtt = null;
+    if (fin(b.att) && b.att > 0 && stack != null && st.cc != null) {
+      const P = { x: -st.cc * Math.cos(S), y: st.cc * Math.sin(S) }; // top tube centre at the seat tube
+      const jy = stack - TT_DROP * Math.sin(H);                        // and at the head tube
+      const sq = b.att ** 2 - (jy - P.y) ** 2;
+      if (sq > 0) reachAtt = P.x + Math.sqrt(sq) - TT_DROP * Math.cos(H);
+    }
+    const reachCalc = reachEtt ?? reachAtt;
+    const reachFrom = reachEtt != null ? 'ett' : reachAtt != null ? 'att' : null;
     const reach = hasReach ? b.reach : reachCalc;
-    return { stack, reach, stackCalc, reachCalc, stackSrc: hasStack ? 'chart' : 'tubes', reachSrc: hasReach ? 'chart' : 'tubes' };
+    return {
+      stack, reach, stackCalc, reachCalc, reachEtt, reachAtt, reachFrom,
+      ccEst: reachFrom === 'att' && st.ccEst, // reach from the actual top tube with the c-c estimated
+      stackSrc: hasStack ? 'chart' : 'tubes', reachSrc: hasReach ? 'chart' : 'tubes',
+    };
   }
 
   /* Bar centre for a stem on a bike that carries resolved stack and reach. */
@@ -184,9 +215,12 @@ const GB = (() => {
     const htBottom = along(-bike.htLength);
     const axisFoot = along(-(bike.htLength + bike.forkA2C));
     const front = { x: axisFoot.x + bike.forkOffset * n.x, y: axisFoot.y + bike.forkOffset * n.y };
-    const stTop = { x: -bike.seatTube * Math.cos(S), y: bike.seatTube * Math.sin(S) };
-    const ssJoin = { x: -(bike.seatTube - 25) * Math.cos(S), y: (bike.seatTube - 25) * Math.sin(S) };
-    return { T, rear, front, htBottom, crown: htBottom, stTop, ssJoin, wheelR: WHEEL_R, groundY: bike.bbDrop - WHEEL_R };
+    const st = seatTubes(bike);
+    const onSeatTube = (l) => ({ x: -l * Math.cos(S), y: l * Math.sin(S) });
+    const stTop = onSeatTube(st.ct);
+    const ttRear = fin(bike.seatTubeCC) && bike.seatTubeCC > 0 ? onSeatTube(st.cc) : stTop; // top tube meets the seat tube
+    const ssJoin = onSeatTube(st.ct - 25);
+    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR: WHEEL_R, groundY: bike.bbDrop - WHEEL_R };
   }
 
   /* One target bike: what to change so saddle tip and hand position match the reference. */
@@ -210,7 +244,9 @@ const GB = (() => {
     const noseAhead = x + y / Math.tan(S); // saddle tip ahead of this seat tube's line at saddle height
     // + = saddle further forward on its rails than on the reference bike; none for a personal fit
     const railMove = fin(fp.noseAhead) ? noseAhead - fp.noseAhead : null;
-    const exposed = (y - RAIL_H) / Math.sin(S) - bike.seatTube;
+    const st = seatTubes(bike);
+    const exposed = (y - RAIL_H) / Math.sin(S) - st.ct;
+    const ctNote = st.ctEst ? ', taking the seat tube c-t as the c-c plus 20 mm' : '';
     const target = { x: hand.x - bike.barReach, y: hand.y - BAR_R };
     const cockpit = solveCockpit(bike, opts, target, fp.stem ? fp.stem.angle : PLAIN_ANGLE);
     const checks = [];
@@ -219,7 +255,13 @@ const GB = (() => {
       checks.push({ level: 'warn', text: `Head tube, fork and BB drop give a stack of ${geo.stackCalc.toFixed(0)} mm, but the chart says ${geo.stack} mm. Check the fork length. The chart value is used.` });
     }
     if (geo.reachSrc === 'chart' && geo.reachCalc != null && Math.abs(geo.reachCalc - geo.reach) > 8) {
-      checks.push({ level: 'warn', text: `Top tube and seat angle give a reach of ${geo.reachCalc.toFixed(0)} mm, but the chart says ${geo.reach} mm. The chart value is used.` });
+      checks.push({ level: 'warn', text: `${geo.reachFrom === 'att' ? 'The actual top tube and seat tube give' : 'Top tube and seat angle give'} a reach of ${geo.reachCalc.toFixed(0)} mm, but the chart says ${geo.reach} mm. The chart value is used.` });
+    }
+    if (geo.reachSrc === 'tubes' && geo.reachEtt != null && geo.reachAtt != null && Math.abs(geo.reachEtt - geo.reachAtt) > 8) {
+      checks.push({ level: 'warn', text: `The effective top tube gives a reach of ${geo.reachEtt.toFixed(0)} mm and the actual top tube ${geo.reachAtt.toFixed(0)} mm. Check both. The effective top tube is used.` });
+    }
+    if (geo.reachSrc === 'tubes' && geo.ccEst) {
+      checks.push({ level: 'info', text: 'Reach comes from the actual top tube, taking the seat tube c-c as 20 mm less than the c-t. Enter the c-c from the chart for an exact reach.' });
     }
     if (Math.abs(handShift) >= 0.5) {
       checks.push({ level: 'info', text: `The bar is ${Math.abs(wBike - wRef).toFixed(0)} mm ${wBike > wRef ? 'wider' : 'narrower'} than on the reference. With the arms angled ${wBike > wRef ? 'further out' : 'less'}, the same personal reach puts the hands ${Math.abs(handShift).toFixed(1)} mm ${handShift < 0 ? 'further back' : 'further forward'}.` });
@@ -231,9 +273,9 @@ const GB = (() => {
       checks.push({ level: 'warn', text: `Moving the saddle ${Math.abs(railMove).toFixed(0)} mm on its rails is more than most saddles allow. Use a seatpost with about ${Math.abs(railMove).toFixed(0)} mm ${railMove > 0 ? 'less' : 'more'} offset than the reference bike's.` });
     }
     if (exposed < 40) {
-      checks.push({ level: 'bad', text: `Only about ${exposed.toFixed(0)} mm of seatpost would show. The saddle may not go this low on this frame.` });
+      checks.push({ level: 'bad', text: `Only about ${exposed.toFixed(0)} mm of seatpost would show${ctNote}. The saddle may not go this low on this frame.` });
     } else if (exposed > 280) {
-      checks.push({ level: 'warn', text: `About ${exposed.toFixed(0)} mm of seatpost would show. Check post length and minimum insertion.` });
+      checks.push({ level: 'warn', text: `About ${exposed.toFixed(0)} mm of seatpost would show${ctNote}. Check post length and minimum insertion.` });
     }
     if (cockpit.best && cockpit.best.err > 5) {
       const b = cockpit.best;
@@ -248,6 +290,6 @@ const GB = (() => {
     return { bike, geo, heightAlong, noseAhead, railMove, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: frameDrawing(bike) };
   }
 
-  return { fitPoints, bodyPoints, frameGeometry, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE };
+  return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE };
 })();
 if (typeof module !== 'undefined') module.exports = GB;
