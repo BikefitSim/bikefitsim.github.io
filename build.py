@@ -1,9 +1,9 @@
-"""Build Bikefit Simulator from src/ into dist/.
+"""Build BikefitSim from src/ into dist/.
 
     python3 build.py
 
-dist/geobike.html        page body for publishing as the Claude artifact (no <html>/<head>; the host adds them)
-dist/geobike-local.html  full document to open straight in a browser for local testing
+dist/bikefitsim.html        page body for publishing as the Claude artifact (no <html>/<head>; the host adds them)
+dist/bikefitsim-local.html  full document to open straight in a browser for local testing
 """
 import os
 from urllib.parse import quote
@@ -12,7 +12,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, 'src')
 DIST = os.path.join(ROOT, 'dist')
 
-HEAD = '''<title>Bikefit Simulator</title>
+HEAD = '''<title>BikefitSim</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,7 +42,8 @@ def build_page():
     engine = read('engine.js').replace("if (typeof module !== 'undefined') module.exports = GB;\n", '')
     return (HEAD + read('base.css') + '\n' + read('body.html') + '\n'
             + '<script>\n' + engine + '\n' + read('draw.js') + '\n' + read('datafile.js') + '</script>\n'
-            + '<script>\n' + read('app.js') + '</script>\n')
+            + '<script>\n' + read('app.js') + '</script>\n'
+            + '<script>\n' + read('fx.js') + '</script>\n')
 
 
 def write(name, text):
@@ -55,5 +56,5 @@ def write(name, text):
 if __name__ == '__main__':
     os.makedirs(DIST, exist_ok=True)
     page = build_page()
-    write('geobike.html', page)
-    write('geobike-local.html', SKELETON + page + '</body></html>\n')
+    write('bikefitsim.html', page)
+    write('bikefitsim-local.html', SKELETON + page + '</body></html>\n')

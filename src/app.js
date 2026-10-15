@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  // storage keys keep their old 'geobike' prefix so saved bikes survive the rename to BikefitSim
   const LS_KEY = 'geobike.v3';
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
