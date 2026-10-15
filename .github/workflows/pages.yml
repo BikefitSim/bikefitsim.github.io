@@ -1,10 +1,11 @@
-# Builds the page and publishes it on GitHub Pages on every push to main.
+# Builds the page and publishes it on GitHub Pages on every push to master (releases).
+# Day-to-day work happens on dev; merge dev into master to publish.
 # One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 permissions:

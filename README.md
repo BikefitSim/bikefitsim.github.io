@@ -35,7 +35,9 @@ To publish a change, ask Claude in the linked chat to republish from this folder
 
 ## GitHub Pages
 
-Every push to `main` runs `.github/workflows/pages.yml`: it runs the engine checks, builds the page and publishes it at
+Branches: `dev` is where work happens; `master` holds releases.
+
+Every push to `master` runs `.github/workflows/pages.yml`: it runs the engine checks, builds the page and publishes it at
 **https://zemiguelmoreira.github.io/geobike/**.
 
 One-time setup on GitHub: **Settings > Pages > Build and deployment > Source: GitHub Actions**.
