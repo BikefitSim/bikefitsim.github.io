@@ -29,19 +29,20 @@
   const isFitRef = (r) => r.kind === 'fit';
   const KINDS = ['bike', 'fit'];
   const KIND_LABEL = { bike: 'Bike fit', fit: 'Personal fit' };
+  const DEFAULT_NAME = { bike: 'Reference bike', fit: 'Personal fit' }; // new references are numbered from these
   const KIND_NOTE = {
     bike: 'A bike that fits you now: its geometry and how it is set up.',
     fit: 'Just your numbers, saddle and hands around the BB centre, with no bike. For when you know your fit but not the bike it came from.',
   };
   // default names from earlier versions, so they read like the new ones
   function newDefaultName(name, kind) {
-    const m = /^(?:Bike reference|Reference bike|Fit reference) (\d+)$/.exec(String(name || ''));
-    return m ? `${KIND_LABEL[kind]} ${m[1]}` : name;
+    const m = /^(?:Bike reference|Reference bike|Fit reference|Bike fit|Personal fit) (\d+)$/.exec(String(name || ''));
+    return m ? `${DEFAULT_NAME[kind]} ${m[1]}` : name;
   }
   const BLANK = () => ({
     v: 3,
     example: true, // nothing entered yet
-    refs: [blankRef('bike', 'r1', 'Bike fit 1'), blankRef('fit', 'r2', 'Personal fit 1')],
+    refs: [blankRef('bike', 'r1', 'Reference bike 1'), blankRef('fit', 'r2', 'Personal fit 1')],
     lastRef: { bike: 'r1', fit: 'r2' }, // the one last open in each tab
     opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, maxSpacers: 40 },
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' })],
@@ -73,7 +74,7 @@
       if (!known) stemFromReach(o);
       return o;
     });
-    for (const k of KINDS) if (!out.refs.some((r) => r.kind === k)) out.refs.push(blankRef(k, uid('r'), `${KIND_LABEL[k]} 1`));
+    for (const k of KINDS) if (!out.refs.some((r) => r.kind === k)) out.refs.push(blankRef(k, uid('r'), `${DEFAULT_NAME[k]} 1`));
     out.opts = Object.assign({}, base.opts, isObj(s.opts) ? s.opts : {});
     const ids = new Set(out.refs.map((r) => r.id));
     const bikeT = Object.assign({}, base.bikes[0], { name: 'Target bike', pick: '' });
@@ -245,16 +246,16 @@
     const r = curRef();
     const fields = (list) => list.map((f) => fieldHTML(f, 'fit', r.fit)).join('');
     if (isFitRef(r)) {
+      $('refName').innerHTML = nameHTML('ref', r.name);
       $('refForm').innerHTML = `
         <h4>Saddle</h4>
-        ${nameHTML('ref', r.name)}
         <div class="fields two">${fields(FIT_SADDLE_FIELDS)}</div>`;
       $('fitHead').textContent = 'Hands';
       $('fitFields').innerHTML = fields(FIT_HAND_FIELDS);
     } else {
+      $('refName').innerHTML = nameHTML('ref', r.name);
       $('refForm').innerHTML = `
         <h4>Frame</h4>
-        ${nameHTML('ref', r.name)}
         <div class="fields two">${geoFieldsHTML('ref', r)}</div>
         <div class="frame-strip" id="refStrip"></div>`;
       $('fitHead').textContent = 'Saddle and cockpit on this bike';
@@ -1048,7 +1049,7 @@
       const src = curRef();
       let made;
       if (addKind) {
-        made = blankRef(addKind, uid('r'), `${KIND_LABEL[addKind]} ${ofKind(addKind).length + 1}`);
+        made = blankRef(addKind, uid('r'), `${DEFAULT_NAME[addKind]} ${ofKind(addKind).length + 1}`);
       } else if (dupR) {
         made = Object.assign(clone(src), { id: uid('r'), name: `${refName(src)} copy` });
       } else {
