@@ -12,6 +12,9 @@ svg .ghost { stroke: var(--ink-2); stroke-opacity: .45; stroke-dasharray: 12 9; 
 .cp .implied { font-size: 13.5px; color: var(--ink); border-top: 1px solid var(--rule-2); padding-top: 8px; }
 .cp .implied b { font: 500 15px var(--mono); }
 .cp .warn { color: var(--warn); }
+.cp .need { color: var(--ink-2); font-size: 13px; }
+.save[data-state="web"]::before { background: var(--part); }
+.save[data-state="file"]::before { background: var(--good); }
 details.parts .fields { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .cmp th.refcol, .cmp td.refcol { color: var(--ink-2); }
 body.loading .f-in { opacity: .55; }
@@ -101,27 +104,24 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
         <circle class="m-pt" cx="42" cy="9" r="2.6"></circle>
       </svg>
       <div>
-        <h1>Geobike</h1>
+        <h1>Bikefit Simulator</h1>
         <p class="tag">Take the fit from a bike you know and put it on another frame. Saddle tip and hand position are fixed on a grid around the bottom bracket centre; every target bike gets the changes that put them back there.</p>
       </div>
     </div>
     <div class="top-right">
       <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false"><span class="sw-track" aria-hidden="true"><span class="sw-knob"></span></span>Dark mode</button>
-      <span class="save" id="saveState" data-state="example" role="status" aria-live="polite">Example numbers</span>
+      <span class="save" id="saveState" data-state="example" role="status" aria-live="polite">Nothing saved yet</span>
     </div>
   </header>
 
   <div class="filebar" id="fileBar" aria-live="polite"></div>
   <input type="file" id="fileInput" accept=".json,application/json" hidden>
 
-  <div class="banner" id="exampleBanner">
-    <span><strong>These are example numbers.</strong> Type your own bikes and fit over them. Your changes are saved as you go.</span>
-  </div>
   <div class="banner" id="importBanner" role="status" hidden></div>
 
   <section class="sheet" aria-labelledby="refTitle">
     <div class="sec-head">
-      <span class="step">1</span><h2 id="refTitle">Reference bikes</h2>
+      <span class="step">1</span><h2 id="refTitle">Reference bike</h2>
       <p>A bike that fits you now and the fit measured on it, as one unit. Add one for each position you want to copy, like a road and a gravel fit. Pick one, and every target bike below is set up to match it.</p>
     </div>
     <div class="tabs" id="refTabs" role="tablist" aria-label="Reference bikes"></div>
@@ -135,7 +135,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
 
   <section class="sheet" aria-labelledby="bikeTitle">
     <div class="sec-head">
-      <span class="step">2</span><h2 id="bikeTitle">Target bikes</h2>
+      <span class="step">2</span><h2 id="bikeTitle">Target bike</h2>
       <p>Frames you want to set up like the reference bike selected above, from their geometry charts, plus the reach of the handlebar each will use.</p>
     </div>
     <details class="parts" id="partsBox">

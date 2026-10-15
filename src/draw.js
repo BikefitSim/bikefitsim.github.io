@@ -1,4 +1,4 @@
-/* Geobike drawings: technical side view of a bike over its reference, on the BB grid.
+/* Bikefit Simulator drawings: technical side view of a bike over its reference, on the BB grid.
    All geometry in mm (BB at 0,0, X forward, Y up); SVG y is flipped. Strokes don't scale
    with zoom (vector-effect), text is sized from the screen width the view is designed for. */
 const GBDraw = (() => {

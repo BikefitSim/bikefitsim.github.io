@@ -1,4 +1,4 @@
-# Geobike
+# Bikefit Simulator
 
 Carries a bike fit from a reference bike to other frames. Everything sits on one grid:
 the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in mm.
@@ -48,16 +48,18 @@ so use the data file to move your bikes between it and the published Claude page
 
 ## Where your data is saved
 
-Every change is saved in up to three places, and on load the newest copy wins:
+The app starts with one empty reference bike and one empty target bike. What happens to your numbers depends on where it runs:
 
-1. **This browser** (always).
-2. **Your account**, when the page runs as the published Claude artifact.
-3. **A data file on your computer**, a plain JSON file such as `data/geobike-data.json`.
+- **Opened from your computer** (`dist/geobike-local.html`, or a local server): every change is saved in this browser and comes back next time.
+- **The Claude page:** saved in this browser and in your Claude account.
+- **The public web copy** (GitHub Pages): nothing is kept between visits, so each visitor starts empty. Use the data file to keep your bikes.
 
-The bar under the header handles the data file:
+The bar under the header handles the data file, a plain JSON file such as `data/bikefit-data.json`:
 
-- **Chrome or Edge, opening `dist/geobike-local.html` directly:** "Save to a file" links a file once and every change is written to it. On the next visit, one click on "Reconnect" lets the page keep saving there. "Open data file" loads another file after asking to replace what is on screen.
-- **Anywhere else, including the published page:** "Download data file" saves a copy and "Open data file" loads one.
+- **Chrome or Edge:** "Save to a file" links a file once and every change is written to it. On the next visit, one click on "Reconnect" picks it up again. "Open data file" loads another file after asking to replace what is on screen.
+- **Other browsers:** "Download data file" saves a copy and "Open data file" loads one.
+
+When more than one copy exists, the newest wins on load.
 
 `data/` and `*.geobike.json` are in `.gitignore`, so your own measurements stay out of the repository.
 
