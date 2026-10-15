@@ -31,8 +31,8 @@
   const KIND_LABEL = { bike: 'Bike fit', fit: 'Personal fit' };
   const DEFAULT_NAME = { bike: 'Reference bike', fit: 'Personal fit' }; // new references are numbered from these
   const KIND_NOTE = {
-    bike: 'A bike that fits you now: its geometry and how it is set up.',
-    fit: 'Just your numbers, saddle and hands around the BB centre, with no bike. For when you know your fit but not the bike it came from.',
+    bike: 'A bike that fits you: its geometry and current setup.',
+    fit: 'Your measurements only, no bike. Use it when you know your position but not the bike it came from.',
   };
   // default names from earlier versions, so they read like the new ones
   function newDefaultName(name, kind) {
@@ -125,6 +125,10 @@
   const isLocal = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || location.hostname.endsWith('.localhost');
   const inClaude = !!(window.claude && typeof window.claude.use === 'function');
   const keepInBrowser = isLocal || inClaude;
+  $('saveNotice').hidden = keepInBrowser;
+  $('dataNote').textContent = inClaude ? 'Your bikes are saved to your Claude account and to any file you save.'
+    : isLocal ? 'Nothing you enter is sent to a server. Your bikes stay in this browser and in any file you save.'
+    : 'Nothing you enter is sent to a server or kept after you leave. Save to a file to keep your bikes.';
 
   // Browser copy: { state, savedAt }. Earlier saves stored the bare state, which still loads.
   function loadLocal() {
@@ -278,9 +282,9 @@
   function renderBikeForm() {
     const b = curBike();
     $('bikeForm').innerHTML = `
-      <div class="grp">${nameHTML('bike', b.name)}</div>
-      <div class="grp"><h4>Frame geometry</h4><div class="fields two">${geoFieldsHTML('bike', b)}</div></div>
-      <div class="grp"><h4>Handlebar</h4><div class="fields two">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar this bike will use. 0 for a flat bar.' }, 'bike', b)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, finite(curRef().fit.barWidth) && curRef().fit.barWidth > 0 ? `same: ${curRef().fit.barWidth}` : 'same as reference')}</div></div>
+      <div class="grp ref-name">${nameHTML('bike', b.name)}</div>
+      <div class="grp"><h4>Frame geometry</h4><div class="fields">${geoFieldsHTML('bike', b)}</div></div>
+      <div class="grp"><h4>Handlebar</h4><div class="fields">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar this bike will use. 0 for a flat bar.' }, 'bike', b)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, finite(curRef().fit.barWidth) && curRef().fit.barWidth > 0 ? `same: ${curRef().fit.barWidth}` : 'same as reference')}</div></div>
       <div class="row-actions">
         <button class="btn" type="button" id="dupBike">Copy as new target bike</button>
         <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' disabled title="Keep at least one target bike"' : ''}>Delete target bike</button>
@@ -464,7 +468,7 @@
         </tbody>
       </table>
       ${text}
-      <p>Selected: every target bike in step 2 is set up to match this one.</p>`;
+      <p>Selected: every target bike in step 2 matches this one.</p>`;
   }
 
   function renderBikeOut() {
@@ -509,7 +513,7 @@
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
       <div>
-        <div class="sub-h"><h4>Stem and spacer options</h4><p>Closest combinations from your stems. Hand fwd and hand up are how far each one puts your hands from the target (+ is further forward or higher), and miss is the straight-line distance. Pick one to see it drawn.</p></div>
+        <div class="sub-h"><h4>Stem and spacer options</h4><p>Closest combinations from your stems. Hand fwd and hand up are the offsets from the target (+ is forward or higher); miss is the straight-line distance. Pick one to draw it.</p></div>
         <div class="tbl-wrap">
           <table class="data" id="optTable">
             <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
@@ -634,7 +638,7 @@
   function setSave(kind) {
     const text = {
       loading: 'Loading saved bikes…', example: 'Nothing saved yet', saving: 'Saving…', saved: 'Saved',
-      local: 'Saved in this browser', file: 'Saved to your data file', web: 'Not kept on this site', error: 'Not saved yet, retrying',
+      local: 'Saved in this browser', file: 'Saved to your data file', web: 'Not saved', error: 'Not saved yet, retrying',
     }[kind] || '';
     saveEl.dataset.state = kind; saveEl.textContent = text;
   }
@@ -802,9 +806,9 @@
     } else if (GBFile.canLink() && fileState === 'prompt') {
       html = `<span class="file-status warn">${fileMsg ? `${esc(fileMsg)} ` : ''}<b>${esc(GBFile.name)}</b> needs your permission again to keep saving.</span>${btn('fileReconnect', 'Reconnect')}${btn('fileUnlink', 'Forget this file')}`;
     } else if (GBFile.canLink()) {
-      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : (keepInBrowser ? 'Keep your bikes in a file on this computer as well.' : 'This site does not keep your bikes between visits. Save them to a file to keep them.')}</span>${btn('fileCreate', 'Save to a file')}${btn('fileOpen', 'Open data file')}`;
+      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : (keepInBrowser ? 'Keep your bikes in a file on this computer as well.' : '')}</span>${btn('fileCreate', 'Save to a file')}${btn('fileOpen', 'Open data file')}`;
     } else {
-      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : (keepInBrowser ? 'Keep a copy of your bikes in a file on this computer.' : 'This site does not keep your bikes between visits. Download them to a file to keep them.')}</span>${btn('fileDownload', 'Download data file')}${btn('fileOpen', 'Open data file')}`;
+      html = `<span class="file-status">${fileMsg ? esc(fileMsg) : (keepInBrowser ? 'Keep a copy of your bikes in a file on this computer.' : '')}</span>${btn('fileDownload', 'Download data file')}${btn('fileOpen', 'Open data file')}`;
     }
     el.innerHTML = html;
   }
