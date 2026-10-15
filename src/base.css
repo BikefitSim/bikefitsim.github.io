@@ -56,9 +56,10 @@ button { font: inherit; color: inherit; }
 /* header */
 .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .brand { display: flex; gap: 14px; align-items: center; min-width: 0; }
-.mark { width: 54px; height: 40px; flex: none; }
-.mark .m-tube { stroke: var(--frame); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.mark .m-wheel { stroke: var(--part); stroke-width: 1.6; fill: none; }
+.mark { width: 56px; height: 44px; flex: none; }
+.mark .m-tube { stroke: var(--part); stroke-width: 2.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.mark .m-wheel { stroke: var(--frame); stroke-width: 2.2; fill: none; }
+.mark .m-letter { stroke: var(--ink); stroke-width: 2.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .mark .m-pt { fill: var(--laser); }
 h1 { font-size: 40px; font-weight: 700; letter-spacing: .01em; line-height: 1; }
 .tag { color: var(--ink-2); font-size: 14.5px; max-width: 60ch; margin-top: 4px; }

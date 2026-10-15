@@ -1,4 +1,4 @@
-/* Geobike drawings: technical side view of a bike over its reference, on the BB grid.
+/* Bikefit Simulator drawings: technical side view of a bike over its reference, on the BB grid.
    All geometry in mm (BB at 0,0, X forward, Y up); SVG y is flipped. Strokes don't scale
    with zoom (vector-effect), text is sized from the screen width the view is designed for. */
 const GBDraw = (() => {
@@ -101,7 +101,7 @@ const GBDraw = (() => {
     const B = p.B; const br = Math.max(30, p.barReach);
     const rb = (dx, dy) => v.P({ x: B.x + dx, y: B.y + dy });
     const barD = `M ${v.P(B)} L ${rb(br - 30, 0)} C ${rb(br + 6, 1)} ${rb(br + 14, -38)} ${rb(br + 2, -78)} C ${rb(br - 8, -110)} ${rb(br - 32, -126)} ${rb(br - 66, -124)}`;
-    s += v.path(barD, 'barbody') + v.path(barD, 'bar');
+    if (p.barReach >= 1) s += v.path(barD, 'barbody') + v.path(barD, 'bar'); // reach 0: a flat bar, seen end-on
     s += v.circle(B, 15.9, 'barc');
     // seatpost and saddle
     if (saddle) {
@@ -133,18 +133,19 @@ const GBDraw = (() => {
   /* data: { r (solveBike result + ref, fp), o (chosen option), names: {bike, ref}, show: {ref, dims, grid} } */
   function render(data) {
     const { r, o, show, names } = data;
-    const fp = r.fp; const bike = r.bike; const ref = fp.bike;
+    const fp = r.fp; const bike = r.bike; const ref = fp.bike; // no ref bike for a personal fit
+    const showRef = !!ref && show.ref;
     const sad = fp.saddle; const hand = r.hand || fp.hand;
-    const g = r.drawing; const rg = GB.frameDrawing(ref);
+    const g = r.drawing; const rg = ref ? GB.frameDrawing(ref) : null;
     const bikeCock = o ? Object.assign(GB.barFor(bike, o.angle, o.length, o.spacers), { spacers: o.spacers, barReach: bike.barReach })
       : { Q: add(g.T, GB.steerer(bike.hta).d, 20), B: r.target, spacers: 0, barReach: bike.barReach };
-    const refCock = { Q: fp.stem.Q, B: fp.stem.B, spacers: fp.spacers, barReach: r.ref.fit.barReach };
     const pb = bikeParts(bike, g, sad, bikeCock);
-    const pr = bikeParts(ref, rg, sad, refCock);
+    const pr = ref ? bikeParts(ref, rg, sad, { Q: fp.stem.Q, B: fp.stem.B, spacers: fp.spacers, barReach: r.ref.fit.barReach }) : null;
 
     /* ---------- main view ---------- */
-    const minX = Math.min(g.rear.x, rg.rear.x) - TYRE_R - 40;
-    const maxX = Math.max(g.front.x, rg.front.x) + TYRE_R + 40;
+    const frames = rg ? [g, rg] : [g];
+    const minX = Math.min(...frames.map((q) => q.rear.x)) - TYRE_R - 40;
+    const maxX = Math.max(...frames.map((q) => q.front.x)) + TYRE_R + 40;
     const minY = g.groundY - 40;
     const maxY = Math.max(sad.y, hand.y) + 110;
     const vb = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
@@ -153,12 +154,14 @@ const GBDraw = (() => {
     if (show.grid) m += grid(v, 50);
     m += v.line({ x: minX + 10, y: g.groundY }, { x: maxX - 10, y: g.groundY }, 'ground');
     m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -(bike.forkA2C + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
-    if (show.ref) m += drawBike(v, 'rf', rg, pr, sad);
+    if (showRef) m += drawBike(v, 'rf', rg, pr, sad);
     m += drawBike(v, 'bk', g, pb, sad);
+    // a personal fit's saddle height: the straight line from the BB to the saddle tip
+    if (!ref) m += v.dim({ x: 0, y: 0 }, sad, 0, `BB to saddle tip ${n0(Math.hypot(sad.x, sad.y))}`, { key: 'height', cls: 'dim rfd', ext: false, labelOff: 8 });
     m += v.target(sad) + v.target(hand);
     if (show.dims) {
       const hl = fp.half > 0 ? ` (${n0(r.reachH)} side view)` : '';
-      m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text({ x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 }, `Rider reach ${n0(r.ref.fit.riderReach)}${hl}`, 'dt', { dy: -7, rot: Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI })}</g>`;
+      m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text({ x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 }, `Personal reach ${n0(fp.riderReach)}${hl}`, 'dt', { dy: -7, rot: Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI })}</g>`;
       // saddle height along this bike's seat tube, offset behind it
       m += v.dim({ x: 0, y: 0 }, pb.axisAt(sad.y), 30, `Saddle height ${n0(r.heightAlong)}`, { key: 'height' });
       // setback: plumb line from the saddle tip, measured at BB height
@@ -176,7 +179,8 @@ const GBDraw = (() => {
     m += '</svg>';
 
     /* ---------- front end close-up ---------- */
-    const fpts = [pb.T, pr.T, pb.stemTop, pr.stemTop, pb.B, pr.B, hand, { x: pb.B.x + pb.barReach, y: pb.B.y }, { x: pr.B.x + pr.barReach, y: pr.B.y }];
+    const fpts = [pb.T, pb.stemTop, pb.B, hand, { x: pb.B.x + pb.barReach, y: pb.B.y }];
+    if (pr) fpts.push(pr.T, pr.stemTop, pr.B, { x: pr.B.x + pr.barReach, y: pr.B.y });
     const fx0 = Math.min(...fpts.map((q) => q.x)) - 70; const fx1 = Math.max(...fpts.map((q) => q.x)) + 45;
     const fy0 = Math.min(...fpts.map((q) => q.y)) - 70; const fy1 = Math.max(...fpts.map((q) => q.y)) + 50;
     const fw = Math.max(fx1 - fx0, (fy1 - fy0) * 1.25);
@@ -197,19 +201,19 @@ const GBDraw = (() => {
       const B = p.B; const br = Math.max(30, p.barReach);
       const rb = (dx, dy) => vv.P({ x: B.x + dx, y: B.y + dy });
       const barD = `M ${vv.P(B)} L ${rb(br - 30, 0)} C ${rb(br + 6, 1)} ${rb(br + 14, -38)} ${rb(br + 2, -78)}`;
-      s += vv.path(barD, 'barbody') + vv.path(barD, 'bar');
+      if (p.barReach >= 1) s += vv.path(barD, 'barbody') + vv.path(barD, 'bar');
       s += vv.circle(B, 15.9, 'barc') + vv.circle(frame.T, 2.4 * vv.k, 'joint');
       return s + '</g>';
     };
-    if (show.ref) f += frontOnly(fv, 'rf', rg, pr);
+    if (showRef) f += frontOnly(fv, 'rf', rg, pr);
     f += frontOnly(fv, 'bk', g, pb);
     f += fv.target(hand, 12);
     if (show.dims) {
-      if (show.ref && pr.spacers > 0.5) f += fv.dim(pr.T, pr.spTop, 26, `${n0(pr.spacers)}`, { key: 'spacers', cls: 'dim rfd' });
-      if (pb.spacers > 0.5) f += fv.dim(pb.T, pb.spTop, show.ref ? 46 : 26, `${n0(pb.spacers)}`, { key: 'spacers' });
+      if (showRef && pr.spacers > 0.5) f += fv.dim(pr.T, pr.spTop, 26, `${n0(pr.spacers)}`, { key: 'spacers', cls: 'dim rfd' });
+      if (pb.spacers > 0.5) f += fv.dim(pb.T, pb.spTop, showRef ? 46 : 26, `${n0(pb.spacers)}`, { key: 'spacers' });
       const stemLbl = (p, opt, cls, dyPx) => fv.text({ x: (p.Q.x + p.B.x) / 2, y: (p.Q.y + p.B.y) / 2 }, opt, `dt ${cls}`, { dy: dyPx, key: 'stem' });
       if (o) f += stemLbl(pb, `${o.length} mm ${o.angle > 0 ? '+' : o.angle < 0 ? MINUS : ''}${Math.abs(o.angle)}°`, 'bkt', -12);
-      if (show.ref) {
+      if (showRef) {
         const rs = { length: Math.round(fp.stem.length), angle: Math.round(fp.stem.angle * 2) / 2 };
         f += stemLbl(pr, `${rs.length} mm ${rs.angle > 0 ? '+' : rs.angle < 0 ? MINUS : ''}${Math.abs(rs.angle)}°`, 'rft', 20);
       }
@@ -233,16 +237,16 @@ const GBDraw = (() => {
       t += vv.poly([{ x: p.clamp.x - 14, y: p.railY + 4 }, { x: p.clamp.x + 14, y: p.railY + 4 }, { x: p.clamp.x + 14, y: p.railY - 6 }, { x: p.clamp.x - 14, y: p.railY - 6 }], 'clamp');
       return t + '</g>';
     };
-    s += `<g class="axes">${sv.line(pb.axisAt(pb.railY - 140), pb.axisAt(sad.y + 40), 'saxis')}${show.ref ? sv.line(pr.axisAt(pr.railY - 140), pr.axisAt(sad.y + 40), 'saxis rfa') : ''}</g>`;
+    s += `<g class="axes">${sv.line(pb.axisAt(pb.railY - 140), pb.axisAt(sad.y + 40), 'saxis')}${showRef ? sv.line(pr.axisAt(pr.railY - 140), pr.axisAt(sad.y + 40), 'saxis rfa') : ''}</g>`;
     {
       const L = 265; const sh = (dx, dy) => sv.P({ x: sad.x + dx, y: sad.y + dy });
       s += `<g class="bike sdl">${sv.path(`M ${sh(2, -7)} Q ${sh(-6, 1)} ${sh(-50, 0)} L ${sh(-L + 45, 5)} Q ${sh(-L + 2, 8)} ${sh(-L, -10)} L ${sh(-L + 28, -26)} L ${sh(-60, -17)} Z`, 'saddle')}${sv.path(`M ${sh(-48, -15)} L ${sv.P({ x: sad.x - 185, y: pb.railY })} L ${sv.P({ x: sad.x - 85, y: pb.railY })} Z`, 'rail')}</g>`;
     }
-    if (show.ref) s += saddleOnly(sv, 'rf', pr);
+    if (showRef) s += saddleOnly(sv, 'rf', pr);
     s += saddleOnly(sv, 'bk', pb);
     s += sv.target(sad, 12);
     if (show.dims) {
-      if (show.ref && Math.abs(r.railMove) >= 0.5) {
+      if (showRef && r.railMove != null && Math.abs(r.railMove) >= 0.5) {
         const a = { x: pr.clamp.x, y: pb.railY }; const b = { x: pb.clamp.x, y: pb.railY };
         s += sv.dim(a.x < b.x ? a : b, a.x < b.x ? b : a, -28, `${n0(Math.abs(r.railMove))} mm ${r.railMove > 0 ? 'forward' : 'back'} on rails`, { key: 'setback' });
       }
