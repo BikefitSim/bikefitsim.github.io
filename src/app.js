@@ -584,7 +584,7 @@
 
   /* ---------- drawings ---------- */
   const LAYER_KEY = 'geobike.layers';
-  let layers = { ref: true, dims: true, grid: true };
+  let layers = { ref: true, ground: false, dims: true, grid: true };
   try { const l = JSON.parse(localStorage.getItem(LAYER_KEY) || 'null'); if (l && typeof l === 'object') layers = Object.assign(layers, l); } catch (e) { /* defaults */ }
   function renderViz() {
     const el = $('vizWrap');
@@ -602,10 +602,10 @@
           <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle tip'}</span>
           <span class="lg"><i class="tg"></i>Saddle tip and hand position</span>
         </div>
-        <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
+        <div class="toggles">${hasBike ? tog('ref', 'Reference bike') + tog('ground', 'Align to ground') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
       <div class="viz">
-        <figure class="draw">${svg.main}<figcaption>Side view on the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
+        <figure class="draw">${svg.main}<figcaption>Side view on the BB grid. Squares are 50 mm; labels every 200 mm.${hasBike && layers.ref && layers.ground ? ' Reference bike moved to stand on the same ground.' : ''}</figcaption></figure>
         <div class="viz-side">
           <figure class="draw">${svg.front}<figcaption>Front end close-up, 10 mm squares</figcaption></figure>
           <figure class="draw">${svg.saddle}<figcaption>Saddle close-up, 10 mm squares</figcaption></figure>
