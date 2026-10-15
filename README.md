@@ -14,6 +14,7 @@ the bottom bracket centre is (0, 0), X points forward, Y points up, lengths in m
 | `src/engine.js` | All the maths: stack and reach from the tubes, fit points, stem and spacer search, saddle position. No DOM, runs in Node. |
 | `src/draw.js` | Side view and close-up drawings (SVG). |
 | `src/app.js` | Page logic: inputs, results, summary, saving, dark mode. |
+| `src/datafile.js` | Saving to and opening a data file on your computer. |
 | `src/base.css`, `src/body.html` | Styles and page layout. |
 | `test/engine.test.js` | Checks for the engine. |
 | `docs/model.md` | The calculation model and its formulas. |
@@ -32,8 +33,30 @@ Open `dist/geobike-local.html` in a browser to try changes. It saves in that bro
 `dist/geobike.html` is the version published as the Claude artifact (the host adds `<html>` and `<head>`).
 To publish a change, ask Claude in the linked chat to republish from this folder; the link stays the same.
 
-## Saved data
+## GitHub Pages
 
-The published page saves your bikes in your Claude account (`data/users/<you>/garage3`) and in the browser.
-A local copy starts with the example numbers and keeps its own data in that browser.
-The saved shape is version 3 and only ever gains fields, so older saves keep loading.
+Every push to `main` runs `.github/workflows/pages.yml`: it runs the engine checks, builds the page and publishes it at
+**https://zemiguelmoreira.github.io/geobike/**.
+
+One-time setup on GitHub: **Settings > Pages > Build and deployment > Source: GitHub Actions**.
+Pages is free for public repositories; a private one needs a paid plan.
+
+The Pages copy saves in the browser and, in Chrome or Edge, to a linked data file. It has no account saving,
+so use the data file to move your bikes between it and the published Claude page.
+
+## Where your data is saved
+
+Every change is saved in up to three places, and on load the newest copy wins:
+
+1. **This browser** (always).
+2. **Your account**, when the page runs as the published Claude artifact.
+3. **A data file on your computer**, a plain JSON file such as `data/geobike-data.json`.
+
+The bar under the header handles the data file:
+
+- **Chrome or Edge, opening `dist/geobike-local.html` directly:** "Save to a file" links a file once and every change is written to it. On the next visit, one click on "Reconnect" lets the page keep saving there. "Open data file" loads another file after asking to replace what is on screen.
+- **Anywhere else, including the published page:** "Download data file" saves a copy and "Open data file" loads one.
+
+`data/` and `*.geobike.json` are in `.gitignore`, so your own measurements stay out of the repository.
+
+The saved shape is version 3 and only ever gains fields, so older saves and files keep loading.
