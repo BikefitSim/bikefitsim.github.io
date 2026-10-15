@@ -169,7 +169,8 @@ const GBDraw = (() => {
       m += `<g class="dim" data-dim="setback">${v.line(sad, { x: sad.x, y: -44 * v.k }, 'plumb')}</g>`;
       m += v.dim({ x: sad.x, y: 0 }, { x: 0, y: 0 }, -40, `Setback ${n0(-sad.x)}`, { key: 'setback', ext: false });
       // hand position on the grid, next to its X
-      m += v.text(hand, `Hand ${n0(hand.x)}, ${n0(hand.y)}`, 'dt tl', { dx: 12, dy: 18, anchor: 'start', key: 'hand' });
+      m += v.text(hand, `Hand ${n0(hand.x)}, ${n0(hand.y)}`, 'dt', { dx: 12, dy: 18, anchor: 'start', key: 'hand' });
+      m += v.text(sad, `Saddle tip ${n0(sad.x)}, ${n0(sad.y)}`, 'dt', { dx: -14, dy: -14, anchor: 'end' });
       // drop from saddle top to the top of the bar
       m += v.dim({ x: hand.x + 70, y: sad.y }, { x: hand.x + 70, y: hand.y }, 0, `Drop ${n0(sad.y - hand.y)}`, { key: 'drop', anchor: 'middle', labelOff: 14 });
       m += `<g class="dim" data-dim="drop">${v.line({ x: sad.x + 10, y: sad.y }, { x: hand.x + 80, y: sad.y }, 'ext lvl')}</g>`;
@@ -216,7 +217,7 @@ const GBDraw = (() => {
         const rs = { length: Math.round(fp.stem.length), angle: Math.round(fp.stem.angle * 2) / 2 };
         f += stemLbl(pr, `${rs.length} mm ${rs.angle > 0 ? '+' : rs.angle < 0 ? MINUS : ''}${Math.abs(rs.angle)}°`, 'rft', 20);
       }
-      f += fv.text(hand, 'Hand', 'dt tl', { dy: -16 });
+      f += fv.text(hand, 'Hand', 'dt', { dy: -16 });
       f += fv.text(pb.T, 'HT top', 'dt', { dx: 10, dy: 14, anchor: 'start' });
     }
     f += '</svg>';
@@ -250,7 +251,7 @@ const GBDraw = (() => {
         s += sv.dim(a.x < b.x ? a : b, a.x < b.x ? b : a, -28, `${n0(Math.abs(r.railMove))} mm ${r.railMove > 0 ? 'forward' : 'back'} on rails`, { key: 'setback' });
       }
       s += sv.dim(pb.axisAt(sad.y), sad, 18, `${n0(Math.abs(r.noseAhead))} to seat-tube line`, { key: 'setback' });
-      s += sv.text(sad, 'Saddle tip', 'dt tl', { dy: -16 });
+      s += sv.text(sad, 'Saddle tip', 'dt', { dy: -16 });
     }
     s += '</svg>';
     return { main: m, front: f, saddle: s };
