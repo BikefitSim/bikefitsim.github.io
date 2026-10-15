@@ -133,7 +133,7 @@ const GBDraw = (() => {
   /* data: { r (solveBike result + ref, fp), o (chosen option), names: {bike, ref}, show: {ref, dims, grid} } */
   function render(data) {
     const { r, o, show, names } = data;
-    const fp = r.fp; const bike = r.bike; const ref = fp.bike; // no ref bike for a fit reference
+    const fp = r.fp; const bike = r.bike; const ref = fp.bike; // no ref bike for a personal fit
     const showRef = !!ref && show.ref;
     const sad = fp.saddle; const hand = r.hand || fp.hand;
     const g = r.drawing; const rg = ref ? GB.frameDrawing(ref) : null;
@@ -156,7 +156,7 @@ const GBDraw = (() => {
     m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -(bike.forkA2C + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
     if (showRef) m += drawBike(v, 'rf', rg, pr, sad);
     m += drawBike(v, 'bk', g, pb, sad);
-    // a fit reference's saddle height: the straight line from the BB to the saddle tip
+    // a personal fit's saddle height: the straight line from the BB to the saddle tip
     if (!ref) m += v.dim({ x: 0, y: 0 }, sad, 0, `BB to saddle tip ${n0(Math.hypot(sad.x, sad.y))}`, { key: 'height', cls: 'dim rfd', ext: false, labelOff: 8 });
     m += v.target(sad) + v.target(hand);
     if (show.dims) {

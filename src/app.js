@@ -16,19 +16,32 @@
 
   const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'seatTube', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach'];
   const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, seatTube: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null };
-  /* Two kinds of reference. A bike reference is a frame plus how it is set up (saddle, spacers,
-     stem, bar); a fit reference is only the rider's numbers (saddle height as a straight line to
-     the saddle tip, setback, personal reach, drop, bar width). Both keep their numbers in `fit`. */
+  /* Two kinds of reference, each with its own tab. A bike fit (kind 'bike') is a frame plus how
+     it is set up (saddle, spacers, stem, bar); a personal fit (kind 'fit') is only the rider's
+     numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
+     bar width). Both keep their numbers in `fit`. There is always at least one of each. */
   const BLANK_FIT = () => ({
     saddleHeight: null, saddleLine: null, setback: null, handFrom: 'stem', riderReach: null, drop: null,
     stemLength: null, stemAngle: null, barWidth: null, spacers: null, barReach: null,
   });
   const blankRef = (kind, id, name) => Object.assign({ id, name, kind }, BLANK_GEO, { fit: BLANK_FIT() });
   const isFitRef = (r) => r.kind === 'fit';
+  const KINDS = ['bike', 'fit'];
+  const KIND_LABEL = { bike: 'Bike fit', fit: 'Personal fit' };
+  const KIND_NOTE = {
+    bike: 'A bike that fits you now: its geometry and how it is set up.',
+    fit: 'Just your numbers, saddle and hands around the BB centre, with no bike. For when you know your fit but not the bike it came from.',
+  };
+  // default names from earlier versions, so they read like the new ones
+  function newDefaultName(name, kind) {
+    const m = /^(?:Bike reference|Reference bike|Fit reference) (\d+)$/.exec(String(name || ''));
+    return m ? `${KIND_LABEL[kind]} ${m[1]}` : name;
+  }
   const BLANK = () => ({
     v: 3,
     example: true, // nothing entered yet
-    refs: [blankRef('bike', 'r1', 'Bike reference 1')],
+    refs: [blankRef('bike', 'r1', 'Bike fit 1'), blankRef('fit', 'r2', 'Personal fit 1')],
+    lastRef: { bike: 'r1', fit: 'r2' }, // the one last open in each tab
     opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, maxSpacers: 40 },
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' })],
     selected: 'b1',
@@ -54,10 +67,12 @@
       // and before the stem could be entered, the hands always came from personal reach and drop
       if (!('handFrom' in fitIn)) fit.handFrom = 'reach';
       const known = r.kind === 'bike' || r.kind === 'fit';
-      const o = Object.assign({}, refT, r, { id: String(r.id || uid('r')), kind: known ? r.kind : 'bike', fit });
+      const kind = known ? r.kind : 'bike';
+      const o = Object.assign({}, refT, r, { id: String(r.id || uid('r')), kind, name: newDefaultName(r.name || refT.name, kind), fit });
       if (!known) stemFromReach(o);
       return o;
     });
+    for (const k of KINDS) if (!out.refs.some((r) => r.kind === k)) out.refs.push(blankRef(k, uid('r'), `${KIND_LABEL[k]} 1`));
     out.opts = Object.assign({}, base.opts, isObj(s.opts) ? s.opts : {});
     const ids = new Set(out.refs.map((r) => r.id));
     const bikeT = Object.assign({}, base.bikes[0], { name: 'Target bike', pick: '' });
@@ -69,9 +84,16 @@
     if (!out.bikes.length) out.bikes = [newBikeFrom(out.refs[0], 'Target bike 1')];
     out.selected = out.bikes.some((b) => b.id === s.selected) ? s.selected : out.bikes[0].id;
     out.selectedRef = ids.has(s.selectedRef) ? s.selectedRef : out.refs[0].id;
+    const lastIn = isObj(s.lastRef) ? s.lastRef : {};
+    out.lastRef = {};
+    for (const k of KINDS) {
+      const ok = out.refs.find((r) => r.kind === k && r.id === lastIn[k]);
+      out.lastRef[k] = (ok || out.refs.find((r) => r.kind === k)).id;
+    }
+    out.lastRef[out.refs.find((r) => r.id === out.selectedRef).kind] = out.selectedRef;
     return out;
   }
-  /* References saved before the two kinds existed are bike references. Those that gave the hands
+  /* References saved before the two kinds existed are bike fits. Those that gave the hands
      by personal reach and drop get the stem those numbers imply on their frame (to 0.1 mm and
      0.1°, so the hands stay put), flagged until the stem actually fitted is entered. */
   function stemFromReach(o) {
@@ -201,20 +223,30 @@
   const refOf = (b) => state.refs.find((r) => r.id === b.refId) || state.refs[0];
   const refName = (r) => r.name || 'Untitled reference';
 
-  const kindName = (r) => (isFitRef(r) ? 'fit reference' : 'bike reference');
+  const kindName = (r) => KIND_LABEL[r.kind].toLowerCase();
+  const ofKind = (k) => state.refs.filter((r) => r.kind === k);
+  function selectRef(id) {
+    const r = state.refs.find((x) => x.id === id);
+    if (!r) return;
+    state.selectedRef = id;
+    if (!isObj(state.lastRef)) state.lastRef = {};
+    state.lastRef[r.kind] = id;
+  }
   function renderRefTabs() {
-    $('refTabs').innerHTML = state.refs.map((r) => `<button class="tab" role="tab" type="button" data-reftab="${esc(r.id)}" aria-selected="${r.id === state.selectedRef}">${esc(refName(r))}<span class="kind">${isFitRef(r) ? 'fit' : 'bike'}</span></button>`).join('')
-      + '<button class="tab add" type="button" id="addRef">+ Bike reference</button><button class="tab add" type="button" id="addFitRef">+ Fit reference</button>';
+    const kind = curRef().kind;
+    $('refKinds').innerHTML = KINDS.map((k) => `<button class="kind-tab" role="tab" type="button" data-refkind="${k}" aria-selected="${k === kind}">${KIND_LABEL[k]}<span class="n">${ofKind(k).length}</span></button>`).join('');
+    $('refKindNote').textContent = KIND_NOTE[kind];
+    $('refTabs').setAttribute('aria-label', `${KIND_LABEL[kind]}s`);
+    $('refTabs').innerHTML = ofKind(kind).map((r) => `<button class="tab" role="tab" type="button" data-reftab="${esc(r.id)}" aria-selected="${r.id === state.selectedRef}">${esc(refName(r))}</button>`).join('')
+      + `<button class="tab add" type="button" id="addRef" data-kind="${kind}">+ Add ${kindName(curRef())}</button>`;
   }
   function renderRefForm() {
     const r = curRef();
     const fields = (list) => list.map((f) => fieldHTML(f, 'fit', r.fit)).join('');
     if (isFitRef(r)) {
       $('refForm').innerHTML = `
-        <h4>Fit reference</h4>
-        ${nameHTML('ref', r.name)}
-        <p class="note">Your position without a bike: where the saddle tip and your hands sit around the BB centre. Use it when you know your numbers but not the bike they came from.</p>
         <h4>Saddle</h4>
+        ${nameHTML('ref', r.name)}
         <div class="fields two">${fields(FIT_SADDLE_FIELDS)}</div>`;
       $('fitHead').textContent = 'Hands';
       $('fitFields').innerHTML = fields(FIT_HAND_FIELDS);
@@ -227,9 +259,10 @@
       $('fitHead').textContent = 'Saddle and cockpit on this bike';
       $('fitFields').innerHTML = fields(BIKE_FIT_FIELDS);
     }
+    const last = ofKind(r.kind).length < 2;
     $('refActions').innerHTML = `
       <button class="btn" type="button" id="dupRef">Copy as new ${kindName(r)}</button>
-      <button class="btn danger" type="button" id="delRef"${state.refs.length < 2 ? ' disabled title="Keep at least one reference"' : ''}>Delete ${kindName(r)}</button>`;
+      <button class="btn danger" type="button" id="delRef"${last ? ` disabled title="Keep at least one ${kindName(r)}"` : ''}>Delete ${kindName(r)}</button>`;
   }
   function renderOptFields() {
     $('optFields').innerHTML = OPT_FIELDS.map((f) => fieldHTML(f, 'opts', state.opts)).join('');
@@ -401,14 +434,14 @@
       text = `
       <p class="implied">Your saddle tip sits <b>${n0(Math.abs(saddle.x))} mm</b> ${saddle.x <= 0 ? 'behind' : 'ahead of'} and <b>${n0(saddle.y)} mm</b> above the BB.</p>
       <p>${halfW > 0 ? `Personal reach ${n1(riderReach)} mm, taped out to the side of a ${n0(f.barWidth)} mm bar, is <b>${n1(reachH)} mm</b> in side view` : `Handlebar width is 0, so personal reach is read as a side-view distance, <b>${n1(reachH)} mm</b>. If you taped it to your hand at the side of the bar, enter the bar width`}. With ${n1(drop)} mm of drop, that places your hands.</p>
-      <p>No bike here, so each target bike gets its full setup rather than changes from a reference bike.</p>`;
+      <p>No bike here, so each target bike gets its full setup rather than changes from another bike.</p>`;
     } else {
       const stem = m.fp.stem;
       text = `
       <p class="implied">This ${n1(stem.length)} mm stem at ${angTxt(stem.angle)} with ${n1(f.spacers)} mm of spacers puts your hands <b>${n0(reachH)} mm</b> ahead of the saddle tip and <b>${n0(Math.abs(drop))} mm</b> ${drop >= 0 ? 'below' : 'above'} the saddle top.</p>
       <p>Your fit on this bike: personal reach <b>${n1(riderReach)} mm</b>${halfW > 0 ? ` to the side of a ${n0(f.barWidth)} mm bar` : ''}, handlebar drop <b>${n1(drop)} mm</b>, and the saddle tip <b>${n1(Math.hypot(saddle.x, saddle.y))} mm</b> from the BB in a straight line.</p>
       ${f.stemImplied ? '<p class="warn">This stem was worked out from the personal reach and drop saved earlier. Enter the stem actually fitted on this bike.</p>' : ''}
-      <div class="row-actions"><button class="btn" type="button" id="toFitRef">Copy as fit reference</button></div>`;
+      <div class="row-actions"><button class="btn" type="button" id="toFitRef">Copy as personal fit</button></div>`;
     }
     el.innerHTML = `
       <h3>Fit points</h3>
@@ -439,7 +472,7 @@
     }
     const fit = r.ref.fit;
     const o = chosenFor(b, r);
-    const hasBike = !!r.fp.bike; // a fit reference has no bike to compare with
+    const hasBike = !!r.fp.bike; // a personal fit has no bike to compare with
     const dH = hasBike ? r.heightAlong - fit.saddleHeight : 0;
     const checks = r.checks.slice();
     if (o && o.err <= 5 && !checks.some((c) => c.level === 'bad')) checks.unshift({ level: 'ok', text: `This frame can carry the fit of ${refName(r.ref)}. Hand position ${missTxt(o)}${o.err >= 1 ? ' of the target' : ''}.` });
@@ -692,7 +725,9 @@
   const timeNow = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   function summarize(s) {
     const n = normalize(s);
-    return `${n.refs.length} reference${n.refs.length === 1 ? '' : 's'} and ${n.bikes.length} target bike${n.bikes.length === 1 ? '' : 's'}`;
+    const filled = (r) => Object.values(r.fit).some(finite) || GEO_KEYS.some((k) => finite(r[k]));
+    const count = (k, word) => { const c = n.refs.filter((r) => r.kind === k && filled(r)).length; return `${c} ${word}${c === 1 ? '' : 's'}`; };
+    return `${count('bike', 'bike fit')}, ${count('fit', 'personal fit')} and ${n.bikes.length} target bike${n.bikes.length === 1 ? '' : 's'}`;
   }
   async function writeFile() {
     if (fileState !== 'linked') return;
@@ -860,8 +895,8 @@
       newRef.fit = Object.assign(BLANK_FIT(), fit, { handFrom: 'reach' });
       stemFromReach(newRef);
       const nf = newRef.fit;
-      notes.push(`${newRef.name} is now a bike reference. Its hand position was converted from the old hood measurements into ${n1(nf.spacers)} mm of spacers${nf.stemLength != null ? ` and a ${n1(nf.stemLength)} mm stem at ${angTxt(nf.stemAngle)}` : ''}. Replace them with what is fitted on the bike.`);
-    } else notes.push(`${newRef.name} is now a bike reference, but its setup could not be converted. Enter it again in step 1.`);
+      notes.push(`${newRef.name} is now a bike fit. Its hand position was converted from the old hood measurements into ${n1(nf.spacers)} mm of spacers${nf.stemLength != null ? ` and a ${n1(nf.stemLength)} mm stem at ${angTxt(nf.stemAngle)}` : ''}. Replace them with what is fitted on the bike.`);
+    } else notes.push(`${newRef.name} is now a bike fit, but its setup could not be converted. Enter it again in step 1.`);
     const rest = oldBikes.filter((b) => b !== refB).map((b) => Object.assign(mapOldBike(b), { id: uid(), refId: newRef.id, barReach: finite(b.barReach) ? b.barReach : newRef.fit.barReach, pick: '' }));
     if (replace) {
       state.refs = [newRef];
@@ -875,7 +910,7 @@
       state.bikes.push(...rest);
       if (rest.length) notes.push(`${rest.length} target bike${rest.length === 1 ? '' : 's'} added to step 2.`);
     }
-    state.selectedRef = newRef.id;
+    selectRef(newRef.id);
     if (rest.length) state.selected = rest[0].id;
     else if (!state.bikes.some((b) => b.id === state.selected)) state.selected = state.bikes[0].id;
     state.importV2Done = true;
@@ -985,10 +1020,16 @@
       return;
     }
     const rtab = e.target.closest('[data-reftab]');
-    if (rtab) {
-      state.selectedRef = rtab.dataset.reftab;
+    const rkind = e.target.closest('[data-refkind]');
+    if (rtab || rkind) {
+      // a kind tab opens the one last used in it; every target bike follows what is open
+      if (rtab) selectRef(rtab.dataset.reftab);
+      else {
+        const k = rkind.dataset.refkind;
+        selectRef(ofKind(k).some((r) => r.id === state.lastRef[k]) ? state.lastRef[k] : ofKind(k)[0].id);
+      }
       renderRefTabs(); renderRefForm(); renderOutputs();
-      if (rtab.closest('#cmp')) $('refTabs').scrollIntoView({ behavior: smooth(), block: 'start' });
+      if (rtab && rtab.closest('#cmp')) $('refKinds').scrollIntoView({ behavior: smooth(), block: 'start' });
       saveLocal();
       return;
     }
@@ -1000,35 +1041,34 @@
       saveLocal();
       return;
     }
-    const addKind = e.target.closest('#addRef') ? 'bike' : e.target.closest('#addFitRef') ? 'fit' : '';
+    const addR = e.target.closest('#addRef'); const addKind = addR ? addR.dataset.kind : '';
     const dupR = e.target.closest('#dupRef'); const toFit = e.target.closest('#toFitRef');
     if (addKind || dupR || toFit) {
       const src = curRef();
       let made;
       if (addKind) {
-        const n = state.refs.filter((x) => isFitRef(x) === (addKind === 'fit')).length + 1;
-        made = blankRef(addKind, uid('r'), `${addKind === 'fit' ? 'Fit' : 'Bike'} reference ${n}`);
+        made = blankRef(addKind, uid('r'), `${KIND_LABEL[addKind]} ${ofKind(addKind).length + 1}`);
       } else if (dupR) {
         made = Object.assign(clone(src), { id: uid('r'), name: `${refName(src)} copy` });
       } else {
         // the fit this bike gives, kept as the rider's own numbers
         const fp = model && model.refs[src.id] && model.refs[src.id].fp;
         if (!fp) return;
-        made = blankRef('fit', uid('r'), `${refName(src)} fit`);
+        made = blankRef('fit', uid('r'), `From ${refName(src)}`);
         Object.assign(made.fit, { saddleLine: r1(Math.hypot(fp.saddle.x, fp.saddle.y)), setback: src.fit.setback, riderReach: r1(fp.riderReach), drop: r1(fp.drop), barWidth: src.fit.barWidth });
       }
-      state.refs.push(made); state.selectedRef = made.id;
+      state.refs.push(made); selectRef(made.id);
       renderAll(); scheduleSave();
       $('ref-name').focus(); $('ref-name').select();
       return;
     }
     const delR = e.target.closest('#delRef');
-    if (delR && state.refs.length > 1) {
+    if (delR && ofKind(curRef().kind).length > 1) {
       if (!armed(delR, 'Click again to delete', `Delete ${kindName(curRef())}`)) return;
-      const gone = state.selectedRef;
+      const gone = state.selectedRef; const kind = curRef().kind;
       state.refs = state.refs.filter((r) => r.id !== gone);
       for (const b of state.bikes) if (b.refId === gone) b.refId = state.refs[0].id;
-      state.selectedRef = state.refs[0].id;
+      selectRef(ofKind(kind)[0].id);
       renderAll(); scheduleSave();
       return;
     }

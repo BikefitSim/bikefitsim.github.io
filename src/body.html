@@ -22,7 +22,18 @@ body.loading .f-in { opacity: .55; }
 .out-sub { font-size: 13.5px; color: var(--ink-2); margin-top: -10px; }
 .cmp tr.match td { font-size: 13px; color: var(--ink-2); }
 .cmp th.refcol .tab { color: var(--ink-2); }
-.tab .kind { font: 500 10.5px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); margin-left: 6px; vertical-align: 1px; }
+.kinds-row { display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap; }
+.kinds { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; padding: 3px; gap: 3px; background: var(--well); }
+.kind-tab { border: 0; border-radius: 4px; background: none; cursor: pointer; padding: 7px 16px; white-space: nowrap; font: 600 17px var(--display); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+.kind-tab:hover { color: var(--ink); }
+.kind-tab[aria-selected="true"] { background: var(--sheet); color: var(--ink); box-shadow: 0 0 0 1px var(--rule), inset 0 -3px 0 var(--part); }
+.kind-tab .n { font: 500 11px var(--mono); color: var(--ink-2); margin-left: 7px; vertical-align: 2px; }
+.kind-note { font-size: 13px; color: var(--ink-2); max-width: 70ch; }
+@media (prefers-reduced-motion: no-preference) { .kind-tab { transition: color .15s, background-color .15s; } }
+.credits { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 26px; padding: 4px 4px 0; }
+.credits h2 { font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+.credits p { font-size: 13px; color: var(--ink-2); max-width: 62ch; }
+.credits a { color: var(--frame); }
 .limits { border-top: 1px solid var(--rule-2); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; }
 .limits h4 { font-size: 15px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .limits ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
@@ -101,16 +112,10 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
 <div class="page">
   <header class="top">
     <div class="brand">
-      <svg class="mark" viewBox="0 0 54 40" aria-hidden="true">
-        <circle class="m-wheel" cx="11" cy="28" r="10"></circle>
-        <circle class="m-wheel" cx="43" cy="28" r="10"></circle>
-        <path class="m-tube" d="M11 28 L24 28 L19 11 L38 13 L24 28 M38 13 L43 28 M19 11 L11 28"></path>
-        <circle class="m-pt" cx="17" cy="7" r="2.6"></circle>
-        <circle class="m-pt" cx="42" cy="9" r="2.6"></circle>
-      </svg>
+      <svg class="mark" viewBox="0 0 72 44" role="img" aria-label="Bikefit Simulator logo: B and S in the wheels of a bike"><circle class="m-wheel" cx="15.0" cy="26.0" r="12.5"></circle><circle class="m-wheel" cx="57.0" cy="26.0" r="12.5"></circle><path class="m-tube" d="M27.5 27.0 L34.0 27.5 L28.0 9.0 M23.8 17.2 L29.0 12.0 M28.0 9.0 L48.0 9.5 L50.2 15.2 L34.0 27.5 M50.2 15.2 L50.3 15.4 M23.8 7.4 H31.4 M48.0 9.5 L53.2 8.5"></path><path class="m-letter" d="M11.4 19.5 V32.5 M11.4 19.5 H15.4 a3.05 3.05 0 0 1 0 6.1 H11.4 M11.4 25.6 H15.9 a3.45 3.45 0 0 1 0 6.9 H11.4"></path><path class="m-letter" d="M60.9 21.4 C60.1 19.9 58.6 19.4 57.1 19.4 C54.8 19.4 53.3 20.8 53.3 22.6 C53.3 26.6 61.0 25.0 61.0 29.3 C61.0 31.3 59.3 32.6 56.9 32.6 C55.1 32.6 53.6 31.9 52.8 30.4"></path><circle class="m-pt" cx="31.4" cy="7.4" r="2.4"></circle><circle class="m-pt" cx="53.2" cy="8.5" r="2.4"></circle></svg>
       <div>
         <h1>Bikefit Simulator</h1>
-        <p class="tag">Simulate the perfect bikefit on any bike</p>
+        <p class="tag">Achieve the perfect fit on any bike</p>
       </div>
     </div>
     <div class="top-right">
@@ -127,9 +132,13 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
   <section class="sheet" aria-labelledby="refTitle">
     <div class="sec-head">
       <span class="step">1</span><h2 id="refTitle">Reference</h2>
-      <p>Where you sit. A bike reference is a bike that fits you now: its geometry and how it is set up. A fit reference is just your numbers, saddle and hands around the BB, with no bike. Add one for each position you want to copy, like a road and a gravel fit. Pick one, and every target bike below is set up to match it.</p>
+      <p>Where you sit, as a bike fit (a bike that fits you and how it is set up) or a personal fit (just your numbers). Keep as many of each as you need, like a road and a gravel position. The one open here is what every target bike below is set up to match.</p>
     </div>
-    <div class="tabs" id="refTabs" role="tablist" aria-label="References"></div>
+    <div class="kinds-row">
+      <div class="kinds" id="refKinds" role="tablist" aria-label="Kind of reference"></div>
+      <p class="kind-note" id="refKindNote"></p>
+    </div>
+    <div class="tabs" id="refTabs" role="tablist" aria-label="Bike fits"></div>
     <div class="ref-grid">
       <div class="grp" id="refForm"></div>
       <div class="grp" id="fitGroup"><h4 id="fitHead">Saddle and cockpit on this bike</h4><div class="fields two" id="fitFields"></div></div>
@@ -141,7 +150,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
   <section class="sheet" aria-labelledby="bikeTitle">
     <div class="sec-head">
       <span class="step">2</span><h2 id="bikeTitle">Target bike</h2>
-      <p>Frames you want to set up like the reference selected above, from their geometry charts, plus the reach of the handlebar each will use.</p>
+      <p>Frames you want to set up like the bike fit or personal fit open above, from their geometry charts, plus the reach of the handlebar each will use.</p>
     </div>
     <details class="parts" id="partsBox">
       <summary>Stems and spacers you can use <span>lengths, angles, spacer sizes</span></summary>
@@ -162,7 +171,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
   <section class="sheet" aria-labelledby="cmpTitle">
     <div class="sec-head">
       <h2 id="cmpTitle">Summary</h2>
-      <p>The selected reference next to every target bike and the setup it needs. Pick a name to open it.</p>
+      <p>The bike fit or personal fit open in step 1 next to every target bike and the setup it needs. Pick a name to open it.</p>
     </div>
     <div class="tbl-wrap" id="cmp"></div>
   </section>
@@ -170,11 +179,11 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
   <section class="sheet" aria-labelledby="howTitle">
     <div class="sec-head"><h2 id="howTitle">How to measure</h2></div>
     <div class="how">
-      <div><h4>Saddle height</h4><p>On a bike reference: from the BB centre to the top of the saddle, following the seat tube line.</p></div>
-      <div><h4>Saddle height on a fit reference</h4><p>A straight tape from the BB centre to the saddle tip. With the setback it places the tip without knowing the seat angle. It reads less than along the seat tube, about 30 mm on a typical road fit.</p></div>
+      <div><h4>Saddle height</h4><p>On a bike fit: from the BB centre to the top of the saddle, following the seat tube line.</p></div>
+      <div><h4>Saddle height on a personal fit</h4><p>A straight tape from the BB centre to the saddle tip. With the setback it places the tip without knowing the seat angle. It reads less than along the seat tube, about 30 mm on a typical road fit.</p></div>
       <div><h4>Saddle setback</h4><p>Hang a plumb line (a string with a small weight) from the saddle tip so it hangs straight down. Setback is the horizontal distance from the string back to the BB centre. Keep the bike level.</p></div>
       <div><h4>Personal reach and bar width</h4><p>A straight tape from the saddle tip to the base of the hoods, where the hood meets the bar. On a bar without hoods, tape to where your hands sit. That line runs out to the side, so the calculator takes away half the bar width (and the drop) to get the side-view distance. Bar width is centre to centre at the hoods.</p></div>
-      <div><h4>Stem on a bike reference</h4><p>A bike reference takes the stem fitted on it instead of personal reach and drop. With the frame, spacers and handlebar reach, that places your hands, and the panel shows the personal reach and drop it works out to. "Copy as fit reference" keeps those numbers without the bike.</p></div>
+      <div><h4>Stem on a bike fit</h4><p>A bike fit takes the stem fitted on it instead of personal reach and drop. With the frame, spacers and handlebar reach, that places your hands, and the panel shows the personal reach and drop it works out to. "Copy as personal fit" keeps those numbers without the bike.</p></div>
       <div><h4>Handlebar reach</h4><p>From the bar's clamp centre forward to the base of the hoods, from the bar's spec. 0 means a flat bar: hands right over the bar.</p></div>
       <div><h4>Handlebar drop</h4><p>Vertical, from the top of the saddle down to the top of the handlebar. Use a level from the saddle. Negative if the bar is higher than the saddle.</p></div>
       <div><h4>Spacers</h4><p>Everything between the top of the head tube and the bottom of the stem, headset top cap included. On target bikes the result is measured the same way.</p></div>
@@ -192,4 +201,15 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--laser); }
       <span>All lengths in mm, angles in degrees. Grid: X forward of the BB centre, Y above it. Assumes a 40 mm tall stem and a 31.8 mm bar.</span>
     </div>
   </section>
+
+  <footer class="credits" aria-label="Credits and contact">
+    <div>
+      <h2>Credits</h2>
+      <p>Bikefit Simulator is made by José Miguel Moreira and released under the <a href="https://github.com/zemiguelmoreira/geobike/blob/master/LICENSE" target="_blank" rel="noopener">MIT License</a>. Type set in IBM Plex Sans, IBM Plex Mono and Saira Condensed, under the SIL Open Font License.</p>
+    </div>
+    <div>
+      <h2>Contact</h2>
+      <p>Found a wrong number, or want a feature? <a href="https://github.com/zemiguelmoreira/geobike/issues" target="_blank" rel="noopener">Open an issue on GitHub</a>, or find me at <a href="https://github.com/zemiguelmoreira" target="_blank" rel="noopener">github.com/zemiguelmoreira</a>. The code is at <a href="https://github.com/zemiguelmoreira/geobike" target="_blank" rel="noopener">github.com/zemiguelmoreira/geobike</a>.</p>
+    </div>
+  </footer>
 </div>
