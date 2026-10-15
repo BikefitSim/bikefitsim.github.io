@@ -103,4 +103,33 @@ test('a fit reference with more setback than saddle height is refused', () => {
   assert.strictEqual(fp.ok, false);
 });
 
+test('the actual top tube gives the same reach as the effective one', () => {
+  // an actual top tube for the reference frame: seat tube c-c 500 mm to 18 mm below the head tube top
+  const S = GB.rad(ref.sta); const H = GB.rad(ref.hta);
+  const P = { x: -500 * Math.cos(S), y: 500 * Math.sin(S) };
+  const J = { x: 380 + 18 * Math.cos(H), y: 580 - 18 * Math.sin(H) };
+  const att = Math.hypot(J.x - P.x, J.y - P.y);
+  const b = Object.assign({}, ref, { ett: null, att, seatTube: null, seatTubeCC: 500, reach: null });
+  const g = GB.frameGeometry(b);
+  near(g.reach, 380, 1e-9, 'reach');
+  assert.strictEqual(g.reachFrom, 'att');
+  assert.strictEqual(g.ccEst, false);
+  const est = GB.frameGeometry(Object.assign({}, b, { seatTube: 520, seatTubeCC: null }));
+  near(est.reach, 380, 1e-9, 'reach with the c-c taken as c-t minus 20');
+  assert.strictEqual(est.ccEst, true);
+  const fp = GB.fitPoints(ref, fit);
+  const both = GB.solveBike(Object.assign({}, ref, { reach: null, att: att + 30, seatTubeCC: 500, barReach: 80 }), fp, fit, opts);
+  assert.ok(both.checks.some((c) => /effective top tube gives a reach/.test(c.text)), 'top tubes that disagree are flagged');
+});
+
+test('a seat tube c-c alone is enough', () => {
+  const fp = GB.fitPoints(ref, fit);
+  const a = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, fit, opts);
+  const b = GB.solveBike(Object.assign({}, ref, { barReach: 80, seatTube: null, seatTubeCC: 500 }), fp, fit, opts);
+  near(b.exposed, a.exposed, 1e-9, 'seatpost showing');
+  near(b.drawing.stTop.y, a.drawing.stTop.y, 1e-9, 'seat tube top');
+  assert.ok(b.drawing.ttRear.y < b.drawing.stTop.y, 'top tube meets the seat tube below its top');
+  assert.strictEqual(a.drawing.ttRear, a.drawing.stTop, 'without a c-c the top tube is drawn to the seat tube top as before');
+});
+
 console.log(`\n${passed} checks passed`);

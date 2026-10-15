@@ -90,7 +90,7 @@ const GBDraw = (() => {
     s += v.line(g.htBottom, g.front, 'tube fork');
     s += v.line({ x: 0, y: 0 }, dtEnd, 'tube');
     s += v.line({ x: 0, y: 0 }, g.stTop, 'tube');
-    s += v.line(g.stTop, ttEnd, 'tube');
+    s += v.line(g.ttRear, ttEnd, 'tube');
     s += v.line(g.htBottom, g.T, 'tube ht');
     // cockpit: spacer stack, stem clamp, stem, bar
     const w = 17;
@@ -193,7 +193,7 @@ const GBDraw = (() => {
       let s = `<g class="bike ${cls}">`;
       s += vv.line(add(frame.T, p.d, -120), frame.T, 'tube ht');
       const tt0 = add(frame.T, p.d, -18);
-      s += vv.line(tt0, add(tt0, unit(sub(frame.stTop, tt0)), 140), 'tube');
+      s += vv.line(tt0, add(tt0, unit(sub(frame.ttRear, tt0)), 140), 'tube');
       const sq = (a, b, half) => [add(a, p.n, half), add(b, p.n, half), add(b, p.n, -half), add(a, p.n, -half)];
       if (p.spacers > 0.5) s += vv.poly(sq(frame.T, p.spTop, 17), 'spacer');
       s += vv.poly(sq(p.spTop, p.stemTop, 18), 'part');
