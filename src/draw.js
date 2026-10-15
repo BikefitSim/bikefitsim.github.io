@@ -126,8 +126,14 @@ const GBDraw = (() => {
     for (let gx = x0; gx <= x + w; gx += step) s += v.line({ x: gx, y }, { x: gx, y: y + h }, gx === 0 ? 'axis0' : (gx % (step * 2) === 0 ? 'major' : 'minor'));
     for (let gy = y0; gy <= y + h; gy += step) s += v.line({ x, y: gy }, { x: x + w, y: gy }, gy === 0 ? 'axis0' : (gy % (step * 2) === 0 ? 'major' : 'minor'));
     const lab = step * 4;
-    for (let gx = Math.ceil(x / lab) * lab; gx <= x + w; gx += lab) s += v.text({ x: gx, y }, n0(gx), 'gl', { dy: -5 });
-    for (let gy = Math.ceil(y / lab) * lab; gy <= y + h; gy += lab) if (gy > y + 20 * v.k) s += v.text({ x, y: gy }, n0(gy), 'gl', { dx: 5, dy: 4, anchor: 'start' });
+    // grid values as small filled tags: text-coloured box, background-coloured digits
+    const tag = (p, str, dx, dy, anchor) => {
+      const cw = 6.1 * v.k; const wd = str.length * cw + 6 * v.k; const ht = 13 * v.k;
+      const cx = p.x + dx * v.k + (anchor === 'start' ? wd / 2 - 3 * v.k : 0); const cy = -p.y + dy * v.k - 3.6 * v.k;
+      return `<rect class="glb" x="${f1(cx - wd / 2)}" y="${f1(cy - ht / 2)}" width="${f1(wd)}" height="${f1(ht)}" rx="${f1(2 * v.k)}"></rect>` + v.text(p, str, 'gl', { dx, dy, anchor });
+    };
+    for (let gx = Math.ceil(x / lab) * lab; gx <= x + w; gx += lab) s += tag({ x: gx, y }, n0(gx), 0, -6, 'middle');
+    for (let gy = Math.ceil(y / lab) * lab; gy <= y + h; gy += lab) if (gy > y + 20 * v.k) s += tag({ x, y: gy }, n0(gy), 6, 4, 'start');
     return s + '</g>';
   }
 
@@ -147,17 +153,30 @@ const GBDraw = (() => {
     const frames = rg ? [g, rg] : [g];
     const minX = Math.min(...frames.map((q) => q.rear.x)) - TYRE_R - 40;
     const maxX = Math.max(...frames.map((q) => q.front.x)) + TYRE_R + 40;
-    const minY = g.groundY - 40;
+    // ground: the line under both wheels, which tilts when the front axle is not at the rear axle's height
+    const contact = (q) => {
+      const ax = unit(sub(q.front, q.rear)); const up = { x: -ax.y, y: ax.x };
+      return { ax, up, a: add(q.rear, up, -q.wheelR), b: add(q.front, up, -q.wheelR), pitch: Math.atan2(ax.y, ax.x) };
+    };
+    const gc = contact(g);
+    const minY = Math.min(gc.a.y, gc.b.y) - 40;
     const maxY = Math.max(sad.y, hand.y) + 110;
     const vb = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
     const v = View(vb, 860);
     let m = v.open('main', `role="img" aria-label="${esc(names.bike)} drawn over ${esc(names.ref)} on a millimetre grid centred on the bottom bracket"`);
     if (show.grid) m += grid(v, 50);
-    m += v.line({ x: minX + 10, y: g.groundY }, { x: maxX - 10, y: g.groundY }, 'ground');
+    m += v.line(add(gc.a, gc.ax, -(gc.a.x - minX - 10) / gc.ax.x), add(gc.b, gc.ax, (maxX - 10 - gc.b.x) / gc.ax.x), 'ground');
     m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -(bike.forkA2C + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
-    // the reference sits on the same BB, or with ground alignment on the same ground line
-    const lift = show.ground && rg ? g.groundY - rg.groundY : 0;
-    if (showRef) m += `<g transform="translate(0 ${f1(-lift)})">${drawBike(v, 'rf', rg, pr, sad)}</g>`;
+    // the reference sits on the same BB, or with ground alignment its wheels rest on the same ground line:
+    // tilt it to the target's pitch about its rear axle, then move it up or down onto that line
+    let refTf = '';
+    if (show.ground && rg) {
+      const rc = contact(rg);
+      const turn = gc.pitch - rc.pitch;
+      const lift = -(gc.up.x * (rg.rear.x - g.rear.x) + gc.up.y * (rg.rear.y - g.rear.y)) / gc.up.y;
+      refTf = ` transform="translate(0 ${f1(-lift)}) rotate(${(-turn * 180 / Math.PI).toFixed(3)} ${f1(rg.rear.x)} ${f1(-rg.rear.y)})"`;
+    }
+    if (showRef) m += `<g${refTf}>${drawBike(v, 'rf', rg, pr, sad)}</g>`;
     m += drawBike(v, 'bk', g, pb, sad);
     // a personal fit's saddle height: the straight line from the BB to the saddle tip
     if (!ref) m += v.dim({ x: 0, y: 0 }, sad, 0, `BB to saddle tip ${n0(Math.hypot(sad.x, sad.y))}`, { key: 'height', cls: 'dim rfd', ext: false, labelOff: 8 });

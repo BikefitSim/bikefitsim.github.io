@@ -52,7 +52,8 @@ svg.geo * { vector-effect: non-scaling-stroke; }
 svg.geo .grid .minor { stroke: var(--grid-1); stroke-width: .7px; }
 svg.geo .grid .major { stroke: var(--grid-2); stroke-width: 1.1px; }
 svg.geo .grid .axis0 { stroke: var(--grid-2); stroke-width: 1.6px; }
-svg.geo .gl { font: 500 calc(var(--k) * 10px) var(--mono); fill: var(--ink); paint-order: stroke; stroke: var(--draw-bg); stroke-width: 3px; stroke-linejoin: round; }
+svg.geo .gl { font: 500 calc(var(--k) * 10px) var(--mono); fill: var(--draw-bg); }
+svg.geo .glb { fill: var(--ink); stroke: none; }
 svg.geo .ground { stroke: var(--rule); stroke-width: 1.2px; stroke-dasharray: 6 5; }
 svg.geo .saxis { stroke: var(--frame); stroke-opacity: .5; stroke-width: 1px; stroke-dasharray: 2 4; fill: none; }
 svg.geo .saxis.rfa { stroke: var(--part); }
@@ -100,6 +101,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
 .file-status.ok::before, .file-status.warn::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex: none; }
 .file-status.warn::before { background: var(--part); }
 .filebar .btn { padding: 5px 11px; font-size: 13px; }
+.toggles .btn { padding: 4px 10px; font-size: 13px; }
 </style>
 
 <div class="page">
