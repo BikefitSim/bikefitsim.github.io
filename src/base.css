@@ -83,7 +83,6 @@ h1 { font-size: 40px; font-weight: 700; letter-spacing: .01em; line-height: 1; }
 
 /* sections */
 .sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.sheet.alt { background: var(--sheet-alt); }
 .sec-head { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
 .step { font: 600 13px var(--mono); color: var(--sheet); background: var(--frame); width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; transform: translateY(-3px); }
 .sec-head h2 { font-size: 26px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
