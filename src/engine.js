@@ -7,10 +7,10 @@ const GB = (() => {
   const STEM_CLAMP = 40;  // stem height on the steerer; its centre sits 20 mm above the spacers
   const BAR_R = 15.9;     // 31.8 mm bar
   const RAIL_H = 45;      // saddle top to rails, for the seatpost check only
-  const POST_OFFSET = 20;  // seatpost offset when none is entered
-  const RAIL_TRAVEL = 30;  // usable saddle rail travel when none is entered
+  const POSTS = [20, 0];   // seatpost offsets the app chooses from: 20 mm setback or inline
+  const RAIL_TRAVEL = 60;  // adjusting area marked on saddle rails, end to end
   const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is entered
-  const MAX_OFFSET = 40;   // most offset a seatpost is sold with
+  const MAX_OFFSET = 40;   // most offset a seatpost is sold with, for the hint when neither fits
   const WHEEL_R = 340;    // drawing only
   const CHAINSTAY = 410;  // drawing only
   const ANGLE_COST = 0.15; // mm of miss traded per degree away from the reference stem angle
@@ -24,35 +24,30 @@ const GB = (() => {
     return noseAhead - RAIL_H / Math.tan(S) + offset / Math.sin(S);
   }
 
-  /* Where the saddle sits on its rails on a frame, + forward of their middle, and whether it
-     fits. The saddle (rail travel, tip to rail centre) comes from the reference: the same
-     saddle on every bike. Returns a 'bad' check when it is past the rails, with the post
-     offset that would bring it back. */
-  function railFit(noseAhead, S, offsetIn, fit, onWhat) {
-    const postOffset = fin(offsetIn) ? offsetIn : POST_OFFSET;
-    const railTravel = fin(fit.railTravel) && fit.railTravel > 0 ? fit.railTravel : RAIL_TRAVEL;
+  /* Which seatpost carries the saddle tip on a frame, and where the saddle sits on its rails
+     (+ forward of their middle). The app picks between an inline post and a 20 mm offset
+     one: whichever leaves the saddle nearer the middle of its rails. The saddle's tip to
+     rail centre comes from the reference: the same saddle on every bike. Returns a 'bad'
+     check when neither post keeps the saddle within its rails. */
+  function railFit(noseAhead, S, fit, onWhat) {
     const tipToRails = fin(fit.tipToRails) && fit.tipToRails > 0 ? fit.tipToRails : TIP_TO_RAILS;
-    const tipClamp = tipAheadOfClamp(noseAhead, S, postOffset);
-    const railPos = tipClamp - tipToRails;
-    const railOver = Math.abs(railPos) - railTravel / 2; // > 0: past the end of the rails
-    let offsetNeeded = null; let check = null;
-    if (railOver > 0.5) {
+    const half = RAIL_TRAVEL / 2;
+    const tries = POSTS.map((postOffset) => {
+      const tipClamp = tipAheadOfClamp(noseAhead, S, postOffset);
+      const railPos = tipClamp - tipToRails;
+      return { postOffset, tipClamp, railPos, railOver: Math.abs(railPos) - half }; // railOver > 0: past the end of the rails
+    });
+    const best = tries.reduce((p, q) => (Math.abs(q.railPos) < Math.abs(p.railPos) - 0.01 ? q : p));
+    let check = null;
+    if (best.railOver > 0.5) {
       // A post with less offset moves the clamp forward, so the saddle sits further back on it.
-      const fwd = railPos > 0;
-      offsetNeeded = postOffset + (fwd ? -1 : 1) * railOver * Math.sin(S);
-      const where = `${railOver.toFixed(0)} mm further ${fwd ? 'forward' : 'back'} than its rails allow`;
-      const post = `a ${postOffset.toFixed(0)} mm offset seatpost and ${railTravel.toFixed(0)} mm of rail travel`;
-      if (offsetNeeded >= -0.5 && offsetNeeded <= MAX_OFFSET) {
-        const pick = fwd ? Math.floor(offsetNeeded / 5) * 5 : Math.ceil(offsetNeeded / 5) * 5; // to the next common size that fits
-        const use = pick <= 0 ? 'an inline seatpost (0 mm offset)' : `a seatpost with about ${pick} mm offset`;
-        check = { level: 'bad', text: `With ${post}, the saddle would have to sit ${where}. Use ${use}.` };
-      } else {
-        const lim = fwd ? 0 : MAX_OFFSET;
-        const still = Math.abs(offsetNeeded - lim) / Math.sin(S);
-        check = { level: 'bad', text: `This saddle setback can't be reached on ${onWhat}. With ${post}, the saddle would have to sit ${where}. Even ${fwd ? 'an inline seatpost' : `a ${MAX_OFFSET} mm offset seatpost`} leaves it ${still.toFixed(0)} mm short.` };
-      }
+      const fwd = best.railPos > 0;
+      const need = best.postOffset + (fwd ? -1 : 1) * best.railOver * Math.sin(S);
+      const post = best.postOffset ? `a ${best.postOffset} mm offset seatpost` : 'an inline seatpost';
+      const hint = need > 0.5 && need <= MAX_OFFSET ? ` It would take a seatpost with about ${Math.ceil(need / 5) * 5} mm offset.` : '';
+      check = { level: 'bad', text: `This saddle setback can't be reached on ${onWhat}. Even with ${post}, the saddle would have to sit ${best.railOver.toFixed(0)} mm further ${fwd ? 'forward' : 'back'} than its ${RAIL_TRAVEL} mm of rail adjustment allows.${hint}` };
     }
-    return { postOffset, railTravel, tipToRails, tipClamp, railPos, railOver, offsetNeeded, check };
+    return Object.assign({ railTravel: RAIL_TRAVEL, tipToRails, check }, best);
   }
 
   function parseList(str, { min = -Infinity, max = Infinity } = {}) {
@@ -190,7 +185,7 @@ const GB = (() => {
       hand,
       noseAhead: xs + ys / Math.tan(S), // saddle tip ahead of the seat-tube line at saddle height
       // the reference bike has to carry its own setback too
-      rail: railFit(xs + ys / Math.tan(S), S, fit.postOffset, fit, 'this bike'),
+      rail: railFit(xs + ys / Math.tan(S), S, fit, 'this bike'),
       spacers: fit.spacers,
     };
   }
@@ -285,8 +280,8 @@ const GB = (() => {
     const handShift = hand.x - fp.hand.x;
     const heightAlong = y / Math.sin(S);
     const noseAhead = x + y / Math.tan(S); // saddle tip ahead of this seat tube's line at saddle height
-    const rail = railFit(noseAhead, S, bikeIn.postOffset, fit, 'this frame');
-    const { postOffset, railTravel, tipToRails, railPos, railOver, offsetNeeded } = rail;
+    const rail = railFit(noseAhead, S, fit, 'this frame');
+    const { postOffset, railTravel, tipToRails, railPos, railOver } = rail;
     // + = saddle further forward on its rails than on the reference bike; none for a personal fit
     const railMove = fp.rail ? rail.tipClamp - fp.rail.tipClamp : null;
     const st = seatTubes(bike);
@@ -330,9 +325,9 @@ const GB = (() => {
     if (cockpit.steepest && cockpit.steepest.spacers < -2) {
       checks.push({ level: 'warn', text: `The front end is tall for this fit. Even a slammed ${cockpit.steepest.angle}° stem leaves the bar about ${Math.abs(cockpit.steepest.spacers).toFixed(0)} mm higher than wanted.` });
     }
-    return { bike, geo, heightAlong, noseAhead, railMove, railPos, railOver, railTravel, postOffset, tipToRails, offsetNeeded, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: frameDrawing(bike) };
+    return { bike, geo, heightAlong, noseAhead, railMove, railPos, railOver, railTravel, postOffset, tipToRails, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: frameDrawing(bike) };
   }
 
-  return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE, POST_OFFSET, RAIL_TRAVEL, TIP_TO_RAILS };
+  return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE, RAIL_TRAVEL, TIP_TO_RAILS };
 })();
 if (typeof module !== 'undefined') module.exports = GB;
