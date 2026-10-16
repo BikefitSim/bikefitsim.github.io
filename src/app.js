@@ -482,6 +482,18 @@
       <p>Selected: every target bike in step 2 matches this one.</p>`;
   }
 
+  /* Order of the stem and spacer options: by how far forward or how high the bar ends up
+     (most first), or by how close it is. Remembered per browser. */
+  const OPT_SORT_KEY = 'geobike.optSort';
+  const OPT_SORTS = [['reach', 'Most reach'], ['stack', 'Most stack'], ['miss', 'Closest']];
+  let optSort = 'reach';
+  try { const v = localStorage.getItem(OPT_SORT_KEY); if (OPT_SORTS.some(([k]) => k === v)) optSort = v; } catch (e) { /* default */ }
+  function sortOpts(list) {
+    if (optSort === 'miss') return list;
+    const by = optSort === 'stack' ? (x) => x.dy : (x) => x.dx;
+    return list.slice().sort((p, q) => by(q) - by(p) || p.err - q.err);
+  }
+
   function renderBikeOut() {
     const b = curBike();
     const r = model.res[b.id];
@@ -524,11 +536,13 @@
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
       <div>
-        <div class="sub-h"><h4>Stem and spacer options</h4><p>Closest combinations from your stems. Hand fwd and hand up are the offsets from the target (+ is forward or higher); miss is the straight-line distance. Pick one to draw it.</p></div>
+        <div class="sub-h"><h4>Stem and spacer options</h4>
+          <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, label]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}">${label}</button>`).join('')}</div>
+          <p>The ${r.cockpit.options.length} closest combinations from your stems. Hand fwd and hand up are the offsets from the target (+ is forward or higher); miss is the straight-line distance. Pick one to draw it.</p></div>
         <div class="tbl-wrap">
           <table class="data" id="optTable">
             <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
-            <tbody>${r.cockpit.options.concat(o && !r.cockpit.options.includes(o) ? [o] : []).map((x, i) => {
+            <tbody>${sortOpts(r.cockpit.options.concat(o && !r.cockpit.options.includes(o) ? [o] : [])).map((x, i) => {
               const sel = o && optKey(x) === optKey(o);
               return `<tr class="opt${sel ? ' pick' : ''}" data-opt="${esc(optKey(x))}">
                 <td><input type="radio" name="opt" id="opt-${i}" aria-label="Use ${esc(stemTxt(x))} with ${n1(x.spacers)} mm spacers" ${sel ? 'checked' : ''}></td>
@@ -1114,6 +1128,14 @@
       state.bikes = state.bikes.filter((b) => b.id !== state.selected);
       state.selected = state.bikes[0].id;
       renderAll(); scheduleSave();
+      return;
+    }
+    const sortBtn = e.target.closest('[data-optsort]');
+    if (sortBtn) {
+      optSort = sortBtn.dataset.optsort;
+      try { localStorage.setItem(OPT_SORT_KEY, optSort); } catch (err) { /* this visit only */ }
+      renderBikeOut();
+      const again = document.querySelector(`[data-optsort="${optSort}"]`); if (again) again.focus();
       return;
     }
     const row = e.target.closest('tr.opt');
