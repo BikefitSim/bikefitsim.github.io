@@ -65,7 +65,7 @@ const GBDraw = (() => {
   }
 
   /* Points for one bike set up with a given stem, spacers and bar reach. */
-  function bikeParts(bike, frame, sad, cockpit) {
+  function bikeParts(bike, frame, sad, cockpit, seat) {
     const S = bike.sta * Math.PI / 180;
     const H = bike.hta * Math.PI / 180;
     const d = { x: -Math.cos(H), y: Math.sin(H) };
@@ -75,7 +75,10 @@ const GBDraw = (() => {
     const axisAt = (y) => ({ x: -y / Math.tan(S), y });
     const spTop = add(T, d, cockpit.spacers);
     const stemTop = add(T, d, cockpit.spacers + 40);
-    return { S, H, d, n, T, railY, axisAt, spTop, stemTop, clamp: axisAt(railY), postTop: axisAt(railY - POST_HEAD), Q: cockpit.Q, B: cockpit.B, barReach: cockpit.barReach, spacers: cockpit.spacers };
+    // the post's head sets the clamp back from the seat tube line by its offset
+    const clamp = { x: axisAt(railY).x - seat.postOffset / Math.sin(S), y: railY };
+    const railMid = sad.x - seat.tipToRails; // middle of the saddle's rails, from its tip
+    return { S, H, d, n, T, railY, axisAt, spTop, stemTop, clamp, railMid, postTop: axisAt(railY - POST_HEAD), Q: cockpit.Q, B: cockpit.B, barReach: cockpit.barReach, spacers: cockpit.spacers };
   }
 
   function drawBike(v, cls, frame, p, sad, { wheels = true, saddle = true } = {}) {
@@ -111,7 +114,7 @@ const GBDraw = (() => {
       const sx = sad.x; const sy = sad.y; const L = 265;
       const sh = (dx, dy) => v.P({ x: sx + dx, y: sy + dy });
       s += v.path(`M ${sh(2, -7)} Q ${sh(-6, 1)} ${sh(-50, 0)} L ${sh(-L + 45, 5)} Q ${sh(-L + 2, 8)} ${sh(-L, -10)} L ${sh(-L + 28, -26)} L ${sh(-60, -17)} Z`, 'saddle');
-      s += v.path(`M ${sh(-48, -15)} L ${v.P({ x: sx - 185, y: p.railY })} L ${v.P({ x: sx - 85, y: p.railY })} Z`, 'rail');
+      s += v.path(`M ${sh(-48, -15)} L ${v.P({ x: p.railMid - 50, y: p.railY })} L ${v.P({ x: p.railMid + 50, y: p.railY })} Z`, 'rail');
       s += v.poly([{ x: p.clamp.x - 14, y: p.railY + 4 }, { x: p.clamp.x + 14, y: p.railY + 4 }, { x: p.clamp.x + 14, y: p.railY - 6 }, { x: p.clamp.x - 14, y: p.railY - 6 }], 'clamp');
     }
     // joints
@@ -140,8 +143,8 @@ const GBDraw = (() => {
     const g = r.drawing; const rg = ref ? GB.frameDrawing(ref) : null;
     const bikeCock = o ? Object.assign(GB.barFor(bike, o.angle, o.length, o.spacers), { spacers: o.spacers, barReach: bike.barReach })
       : { Q: add(g.T, GB.steerer(bike.hta).d, 20), B: r.target, spacers: 0, barReach: bike.barReach };
-    const pb = bikeParts(bike, g, sad, bikeCock);
-    const pr = ref ? bikeParts(ref, rg, sad, { Q: fp.stem.Q, B: fp.stem.B, spacers: fp.spacers, barReach: r.ref.fit.barReach }) : null;
+    const pb = bikeParts(bike, g, sad, bikeCock, r);
+    const pr = ref ? bikeParts(ref, rg, sad, { Q: fp.stem.Q, B: fp.stem.B, spacers: fp.spacers, barReach: r.ref.fit.barReach }, { postOffset: fp.rail.postOffset, tipToRails: r.tipToRails }) : null;
 
     /* ---------- main view ---------- */
     const frames = rg ? [g, rg] : [g];
@@ -240,7 +243,7 @@ const GBDraw = (() => {
     s += `<g class="axes">${sv.line(pb.axisAt(pb.railY - 140), pb.axisAt(sad.y + 40), 'saxis')}${showRef ? sv.line(pr.axisAt(pr.railY - 140), pr.axisAt(sad.y + 40), 'saxis rfa') : ''}</g>`;
     {
       const L = 265; const sh = (dx, dy) => sv.P({ x: sad.x + dx, y: sad.y + dy });
-      s += `<g class="bike sdl">${sv.path(`M ${sh(2, -7)} Q ${sh(-6, 1)} ${sh(-50, 0)} L ${sh(-L + 45, 5)} Q ${sh(-L + 2, 8)} ${sh(-L, -10)} L ${sh(-L + 28, -26)} L ${sh(-60, -17)} Z`, 'saddle')}${sv.path(`M ${sh(-48, -15)} L ${sv.P({ x: sad.x - 185, y: pb.railY })} L ${sv.P({ x: sad.x - 85, y: pb.railY })} Z`, 'rail')}</g>`;
+      s += `<g class="bike sdl">${sv.path(`M ${sh(2, -7)} Q ${sh(-6, 1)} ${sh(-50, 0)} L ${sh(-L + 45, 5)} Q ${sh(-L + 2, 8)} ${sh(-L, -10)} L ${sh(-L + 28, -26)} L ${sh(-60, -17)} Z`, 'saddle')}${sv.path(`M ${sh(-48, -15)} L ${sv.P({ x: pb.railMid - 50, y: pb.railY })} L ${sv.P({ x: pb.railMid + 50, y: pb.railY })} Z`, 'rail')}</g>`;
     }
     if (showRef) s += saddleOnly(sv, 'rf', pr);
     s += saddleOnly(sv, 'bk', pb);
