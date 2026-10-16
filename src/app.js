@@ -183,7 +183,7 @@
     spacers: { k: 'spacers', l: 'Spacers under stem', u: 'mm', h: 'Head tube top to stem, top cap included' },
     barReach: { k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar on this bike. 0 for a flat bar.' },
     barWidthBike: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods' },
-    tipToRails: { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, ph: `${GB.TIP_TO_RAILS}`, h: `Saddle tip to the middle of the rail markings. Empty means ${GB.TIP_TO_RAILS}.` },
+    tipToRails: { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, ph: `${GB.TIP_TO_RAILS}`, h: `Horizontal, saddle level: tip to above the middle of the rail markings. Empty means ${GB.TIP_TO_RAILS}.` },
     barWidthFit: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods. 0 if you measured personal reach in side view.' },
   };
   const BIKE_FIT_FIELDS = [FF.saddleHeight, FF.setback, FF.tipToRails, FF.spacers, FF.stemLength, FF.stemAngle, FF.barReach, FF.barWidthBike];
