@@ -132,4 +132,35 @@ test('a seat tube c-c alone is enough', () => {
   assert.strictEqual(a.drawing.ttRear, a.drawing.stTop, 'without a c-c the top tube is drawn to the seat tube top as before');
 });
 
+test('a saddle setback no seatpost can reach is flagged', () => {
+  const fp = GB.bodyPoints({ saddleLine: 760, setback: 200, riderReach: 600, drop: 60, barWidth: 0 });
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, { barWidth: 0 }, opts);
+  assert.ok(r.railPos < -r.railTravel / 2, 'saddle should be past the back of its rails');
+  assert.ok(r.checks.some((c) => c.level === 'bad' && c.text.includes("can't be reached")), 'should say it cannot be reached');
+});
+
+test('an ordinary personal fit sits within the rails', () => {
+  const fp = GB.bodyPoints({ saddleLine: 720, setback: 70, riderReach: 600, drop: 60, barWidth: 0 });
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, { barWidth: 0 }, opts);
+  assert.ok(Math.abs(r.railPos) <= r.railTravel / 2, `rail position ${r.railPos}`);
+  assert.ok(!r.checks.some((c) => c.level === 'bad'), 'no bad checks');
+});
+
+test('the app picks the post that keeps the saddle nearest the middle of its rails', () => {
+  const fp = GB.fitPoints(ref, fit); // tip about 154 mm ahead of a 20 mm post's clamp
+  assert.strictEqual(fp.rail.postOffset, 20);
+  const back = GB.fitPoints(ref, Object.assign({}, fit, { setback: 45 })); // tip 20 mm further forward
+  assert.strictEqual(back.rail.postOffset, 0, 'an inline post for a forward saddle');
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), back, fit, opts);
+  assert.ok(!r.checks.some((c) => c.level === 'bad'), 'fits');
+});
+
+test('a bike fit with a setback its own seatpost cannot carry is flagged, and so is every target', () => {
+  const f = Object.assign({}, fit, { setback: 200, handFrom: 'stem', stemLength: 110, stemAngle: -6 });
+  const fp = GB.fitPoints(ref, f);
+  assert.ok(fp.rail.check && fp.rail.check.text.includes("can't be reached on this bike"), 'reference flagged');
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, f, opts);
+  assert.ok(r.checks.some((c) => c.level === 'bad' && c.text.includes("can't be reached")), 'target flagged too');
+});
+
 console.log(`\n${passed} checks passed`);

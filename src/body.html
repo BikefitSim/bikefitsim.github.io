@@ -6,6 +6,7 @@
 @media (max-width: 700px) { .ref-grid { grid-template-columns: minmax(0, 1fr); } }
 .t-d { font: 500 12.5px var(--mono); color: var(--frame); }
 .t-d.same { color: var(--ink-2); }
+.t-d.over { color: var(--bad); }
 svg .ghost { stroke: var(--ink-2); stroke-opacity: .45; stroke-dasharray: 12 9; stroke-linecap: round; fill: none; }
 .lg i.gh { height: 0; border-top: 2px dashed var(--ink-2); border-radius: 0; opacity: .7; }
 .cp .implied { font-size: 13.5px; color: var(--ink); border-top: 1px solid var(--rule-2); padding-top: 8px; }
@@ -177,6 +178,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
       <div><h4>Saddle height</h4><p>Bike fit: BB centre to the top of the saddle, along the seat tube.</p></div>
       <div><h4>Saddle height on a personal fit</h4><p>Straight line from the BB centre to the saddle tip. With the setback, it places the tip without the seat angle. Expect about 30 mm less than along the seat tube.</p></div>
       <div><h4>Saddle setback</h4><p>With the bike level, hang a plumb line from the saddle tip. Setback is the horizontal distance from the line back to the BB centre.</p></div>
+      <div><h4>Tip to rail centre</h4><p>With the saddle level, the horizontal distance from the saddle tip back to a point directly above the middle of the rail markings. Not the slanted line down to the rails.</p></div>
       <div><h4>Personal reach and bar width</h4><p>Straight line from the saddle tip to the base of the hoods (no hoods: where your hands sit). Half the bar width and the drop are taken out to get the side-view distance. Bar width is centre to centre at the hoods.</p></div>
       <div><h4>Stem on a bike fit</h4><p>A bike fit uses the fitted stem instead of personal reach and drop. The panel shows the reach and drop it gives. "Copy as personal fit" keeps them without the bike.</p></div>
       <div><h4>Handlebar reach</h4><p>Clamp centre forward to the base of the hoods, from the bar's spec. 0 means a flat bar.</p></div>
@@ -193,6 +195,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
         <li>Handlebar reach 0 means a flat bar, hands over the bar centre.</li>
         <li>Bar rise and drop are not modelled. A riser bar, or hoods above or below the bar top, moves the hands by that amount.</li>
         <li>Positions use the saddle tip, so results assume the same saddle on every bike. A saddle 20 mm shorter, tip in the same place, puts you 20 mm forward: slide it back 20 mm.</li>
+        <li>Whether the saddle fits on its rails is an estimate: 60 mm of rail adjustment, an inline or 20 mm offset seatpost, and the tip to rail centre (150 mm when empty).</li>
         <li>Results are estimates. Check the setup on the bike before riding.</li>
       </ul>
     </div>
