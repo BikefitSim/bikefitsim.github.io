@@ -132,4 +132,28 @@ test('a seat tube c-c alone is enough', () => {
   assert.strictEqual(a.drawing.ttRear, a.drawing.stTop, 'without a c-c the top tube is drawn to the seat tube top as before');
 });
 
+test('a saddle setback no seatpost can reach is flagged', () => {
+  const fp = GB.bodyPoints({ saddleLine: 760, setback: 200, riderReach: 600, drop: 60, barWidth: 0 });
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, { barWidth: 0 }, opts);
+  assert.ok(r.railPos < -r.railTravel / 2, 'saddle should be past the back of its rails');
+  assert.ok(r.checks.some((c) => c.level === 'bad' && c.text.includes("can't be reached")), 'should say it cannot be reached');
+});
+
+test('an ordinary personal fit sits within the rails', () => {
+  const fp = GB.bodyPoints({ saddleLine: 720, setback: 70, riderReach: 600, drop: 60, barWidth: 0 });
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, { barWidth: 0 }, opts);
+  assert.ok(Math.abs(r.railPos) <= r.railTravel / 2, `rail position ${r.railPos}`);
+  assert.ok(!r.checks.some((c) => c.level === 'bad'), 'no bad checks');
+});
+
+test('a post with less offset than the reference moves the saddle back and suggests a post', () => {
+  const fp = GB.fitPoints(ref, Object.assign({}, fit, { postOffset: 20 }));
+  const same = GB.solveBike(Object.assign({}, ref, { barReach: 80, postOffset: 20 }), fp, fit, opts);
+  near(same.railMove, 0, 1e-9, 'same post, same place');
+  const inline = GB.solveBike(Object.assign({}, ref, { barReach: 80, postOffset: 0, railTravel: 20 }), fp, fit, opts);
+  near(inline.railMove, -20 / Math.sin(GB.rad(73.5)), 1e-9, 'rail move');
+  const c = inline.checks.find((x) => x.level === 'bad');
+  assert.ok(c && /about 10 mm offset/.test(c.text), c ? c.text : 'no check');
+});
+
 console.log(`\n${passed} checks passed`);
