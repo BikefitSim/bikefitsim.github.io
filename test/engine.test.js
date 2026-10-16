@@ -148,12 +148,22 @@ test('an ordinary personal fit sits within the rails', () => {
 
 test('a post with less offset than the reference moves the saddle back and suggests a post', () => {
   const fp = GB.fitPoints(ref, Object.assign({}, fit, { postOffset: 20 }));
+  assert.ok(!fp.rail.check, 'the reference itself fits on its rails');
   const same = GB.solveBike(Object.assign({}, ref, { barReach: 80, postOffset: 20 }), fp, fit, opts);
   near(same.railMove, 0, 1e-9, 'same post, same place');
-  const inline = GB.solveBike(Object.assign({}, ref, { barReach: 80, postOffset: 0, railTravel: 20 }), fp, fit, opts);
+  const inline = GB.solveBike(Object.assign({}, ref, { barReach: 80, postOffset: 0 }), fp, fit, opts);
   near(inline.railMove, -20 / Math.sin(GB.rad(73.5)), 1e-9, 'rail move');
   const c = inline.checks.find((x) => x.level === 'bad');
-  assert.ok(c && /about 10 mm offset/.test(c.text), c ? c.text : 'no check');
+  assert.ok(c && /about 5 mm offset/.test(c.text), c ? c.text : 'no check');
+});
+
+test('a bike fit with a setback its own seatpost cannot carry is flagged, and so is every target', () => {
+  const f = Object.assign({}, fit, { setback: 200, handFrom: 'stem', stemLength: 110, stemAngle: -6 });
+  const fp = GB.fitPoints(ref, f);
+  assert.ok(fp.rail.check && fp.rail.check.text.includes("can't be reached on this bike"), 'reference flagged');
+  const r = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, f, opts);
+  near(r.railMove, 0, 1e-9, 'same frame and post');
+  assert.ok(r.checks.some((c) => c.level === 'bad' && c.text.includes("can't be reached")), 'target flagged too');
 });
 
 console.log(`\n${passed} checks passed`);

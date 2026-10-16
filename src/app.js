@@ -17,14 +17,14 @@
 
   const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach'];
   const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null };
-  const BLANK_SEAT = { postOffset: null, railTravel: null, tipToRails: null }; // a target bike's seatpost and saddle; empty uses the engine's defaults
+  const BLANK_SEAT = { postOffset: null }; // a target bike's seatpost; empty uses the engine's default
   /* Two kinds of reference, each with its own tab. A bike fit (kind 'bike') is a frame plus how
      it is set up (saddle, spacers, stem, bar); a personal fit (kind 'fit') is only the rider's
      numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
      bar width). Both keep their numbers in `fit`. There is always at least one of each. */
   const BLANK_FIT = () => ({
     saddleHeight: null, saddleLine: null, setback: null, handFrom: 'stem', riderReach: null, drop: null,
-    stemLength: null, stemAngle: null, barWidth: null, spacers: null, barReach: null, postOffset: null,
+    stemLength: null, stemAngle: null, barWidth: null, spacers: null, barReach: null, postOffset: null, railTravel: null, tipToRails: null,
   });
   const blankRef = (kind, id, name) => Object.assign({ id, name, kind }, BLANK_GEO, { fit: BLANK_FIT() });
   const isFitRef = (r) => r.kind === 'fit';
@@ -185,10 +185,12 @@
     barReach: { k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar on this bike. 0 for a flat bar.' },
     barWidthBike: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods' },
     postOffset: { k: 'postOffset', l: 'Seatpost offset', u: 'mm', opt: true, ph: `${GB.POST_OFFSET}`, h: `Rail clamp behind the seat tube line. 0 for an inline post. Empty means ${GB.POST_OFFSET}.` },
+    railTravel: { k: 'railTravel', l: 'Saddle rail travel', u: 'mm', opt: true, ph: `${GB.RAIL_TRAVEL}`, h: `How far the saddle can slide in the clamp, end to end. Empty means ${GB.RAIL_TRAVEL}.` },
+    tipToRails: { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, ph: `${GB.TIP_TO_RAILS}`, h: `Saddle tip to the middle of the rail markings. Empty means ${GB.TIP_TO_RAILS}.` },
     barWidthFit: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods. 0 if you measured personal reach in side view.' },
   };
-  const BIKE_FIT_FIELDS = [FF.saddleHeight, FF.setback, FF.postOffset, FF.spacers, FF.stemLength, FF.stemAngle, FF.barReach, FF.barWidthBike];
-  const FIT_SADDLE_FIELDS = [FF.saddleLine, FF.setback];
+  const BIKE_FIT_FIELDS = [FF.saddleHeight, FF.setback, FF.postOffset, FF.railTravel, FF.tipToRails, FF.spacers, FF.stemLength, FF.stemAngle, FF.barReach, FF.barWidthBike];
+  const FIT_SADDLE_FIELDS = [FF.saddleLine, FF.setback, FF.railTravel, FF.tipToRails];
   const FIT_HAND_FIELDS = [FF.riderReach, FF.drop, FF.barWidthFit];
   const OPT_FIELDS = [
     { k: 'stemLengths', l: 'Stem lengths', type: 'list', u: 'mm', h: 'Separate with commas' },
@@ -197,11 +199,7 @@
     { k: 'maxSpacers', l: 'Max spacers', u: 'mm', h: 'Most you would run under a stem' },
   ];
 
-  const SEAT_FIELDS = [
-    FF.postOffset,
-    { k: 'railTravel', l: 'Saddle rail travel', u: 'mm', opt: true, ph: `${GB.RAIL_TRAVEL}`, h: `How far the saddle can slide in the clamp, end to end. Empty means ${GB.RAIL_TRAVEL}.` },
-    { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, ph: `${GB.TIP_TO_RAILS}`, h: `Saddle tip to the middle of the rail markings. Empty means ${GB.TIP_TO_RAILS}.` },
-  ];
+  const SEAT_FIELDS = [FF.postOffset]; // the saddle itself is set in step 1, the same on every bike
 
   function fieldHTML(f, scope, obj, placeholder = f.ph) {
     const id = `${scope}-${f.k}`;
@@ -293,7 +291,7 @@
       <div class="grp ref-name">${nameHTML('bike', b.name)}</div>
       <div class="grp"><h4>Frame geometry</h4><div class="fields">${geoFieldsHTML('bike', b)}</div></div>
       <div class="grp"><h4>Handlebar</h4><div class="fields">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar this bike will use. 0 for a flat bar.' }, 'bike', b)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, finite(curRef().fit.barWidth) && curRef().fit.barWidth > 0 ? `same: ${curRef().fit.barWidth}` : 'same as reference')}</div></div>
-      <div class="grp"><h4>Seatpost and saddle</h4><div class="fields">${SEAT_FIELDS.map((f) => fieldHTML(f, 'bike', b)).join('')}</div></div>
+      <div class="grp"><h4>Seatpost</h4><div class="fields">${SEAT_FIELDS.map((f) => fieldHTML(f, 'bike', b)).join('')}</div></div>
       <div class="row-actions">
         <button class="btn" type="button" id="dupBike">Copy as new target bike</button>
         <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' disabled title="Keep at least one target bike"' : ''}>Delete target bike</button>
@@ -338,6 +336,10 @@
     if (withBar) c.chk('barReach', 0, 150, 'Handlebar reach');
     return c.done();
   }
+  function saddleChk(c, f) {
+    if (f.railTravel != null) c.chk('railTravel', 1, 100, 'Saddle rail travel', ' mm');
+    if (f.tipToRails != null) c.chk('tipToRails', 50, 300, 'Tip to rail centre', ' mm');
+  }
   function fitErrors(r) {
     const f = r.fit;
     if (isFitRef(r)) {
@@ -345,6 +347,7 @@
       c.chk('saddleLine', 400, 1000, 'Saddle height', ' mm'); c.chk('setback', -100, 200, 'Saddle setback', ' mm');
       c.chk('riderReach', 300, 900, 'Personal reach', ' mm'); c.chk('drop', -300, 300, 'Handlebar drop', ' mm');
       c.chk('barWidth', 0, 600, 'Handlebar width', ' mm');
+      saddleChk(c, f);
       return c.done();
     }
     const c = checker(f, 'The setup');
@@ -352,6 +355,7 @@
     c.chk('spacers', 0, 120, 'Spacers', ' mm'); c.chk('stemLength', 20, 200, 'Stem length', ' mm'); c.chk('stemAngle', -45, 45, 'Stem angle', '°');
     c.chk('barReach', 0, 150, 'Handlebar reach', ' mm'); c.chk('barWidth', 0, 600, 'Handlebar width', ' mm');
     if (f.postOffset != null) c.chk('postOffset', -30, 60, 'Seatpost offset', ' mm');
+    saddleChk(c, f);
     return c.done();
   }
   function optErrors() {
@@ -383,8 +387,6 @@
       const be = geoErrors(b, true);
       if (b.barWidth != null && (!finite(b.barWidth) || b.barWidth < 250 || b.barWidth > 600)) be.push('Handlebar width should be between 250 and 600, or left empty.');
       if (b.postOffset != null && (!finite(b.postOffset) || b.postOffset < -30 || b.postOffset > 60)) be.push('Seatpost offset should be between -30 and 60, or left empty.');
-      if (b.railTravel != null && (!finite(b.railTravel) || b.railTravel <= 0 || b.railTravel > 100)) be.push('Saddle rail travel should be between 1 and 100, or left empty.');
-      if (b.tipToRails != null && (!finite(b.tipToRails) || b.tipToRails < 50 || b.tipToRails > 300)) be.push('Tip to rail centre should be between 50 and 300, or left empty.');
       if (!rm.fp) res[b.id] = { refErrors: rm.errs, ref };
       else if (be.length) res[b.id] = { errors: be, ref };
       else res[b.id] = Object.assign(GB.solveBike(b, rm.fp, ref.fit, state.opts), { ref, fp: rm.fp });
@@ -433,6 +435,7 @@
     const pos = Math.abs(r.railPos) < 0.5 ? 'in the middle of its rails' : `${n0(Math.abs(r.railPos))} mm ${r.railPos > 0 ? 'forward' : 'back'} of the middle of its rails`;
     const fits = r.railOver > 0.5 ? `, past the ${n0(r.railTravel)} mm they allow` : '';
     if (r.railMove == null) return `Plumb line from the saddle tip, ${n1(r.ref.fit.setback)} mm behind the BB. On this frame that puts the tip ${n0(r.noseAhead)} mm ahead of the seat tube line at saddle height. With a ${post}, the saddle ${r.railOver > 0.5 ? 'would have to sit' : 'sits'} about ${pos}${fits}.`;
+    if (r.railOver > 0.5) return `Same point from the BB. On a ${post}, the saddle would have to sit about ${pos}${fits}.`;
     if (Math.abs(r.railMove) < 0.5) return `Saddle sits in the same place on its rails as on the reference, on a ${post}${fits}.`;
     const back = r.railMove < 0;
     return `Same point from the BB. On a ${post}, slide the saddle ${n0(Math.abs(r.railMove))} mm ${back ? 'back' : 'forward'} on its rails from where it sits on the reference${r.railOver > 0.5 ? `. That is past the ${n0(r.railTravel)} mm of rail travel` : ''}.`;
@@ -471,6 +474,7 @@
       text = `
       <p class="implied">This ${n1(stem.length)} mm stem at ${angTxt(stem.angle)} with ${n1(f.spacers)} mm of spacers puts your hands <b>${n0(reachH)} mm</b> ahead of the saddle tip and <b>${n0(Math.abs(drop))} mm</b> ${drop >= 0 ? 'below' : 'above'} the saddle top.</p>
       <p>Your fit on this bike: personal reach <b>${n1(riderReach)} mm</b>${halfW > 0 ? ` to the side of a ${n0(f.barWidth)} mm bar` : ''}, handlebar drop <b>${n1(drop)} mm</b>, and the saddle tip <b>${n1(Math.hypot(saddle.x, saddle.y))} mm</b> from the BB in a straight line.</p>
+      ${m.fp.rail.check ? `<p class="err">${esc(m.fp.rail.check.text)}</p>` : ''}
       ${f.stemImplied ? '<p class="warn">This stem was worked out from the personal reach and drop saved earlier. Enter the stem actually fitted on this bike.</p>' : ''}
       <div class="row-actions"><button class="btn" type="button" id="toFitRef">Copy as personal fit</button></div>`;
     }
@@ -560,7 +564,7 @@
           stem: na, spacers: na, bar: na, width: f.barWidth > 0 ? `${n0(f.barWidth)} mm` : 'not entered', hand: 'target',
         } : fp ? {
           match: 'reference', sta: `${n1(ref.sta)}°`, stack: `${n0(fp.geo.stack)}${mark(fp.geo.stackSrc)} / ${n0(fp.geo.reach)}${mark(fp.geo.reachSrc)}`,
-          height: `${n1(f.saddleHeight)} mm`, setback: `${n1(f.setback)} mm`, rails: `as measured, ${n0(fp.postOffset)} mm post`,
+          height: `${n1(f.saddleHeight)} mm`, setback: `${n1(f.setback)} mm`, rails: `as measured, ${n0(fp.rail.postOffset)} mm post${fp.rail.check ? ' <span class="miss-bad">past the rails</span>' : ''}`,
           stem: esc(stemTxt(refStem(fp))), spacers: `${n1(f.spacers)} mm`, bar: `${n1(f.barReach)} mm`, width: f.barWidth > 0 ? `${n0(f.barWidth)} mm` : 'not entered', hand: 'target',
         } : null,
       };

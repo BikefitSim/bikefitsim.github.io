@@ -144,7 +144,7 @@ const GBDraw = (() => {
     const bikeCock = o ? Object.assign(GB.barFor(bike, o.angle, o.length, o.spacers), { spacers: o.spacers, barReach: bike.barReach })
       : { Q: add(g.T, GB.steerer(bike.hta).d, 20), B: r.target, spacers: 0, barReach: bike.barReach };
     const pb = bikeParts(bike, g, sad, bikeCock, r);
-    const pr = ref ? bikeParts(ref, rg, sad, { Q: fp.stem.Q, B: fp.stem.B, spacers: fp.spacers, barReach: r.ref.fit.barReach }, { postOffset: fp.postOffset, tipToRails: r.tipToRails }) : null;
+    const pr = ref ? bikeParts(ref, rg, sad, { Q: fp.stem.Q, B: fp.stem.B, spacers: fp.spacers, barReach: r.ref.fit.barReach }, { postOffset: fp.rail.postOffset, tipToRails: r.tipToRails }) : null;
 
     /* ---------- main view ---------- */
     const frames = rg ? [g, rg] : [g];
