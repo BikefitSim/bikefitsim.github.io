@@ -235,7 +235,7 @@ const GB = (() => {
       return { angle: a, length: (Math.cos(H) * dyp + Math.sin(H) * dxp) / ca, spacers: (Math.cos(th) * dyp - Math.sin(th) * dxp) / ca };
     };
     return {
-      options: ranked.slice(0, 6),
+      options: ranked.slice(0, 12),
       all: ranked,
       best: ranked[0] || null,
       exactFor,
