@@ -7,12 +7,22 @@ const GB = (() => {
   const STEM_CLAMP = 40;  // stem height on the steerer; its centre sits 20 mm above the spacers
   const BAR_R = 15.9;     // 31.8 mm bar
   const RAIL_H = 45;      // saddle top to rails, for the seatpost check only
+  const POST_OFFSET = 20;  // seatpost offset when none is entered
+  const RAIL_TRAVEL = 30;  // usable saddle rail travel when none is entered
+  const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is entered
+  const MAX_OFFSET = 40;   // most offset a seatpost is sold with
   const WHEEL_R = 340;    // drawing only
   const CHAINSTAY = 410;  // drawing only
   const ANGLE_COST = 0.15; // mm of miss traded per degree away from the reference stem angle
   const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a personal fit)
   const TT_DROP = 18;     // top tube centre below the head tube top, where an actual top tube ends
   const ST_EXT = 20;      // seat tube top above the top tube centre, when only one seat tube length is given
+
+  /* How far the saddle tip sits ahead of the seatpost clamp. The clamp is RAIL_H below the
+     saddle top, on a post whose offset is measured square to the seat tube. */
+  function tipAheadOfClamp(noseAhead, S, offset) {
+    return noseAhead - RAIL_H / Math.tan(S) + offset / Math.sin(S);
+  }
 
   function parseList(str, { min = -Infinity, max = Infinity } = {}) {
     const out = String(str || '')
@@ -148,6 +158,8 @@ const GB = (() => {
       saddle: { x: xs, y: ys },
       hand,
       noseAhead: xs + ys / Math.tan(S), // saddle tip ahead of the seat-tube line at saddle height
+      postOffset: fin(fit.postOffset) ? fit.postOffset : POST_OFFSET,
+      tipClamp: tipAheadOfClamp(xs + ys / Math.tan(S), S, fin(fit.postOffset) ? fit.postOffset : POST_OFFSET),
       spacers: fit.spacers,
     };
   }
@@ -242,8 +254,18 @@ const GB = (() => {
     const handShift = hand.x - fp.hand.x;
     const heightAlong = y / Math.sin(S);
     const noseAhead = x + y / Math.tan(S); // saddle tip ahead of this seat tube's line at saddle height
+    // Where the saddle sits on its rails, + forward of their middle. On a bike fit it is worked
+    // out from the reference bike's post (that saddle is really there, so it is held within
+    // its rails); a personal fit has only the saddle's tip-to-rails distance to go by.
+    const postOffset = fin(bikeIn.postOffset) ? bikeIn.postOffset : POST_OFFSET;
+    const railTravel = fin(bikeIn.railTravel) && bikeIn.railTravel > 0 ? bikeIn.railTravel : RAIL_TRAVEL;
+    const tipToRails = fin(bikeIn.tipToRails) && bikeIn.tipToRails > 0 ? bikeIn.tipToRails : TIP_TO_RAILS;
+    const halfRail = railTravel / 2;
+    const tipClamp = tipAheadOfClamp(noseAhead, S, postOffset);
     // + = saddle further forward on its rails than on the reference bike; none for a personal fit
-    const railMove = fin(fp.noseAhead) ? noseAhead - fp.noseAhead : null;
+    const railMove = fin(fp.tipClamp) ? tipClamp - fp.tipClamp : null;
+    const railPos = railMove != null ? Math.max(-halfRail, Math.min(halfRail, fp.tipClamp - tipToRails)) + railMove : tipClamp - tipToRails;
+    const railOver = Math.abs(railPos) - halfRail; // > 0: past the end of the rails
     const st = seatTubes(bike);
     const exposed = (y - RAIL_H) / Math.sin(S) - st.ct;
     const ctNote = st.ctEst ? ', taking the seat tube c-t as the c-c plus 20 mm' : '';
@@ -269,8 +291,22 @@ const GB = (() => {
     if (wRef === 0 && fin(bikeIn.barWidth) && bikeIn.barWidth > 0) {
       checks.push({ level: 'warn', text: 'Enter the reference\'s handlebar width in step 1, so this bar width can be compared with it.' });
     }
-    if (railMove != null && Math.abs(railMove) > 15) {
-      checks.push({ level: 'warn', text: `Moving the saddle ${Math.abs(railMove).toFixed(0)} mm on its rails is more than most saddles allow. Use a seatpost with about ${Math.abs(railMove).toFixed(0)} mm ${railMove > 0 ? 'less' : 'more'} offset than the reference bike's.` });
+    let offsetNeeded = null;
+    if (railOver > 0.5) {
+      // A post with less offset moves the clamp forward, so the saddle sits further back on it.
+      const fwd = railPos > 0;
+      offsetNeeded = postOffset + (fwd ? -1 : 1) * railOver * Math.sin(S);
+      const where = `${railOver.toFixed(0)} mm further ${fwd ? 'forward' : 'back'} than its rails allow`;
+      const post = `a ${postOffset.toFixed(0)} mm offset seatpost and ${railTravel.toFixed(0)} mm of rail travel`;
+      if (offsetNeeded >= -0.5 && offsetNeeded <= MAX_OFFSET) {
+        const pick = fwd ? Math.floor(offsetNeeded / 5) * 5 : Math.ceil(offsetNeeded / 5) * 5; // to the next common size that fits
+        const use = pick <= 0 ? 'an inline seatpost (0 mm offset)' : `a seatpost with about ${pick} mm offset`;
+        checks.push({ level: 'bad', text: `With ${post}, the saddle would have to sit ${where}. Use ${use}.` });
+      } else {
+        const lim = fwd ? 0 : MAX_OFFSET;
+        const still = Math.abs(offsetNeeded - lim) / Math.sin(S);
+        checks.push({ level: 'bad', text: `This saddle setback can't be reached on this frame. With ${post}, the saddle would have to sit ${where}. Even ${fwd ? 'an inline seatpost' : `a ${MAX_OFFSET} mm offset seatpost`} leaves it ${still.toFixed(0)} mm short.` });
+      }
     }
     if (exposed < 40) {
       checks.push({ level: 'bad', text: `Only about ${exposed.toFixed(0)} mm of seatpost would show${ctNote}. The saddle may not go this low on this frame.` });
@@ -287,9 +323,9 @@ const GB = (() => {
     if (cockpit.steepest && cockpit.steepest.spacers < -2) {
       checks.push({ level: 'warn', text: `The front end is tall for this fit. Even a slammed ${cockpit.steepest.angle}° stem leaves the bar about ${Math.abs(cockpit.steepest.spacers).toFixed(0)} mm higher than wanted.` });
     }
-    return { bike, geo, heightAlong, noseAhead, railMove, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: frameDrawing(bike) };
+    return { bike, geo, heightAlong, noseAhead, railMove, railPos, railOver, railTravel, postOffset, tipToRails, offsetNeeded, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: frameDrawing(bike) };
   }
 
-  return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE };
+  return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE, POST_OFFSET, RAIL_TRAVEL, TIP_TO_RAILS };
 })();
 if (typeof module !== 'undefined') module.exports = GB;
