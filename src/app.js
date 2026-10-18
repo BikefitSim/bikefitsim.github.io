@@ -15,8 +15,8 @@
   const finite = (v) => typeof v === 'number' && Number.isFinite(v);
   const isObj = (o) => o && typeof o === 'object';
 
-  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach'];
-  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null };
+  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay'];
+  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null, chainstay: null };
   /* Two kinds of reference, each with its own tab. A bike fit (kind 'bike') is a frame plus how
      it is set up (saddle, spacers, stem, bar); a personal fit (kind 'fit') is only the rider's
      numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
@@ -171,6 +171,7 @@
     { k: 'forkOffset', l: 'Fork offset', u: 'mm', h: 'Also called rake' },
     { k: 'stack', l: 'Stack', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'reach', l: 'Reach', u: 'mm', opt: true, h: 'Optional, from the chart' },
+    { k: 'chainstay', l: 'Chainstay', u: 'mm', opt: true, h: 'Optional. BB centre to rear axle. Places the rear wheel and adds a ground view.' },
   ];
   const FF = {
     saddleHeight: { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
@@ -328,6 +329,7 @@
     }
     if (finite(b.stack) && (b.stack < 300 || b.stack > 800)) c.wrong.push('Stack should be between 300 and 800.');
     if (hasReach && (b.reach < 250 || b.reach > 600)) c.wrong.push('Reach should be between 250 and 600.');
+    if (b.chainstay != null && b.chainstay !== '' && !(finite(b.chainstay) && b.chainstay >= 350 && b.chainstay <= 500)) c.wrong.push('Chainstay should be between 350 and 500.');
     if (withBar) c.chk('barReach', 0, 150, 'Handlebar reach');
     return c.done();
   }
@@ -644,7 +646,12 @@
           <figure class="draw">${svg.front}<figcaption>Front end close-up, 10 mm squares</figcaption></figure>
           <figure class="draw">${svg.saddle}<figcaption>Saddle close-up, 10 mm squares</figcaption></figure>
         </div>
-      </div>`;
+      </div>${groundHTML(svg.ground, hasBike)}`;
+  }
+  // the frames on level ground, after the side view; needs a chainstay on both frames
+  function groundHTML(svg, hasBike) {
+    if (svg) return `<div class="viz viz-ground"><figure class="draw">${svg}<figcaption>Both frames on level ground, BBs on the same vertical line. Heights from the ground; squares are 50 mm.</figcaption></figure></div>`;
+    return hasBike ? '<p class="viz-note">Enter the chainstay on the reference bike and this frame to compare them on level ground.</p>' : '';
   }
   // a result tile lights up its dimension in the drawings
   function highlight(key, on) {

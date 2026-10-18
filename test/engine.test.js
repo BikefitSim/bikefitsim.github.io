@@ -163,4 +163,14 @@ test('a bike fit with a setback its own seatpost cannot carry is flagged, and so
   assert.ok(r.checks.some((c) => c.level === 'bad' && c.text.includes("can't be reached")), 'target flagged too');
 });
 
+test('a chainstay places the rear axle; without one the drawing keeps its default', () => {
+  const plain = GB.frameDrawing(Object.assign({}, ref));
+  assert.strictEqual(plain.csKnown, false);
+  near(Math.hypot(plain.rear.x, plain.rear.y), 410, 1e-9, 'default chainstay');
+  const d = GB.frameDrawing(Object.assign({}, ref, { chainstay: 420 }));
+  assert.strictEqual(d.csKnown, true);
+  near(Math.hypot(d.rear.x, d.rear.y), 420, 1e-9, 'chainstay');
+  near(d.rear.y, ref.bbDrop, 1e-9, 'axle BB drop above the BB');
+});
+
 console.log(`\n${passed} checks passed`);

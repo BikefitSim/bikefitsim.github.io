@@ -181,6 +181,40 @@ const GBDraw = (() => {
     m += v.text({ x: 0, y: 0 }, 'BB 0, 0', 'bbl', { dx: 12, dy: 17, anchor: 'start' });
     m += '</svg>';
 
+    /* ---------- both frames on level ground ---------- */
+    // Only with a reference bike and a chainstay on both frames: the rear wheel has to be in place.
+    // Same wheel size on both, BB on the same vertical line, heights measured from the ground.
+    let gr = null;
+    if (pr && g.csKnown && rg.csKnown) {
+      const hb = -g.groundY; const hr = -rg.groundY; // BB height above the ground
+      const up = (q, h) => ({ x: q.x, y: q.y + h });
+      const gx0 = Math.min(g.rear.x, rg.rear.x) - TYRE_R - 40;
+      const gx1 = Math.max(g.front.x, rg.front.x) + TYRE_R + 40;
+      const gy1 = Math.max(sad.y, hand.y, fp.hand.y) + Math.max(hb, hr) + 110;
+      const below = 95 * (gx1 - gx0) / 860; // room under the ground for the wheelbases and grid labels
+      const gvb = { x: gx0, y: -below, w: gx1 - gx0, h: gy1 + below };
+      const gv = View(gvb, 860);
+      const lift = (h, body) => `<g transform="translate(0 ${f1(-h)})">${body}</g>`;
+      gr = gv.open('ground', `role="img" aria-label="${esc(names.bike)} and ${esc(names.ref)} standing on level ground, bottom brackets on the same vertical line"`);
+      if (show.grid) gr += grid(gv, 50);
+      gr += gv.line({ x: gx0 + 10, y: 0 }, { x: gx1 - 10, y: 0 }, 'ground');
+      gr += lift(hr, drawBike(gv, 'rf', rg, pr, sad));
+      gr += lift(hb, drawBike(gv, 'bk', g, pb, sad));
+      const sg = up(sad, hb); const hg = up(hand, hb);
+      gr += gv.target(sg) + gv.target(hg);
+      if (show.dims) {
+        const wb = (q, off, cls) => gv.dim({ x: q.rear.x, y: 0 }, { x: q.front.x, y: 0 }, off, `Wheelbase ${n0(q.front.x - q.rear.x)}`, { cls, ext: false });
+        gr += wb(g, -34, 'dim');
+        gr += wb(rg, -58, 'dim rfd');
+        gr += gv.dim({ x: 0, y: 0 }, { x: 0, y: hb }, 34, `BB height ${n0(hb)}`, { ext: false });
+        gr += gv.dim({ x: 0, y: 0 }, { x: 0, y: hr }, -34, `BB height ${n0(hr)}`, { cls: 'dim rfd', ext: false });
+        gr += gv.text(hg, `Hand ${n0(hg.x)}, ${n0(hg.y)}`, 'dt', { dx: 12, dy: 18, anchor: 'start' });
+        gr += gv.text(sg, `Saddle tip ${n0(sg.x)}, ${n0(sg.y)}`, 'dt', { dx: -14, dy: -14, anchor: 'end' });
+      }
+      gr += gv.text({ x: 0, y: 0 }, 'Ground 0, 0', 'bbl', { dx: -8, dy: 15, anchor: 'end' });
+      gr += '</svg>';
+    }
+
     /* ---------- front end close-up ---------- */
     const fpts = [pb.T, pb.stemTop, pb.B, hand, { x: pb.B.x + pb.barReach, y: pb.B.y }];
     if (pr) fpts.push(pr.T, pr.stemTop, pr.B, { x: pr.B.x + pr.barReach, y: pr.B.y });
@@ -257,7 +291,7 @@ const GBDraw = (() => {
       s += sv.text(sad, 'Saddle tip', 'dt', { dy: -16 });
     }
     s += '</svg>';
-    return { main: m, front: f, saddle: s };
+    return { main: m, front: f, saddle: s, ground: gr };
   }
 
   return { render };

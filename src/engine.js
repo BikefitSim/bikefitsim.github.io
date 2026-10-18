@@ -12,7 +12,7 @@ const GB = (() => {
   const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is entered
   const MAX_OFFSET = 40;   // most offset a seatpost is sold with, for the hint when neither fits
   const WHEEL_R = 340;    // drawing only
-  const CHAINSTAY = 410;  // drawing only
+  const CHAINSTAY = 410;  // drawing only, when the frame has no chainstay length
   const ANGLE_COST = 0.15; // mm of miss traded per degree away from the reference stem angle
   const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a personal fit)
   const TT_DROP = 18;     // top tube centre below the head tube top, where an actual top tube ends
@@ -247,7 +247,10 @@ const GB = (() => {
     const { d, n } = steerer(bike.hta);
     const S = rad(bike.sta);
     const T = { x: bike.reach, y: bike.stack };
-    const csH = Math.sqrt(CHAINSTAY ** 2 - bike.bbDrop ** 2);
+    // BB centre to rear axle, straight line; the axle sits BB drop above the BB
+    const csKnown = fin(bike.chainstay) && bike.chainstay > Math.abs(bike.bbDrop) + 1;
+    const cs = csKnown ? bike.chainstay : CHAINSTAY;
+    const csH = Math.sqrt(cs ** 2 - bike.bbDrop ** 2);
     const rear = { x: -csH, y: bike.bbDrop };
     const along = (t) => ({ x: T.x + t * d.x, y: T.y + t * d.y });
     const htBottom = along(-bike.htLength);
@@ -258,7 +261,7 @@ const GB = (() => {
     const stTop = onSeatTube(st.ct);
     const ttRear = fin(bike.seatTubeCC) && bike.seatTubeCC > 0 ? onSeatTube(st.cc) : stTop; // top tube meets the seat tube
     const ssJoin = onSeatTube(st.ct - 25);
-    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR: WHEEL_R, groundY: bike.bbDrop - WHEEL_R };
+    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR: WHEEL_R, groundY: bike.bbDrop - WHEEL_R, csKnown };
   }
 
   /* One target bike: what to change so saddle tip and hand position match the reference. */
