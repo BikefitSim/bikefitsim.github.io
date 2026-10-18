@@ -50,6 +50,9 @@ body.loading .f-in { opacity: .55; }
 .viz-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .viz-ground { margin-top: 14px; }
 .zoomwrap { overflow: auto; max-height: 70vh; overscroll-behavior: contain; }
+.gzoom svg.geo { cursor: zoom-in; }
+.gzoom.in svg.geo { cursor: zoom-out; }
+.gzoom figcaption { justify-content: space-between; align-items: center; }
 .viz-note { margin: 12px 0 0; font-size: 13px; color: var(--ink-2); }
 @media (max-width: 980px) { .viz { grid-template-columns: minmax(0, 1fr); } .viz-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
 svg.geo { display: block; width: 100%; height: auto; max-width: 100%; background: var(--draw-bg); }

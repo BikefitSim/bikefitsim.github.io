@@ -6,7 +6,7 @@ const GBDraw = (() => {
   const POST_HEAD = 18;   // rails to top of the post shaft
   const TYRE_R = 340;
   const RIM_R = 311;
-  const ZOOM_PX = 2;     // screen px per mm when zoomed: 5 mm squares are 10 px
+  const ZOOM_PX = 1.5;   // screen px per mm on the zoomed ground view: 10 mm squares are 15 px
 
   const f1 = (v) => v.toFixed(1);
   const MINUS = '−';
@@ -161,10 +161,9 @@ const GBDraw = (() => {
     const minY = g.groundY - 40;
     const maxY = Math.max(sad.y, hand.y) + 110;
     const vb = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
-    const zoom = !!show.zoom;
-    const v = zoom ? View(vb, vb.w * ZOOM_PX, true) : View(vb, 860);
+    const v = View(vb, 860);
     let m = v.open('main', `role="img" aria-label="${esc(names.bike)} drawn over ${esc(names.ref)} on a millimetre grid centred on the bottom bracket"`);
-    if (show.grid) m += zoom ? grid(v, 5, ZOOM_GRID) : grid(v, 50);
+    if (show.grid) m += grid(v, 50);
     m += v.line({ x: minX + 10, y: g.groundY }, { x: maxX - 10, y: g.groundY }, 'ground');
     m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -(bike.forkA2C + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
     if (showRef) m += drawBike(v, 'rf', rg, pr, sad);
@@ -195,8 +194,10 @@ const GBDraw = (() => {
     // Same wheel size on both, rear axles at x = 0, ground at y = 0. Drawn small, with the
     // measurements around the bikes: centres, trail and wheelbase under the ground, reach above,
     // heights to the sides.
-    let gr = null; let groundBB = null;
+    // zoomAt: a point on the ground grid (mm) to zoom in on, from a click on the drawing
+    let gr = null; let groundFocus = null;
     if (pr && g.csKnown && rg.csKnown) {
+      const zoom = !!data.zoomAt;
       // each frame moved from its BB grid onto the ground grid
       const place = (q) => {
         const dx = -q.rear.x; const h = -q.groundY; // horizontal chainstay, BB height
@@ -216,10 +217,10 @@ const GBDraw = (() => {
       const gw = zoom ? span * ZOOM_PX + M.l + M.r : DW; // drawing width in px
       const gvb = { x: x0 - M.l * k, y: -M.b * k, w: gw * k, h: top + (M.t + M.b) * k };
       const gv = View(gvb, gw, zoom);
-      groundBB = gv.px(both[0].bb);
+      if (zoom) groundFocus = gv.px(data.zoomAt === true ? both[0].bb : data.zoomAt);
       const lift = (P, body) => `<g transform="translate(${f1(P.dx)} ${f1(-P.h)})">${body}</g>`;
       gr = gv.open('ground', `role="img" aria-label="${esc(names.bike)} and ${esc(names.ref)} standing on level ground, rear axles at the same point"`);
-      if (show.grid) gr += zoom ? grid(gv, 5, ZOOM_GRID) : grid(gv, 50);
+      if (show.grid) gr += zoom ? grid(gv, 10, ZOOM_GRID) : grid(gv, 50);
       gr += gv.line({ x: gvb.x + 6 * k, y: 0 }, { x: gvb.x + gvb.w - 6 * k, y: 0 }, 'ground');
       // steering axes down to the ground
       gr += `<g class="axes">${both.map((P, i) => gv.line(P.T, P.axis, i ? 'saxis rfa' : 'saxis')).join('')}</g>`;
@@ -329,8 +330,8 @@ const GBDraw = (() => {
       s += sv.text(sad, 'Saddle tip', 'dt', { dy: -16 });
     }
     s += '</svg>';
-    // where the BB is on the zoomed drawings, so they open scrolled to it
-    return { main: m, front: f, saddle: s, ground: gr, focus: { main: v.px({ x: 0, y: 0 }), ground: groundBB } };
+    // groundFocus: where the zoomed-in point is on the zoomed ground view, in px
+    return { main: m, front: f, saddle: s, ground: gr, groundFocus };
   }
 
   return { render };

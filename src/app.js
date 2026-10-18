@@ -624,6 +624,8 @@
   const LAYER_KEY = 'geobike.layers';
   let layers = { ref: true, dims: true, grid: true };
   try { const l = JSON.parse(localStorage.getItem(LAYER_KEY) || 'null'); if (l && typeof l === 'object') layers = Object.assign(layers, l); } catch (e) { /* defaults */ }
+  // the ground view zooms in where it is clicked (or on the BB, from its button) and out on the next click
+  let groundZoom = null; // null, or { at: point on the ground grid in mm, or true for the BB; off: click position in the drawing, px }
   function renderViz() {
     const el = $('vizWrap');
     const b = curBike();
@@ -631,12 +633,11 @@
     if (!r || !r.fp || r.errors) { el.innerHTML = '<div class="empty">The side view appears once the reference and this frame are complete.</div>'; return; }
     const o = chosenFor(b, r);
     const hasBike = !!r.fp.bike;
-    const svg = GBDraw.render({ r, o, show: layers, names: { bike: b.name || 'This bike', ref: refName(r.ref) } });
-    // zoomed drawings scroll in a frame; keep where each one was scrolled to across redraws
-    const kept = {};
-    el.querySelectorAll('.zoomwrap').forEach((w) => { kept[w.dataset.zoom] = [w.scrollLeft, w.scrollTop]; });
-    const zoomed = (body, key) => (layers.zoom && body ? `<div class="zoomwrap" data-zoom="${key}">${body}</div>` : body);
-    const squares = layers.zoom ? 'Squares are 5 mm; values every 50 mm. Scroll to move around.' : 'Squares are 50 mm; labels every 200 mm.';
+    const svg = GBDraw.render({ r, o, show: layers, zoomAt: groundZoom && groundZoom.at, names: { bike: b.name || 'This bike', ref: refName(r.ref) } });
+    if (!svg.ground) groundZoom = null;
+    // the zoomed ground view scrolls in a frame; keep where it was scrolled to across redraws
+    const was = el.querySelector('.zoomwrap');
+    const kept = was ? [was.scrollLeft, was.scrollTop] : null;
     const tog = (k, label) => `<label class="tog"><input type="checkbox" data-layer="${k}" id="lay-${k}"${layers[k] ? ' checked' : ''}> ${label}</label>`;
     el.innerHTML = `
       <div class="viz-bar">
@@ -645,27 +646,45 @@
           <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle tip'}</span>
           <span class="lg"><i class="tg"></i>Saddle tip and hand position</span>
         </div>
-        <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}${tog('zoom', '5 mm squares')}</div>
+        <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
       <div class="viz">
-        <figure class="draw">${zoomed(svg.main, 'main')}<figcaption>Side view on the BB grid. ${squares}</figcaption></figure>
+        <figure class="draw">${svg.main}<figcaption>Side view on the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
         <div class="viz-side">
           <figure class="draw">${svg.front}<figcaption>Front end close-up, 10 mm squares</figcaption></figure>
           <figure class="draw">${svg.saddle}<figcaption>Saddle close-up, 10 mm squares</figcaption></figure>
         </div>
-      </div>${groundHTML(zoomed(svg.ground, 'ground'), hasBike, squares)}`;
-    // a zoomed drawing opens on the BB, then stays where it was scrolled to
-    el.querySelectorAll('.zoomwrap').forEach((w) => {
-      const at = kept[w.dataset.zoom];
-      const f = svg.focus[w.dataset.zoom];
-      if (at) { w.scrollLeft = at[0]; w.scrollTop = at[1]; } else if (f) { w.scrollLeft = f.x - w.clientWidth / 2; w.scrollTop = f.y - w.clientHeight / 2; }
-    });
+      </div>${groundHTML(svg.ground, hasBike)}`;
+    // zooming in keeps the clicked point under the pointer; after that the frame stays where it was scrolled to
+    const w = el.querySelector('.zoomwrap');
+    if (w && svg.groundFocus) {
+      const off = (groundZoom && groundZoom.off) || [w.clientWidth / 2, w.clientHeight / 2];
+      [w.scrollLeft, w.scrollTop] = kept || [svg.groundFocus.x - off[0], svg.groundFocus.y - off[1]];
+    }
   }
   // the frames on level ground, after the side view; needs a chainstay on both frames
-  function groundHTML(svg, hasBike, squares) {
-    if (svg) return `<div class="viz viz-ground"><figure class="draw">${svg}<figcaption>Both frames on level ground: rear axles at x = 0, ground at y = 0. ${squares}</figcaption></figure></div>`;
+  function groundHTML(svg, hasBike) {
+    if (svg) {
+      const z = !!groundZoom;
+      const how = z ? 'Zoomed in: squares are 10 mm, values every 50 mm. Scroll to move around; click to zoom out.' : 'Squares are 50 mm. Click the drawing to zoom in to 10 mm squares.';
+      return `<div class="viz viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>Both frames on level ground: rear axles at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
+    }
     return hasBike ? '<p class="viz-note">Enter the chainstay on the reference bike and this frame to compare them on level ground.</p>' : '';
   }
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-gzoom]');
+    const pic = !btn && e.target.closest && e.target.closest('#vizWrap svg.ground');
+    if (!btn && !pic) return;
+    if (groundZoom) groundZoom = null;
+    else if (btn) groundZoom = { at: true };
+    else {
+      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(pic.getScreenCTM().inverse()); // SVG y runs down
+      const box = pic.getBoundingClientRect();
+      groundZoom = { at: { x: p.x, y: -p.y }, off: [e.clientX - box.left, e.clientY - box.top] };
+    }
+    renderViz();
+    if (btn) { const again = document.querySelector('[data-gzoom]'); if (again) again.focus(); }
+  });
   // a result tile lights up its dimension in the drawings
   function highlight(key, on) {
     document.querySelectorAll(`#vizWrap [data-dim="${key}"]`).forEach((n) => n.classList.toggle('hl', on));
