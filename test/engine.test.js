@@ -163,4 +163,44 @@ test('a bike fit with a setback its own seatpost cannot carry is flagged, and so
   assert.ok(r.checks.some((c) => c.level === 'bad' && c.text.includes("can't be reached")), 'target flagged too');
 });
 
+test('a chainstay places the rear axle; without one the drawing keeps its default', () => {
+  const plain = GB.frameDrawing(Object.assign({}, ref));
+  assert.strictEqual(plain.csKnown, false);
+  near(Math.hypot(plain.rear.x, plain.rear.y), 410, 1e-9, 'default chainstay');
+  const d = GB.frameDrawing(Object.assign({}, ref, { chainstay: 420 }));
+  assert.strictEqual(d.csKnown, true);
+  near(Math.hypot(d.rear.x, d.rear.y), 420, 1e-9, 'chainstay');
+  near(d.rear.y, ref.bbDrop, 1e-9, 'axle BB drop above the BB');
+});
+
+test('the front axle sits level with the rear one, even when the chart stack disagrees with the tubes', () => {
+  // a chart where fork and head tube give 4 mm less stack than the chart (size 1 of a real chart)
+  const b = { sta: 74.5, hta: 72.5, htLength: 115, ett: 535, seatTube: 490, bbDrop: 45, forkA2C: 370, forkOffset: 45, chainstay: 401, stack: 498, reach: 396 };
+  const d = GB.frameDrawing(b);
+  near(d.front.y, 45, 1e-9, 'front axle height');
+  near(d.front.x - d.rear.x, 984.5, 0.1, 'wheelbase (chart says 985)');
+  // stack from the tubes: the fork length is used as it is
+  const t = Object.assign({}, ref, GB.frameGeometry(Object.assign({}, ref, { stack: null, reach: null })));
+  const dt = GB.frameDrawing(t);
+  const foot = { x: dt.front.x - 50 * Math.sin(GB.rad(72.5)), y: dt.front.y - 50 * Math.cos(GB.rad(72.5)) };
+  near(Math.hypot(foot.x - dt.T.x, foot.y - dt.T.y), 163 + 385, 1e-6, 'head tube plus fork down the axis');
+  near(dt.trail, (340 * Math.cos(GB.rad(72.5)) - 50) / Math.sin(GB.rad(72.5)), 1e-6, 'trail');
+});
+
+test('a chart wheelbase places the front axle exactly, and a far-off one is flagged', () => {
+  // size S of a real chart: its own numbers give 963.7 mm, the chart says 963
+  const b = { sta: 75, hta: 73.5, htLength: 125, ett: 535, seatTube: 535, bbDrop: 57, forkA2C: 370, forkOffset: 40, chainstay: 393, stack: 520, reach: 396 };
+  near(GB.frameDrawing(b).front.x - GB.frameDrawing(b).rear.x, 963.7, 0.05, 'from the frame');
+  const d = GB.frameDrawing(Object.assign({}, b, { wheelbase: 963 }));
+  near(d.front.x - d.rear.x, 963, 1e-9, 'from the chart');
+  near(d.front.y, 57, 1e-9, 'front axle level');
+  const noCs = GB.frameDrawing(Object.assign({}, b, { chainstay: null, wheelbase: 963 }));
+  assert.strictEqual(noCs.wbKnown, false, 'wheelbase needs the chainstay');
+  const fp = GB.fitPoints(ref, fit);
+  const far = GB.solveBike(Object.assign({}, b, { wheelbase: 990, barReach: 80 }), fp, fit, opts);
+  assert.ok(far.checks.some((c) => c.level === 'warn' && c.text.includes('wheelbase')), 'flagged');
+  const close = GB.solveBike(Object.assign({}, b, { wheelbase: 963, barReach: 80 }), fp, fit, opts);
+  assert.ok(!close.checks.some((c) => c.text.includes('wheelbase')), 'not flagged');
+});
+
 console.log(`\n${passed} checks passed`);

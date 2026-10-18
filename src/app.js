@@ -15,8 +15,8 @@
   const finite = (v) => typeof v === 'number' && Number.isFinite(v);
   const isObj = (o) => o && typeof o === 'object';
 
-  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach'];
-  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null };
+  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay', 'wheelbase'];
+  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null, chainstay: null, wheelbase: null };
   /* Two kinds of reference, each with its own tab. A bike fit (kind 'bike') is a frame plus how
      it is set up (saddle, spacers, stem, bar); a personal fit (kind 'fit') is only the rider's
      numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
@@ -171,6 +171,8 @@
     { k: 'forkOffset', l: 'Fork offset', u: 'mm', h: 'Also called rake' },
     { k: 'stack', l: 'Stack', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'reach', l: 'Reach', u: 'mm', opt: true, h: 'Optional, from the chart' },
+    { k: 'chainstay', l: 'Chainstay', u: 'mm', opt: true, h: 'Optional. BB centre to rear axle. Places the rear wheel and adds a ground view.' },
+    { k: 'wheelbase', l: 'Wheelbase', u: 'mm', opt: true, h: 'Optional, with the chainstay. Places the front wheel exactly as the chart has it.' },
   ];
   const FF = {
     saddleHeight: { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
@@ -328,6 +330,8 @@
     }
     if (finite(b.stack) && (b.stack < 300 || b.stack > 800)) c.wrong.push('Stack should be between 300 and 800.');
     if (hasReach && (b.reach < 250 || b.reach > 600)) c.wrong.push('Reach should be between 250 and 600.');
+    if (b.chainstay != null && b.chainstay !== '' && !(finite(b.chainstay) && b.chainstay >= 350 && b.chainstay <= 500)) c.wrong.push('Chainstay should be between 350 and 500.');
+    if (b.wheelbase != null && b.wheelbase !== '' && !(finite(b.wheelbase) && b.wheelbase >= 850 && b.wheelbase <= 1300)) c.wrong.push('Wheelbase should be between 850 and 1300.');
     if (withBar) c.chk('barReach', 0, 150, 'Handlebar reach');
     return c.done();
   }
@@ -482,16 +486,24 @@
       <p>Selected: every target bike in step 2 matches this one.</p>`;
   }
 
-  /* Order of the stem and spacer options: by how far forward or how high the bar ends up
-     (most first), or by how close it is. Remembered per browser. */
-  const OPT_SORT_KEY = 'geobike.optSort';
-  const OPT_SORTS = [['reach', 'Most reach'], ['stack', 'Most stack'], ['miss', 'Closest']];
-  let optSort = 'reach';
-  try { const v = localStorage.getItem(OPT_SORT_KEY); if (OPT_SORTS.some(([k]) => k === v)) optSort = v; } catch (e) { /* default */ }
+  /* Order of the stem and spacer options: by how close the bar gets (the default), or by
+     how far forward or how high it ends up. Clicking reach or stack again flips it between
+     most first and least first. Remembered per browser. */
+  const OPT_SORT_KEY = 'geobike.optSort2';
+  const OPT_SORTS = [['miss', 'Closest', 'Closest'], ['reach', 'Most reach', 'Least reach'], ['stack', 'Most stack', 'Least stack']];
+  let optSort = 'miss';
+  let optLeast = false; // reach or stack: least first
+  try {
+    const m = /^(miss|reach|stack)(-least)?$/.exec(localStorage.getItem(OPT_SORT_KEY) || '');
+    if (m) { optSort = m[1]; optLeast = !!m[2] && m[1] !== 'miss'; }
+  } catch (e) { /* default */ }
+  let optsOpen = true; // the options list, shown or hidden with its +/− (kept across redraws)
+  document.addEventListener('toggle', (e) => { if (e.target.id === 'optsBox') optsOpen = e.target.open; }, true);
   function sortOpts(list) {
     if (optSort === 'miss') return list;
     const by = optSort === 'stack' ? (x) => x.dy : (x) => x.dx;
-    return list.slice().sort((p, q) => by(q) - by(p) || p.err - q.err);
+    const dir = optLeast ? -1 : 1;
+    return list.slice().sort((p, q) => dir * (by(q) - by(p)) || p.err - q.err);
   }
 
   function renderBikeOut() {
@@ -535,10 +547,11 @@
           <span class="t-s">Hand position <b>${o ? missTxt(o) : 'n/a'}</b></span></div>
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
-      <div>
-        <div class="sub-h"><h4>Stem and spacer options</h4>
-          <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, label]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}">${label}</button>`).join('')}</div>
-          <p>The ${r.cockpit.options.length} closest combinations from your stems. Hand fwd and hand up are the offsets from the target (+ is forward or higher); miss is the straight-line distance. Pick one to draw it.</p></div>
+      <details class="parts opts" id="optsBox"${optsOpen ? ' open' : ''}>
+        <summary>Stem and spacer options <span>the ${r.cockpit.options.length} closest from your stems</span></summary>
+        <div class="sub-h">
+          <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}"${k !== 'miss' ? ` title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first"` : ''}>${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
+          <p>Hand fwd and hand up are the offsets from the target (+ is forward or higher); miss is the straight-line distance. Pick one to draw it.</p></div>
         <div class="tbl-wrap">
           <table class="data" id="optTable">
             <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
@@ -551,7 +564,7 @@
             }).join('')}</tbody>
           </table>
         </div>
-      </div>`;
+      </details>`;
   }
 
   function renderCompare() {
@@ -611,6 +624,8 @@
   const LAYER_KEY = 'geobike.layers';
   let layers = { ref: true, dims: true, grid: true };
   try { const l = JSON.parse(localStorage.getItem(LAYER_KEY) || 'null'); if (l && typeof l === 'object') layers = Object.assign(layers, l); } catch (e) { /* defaults */ }
+  // the ground view zooms in where it is clicked (or on the BB, from its button) and out on the next click
+  let groundZoom = null; // null, or { at: point on the ground grid in mm, or true for the BB; off: click position in the drawing, px }
   function renderViz() {
     const el = $('vizWrap');
     const b = curBike();
@@ -618,7 +633,11 @@
     if (!r || !r.fp || r.errors) { el.innerHTML = '<div class="empty">The side view appears once the reference and this frame are complete.</div>'; return; }
     const o = chosenFor(b, r);
     const hasBike = !!r.fp.bike;
-    const svg = GBDraw.render({ r, o, show: layers, names: { bike: b.name || 'This bike', ref: refName(r.ref) } });
+    const svg = GBDraw.render({ r, o, show: layers, zoomAt: groundZoom && groundZoom.at, names: { bike: b.name || 'This bike', ref: refName(r.ref) } });
+    if (!svg.ground) groundZoom = null;
+    // the zoomed ground view scrolls in a frame; keep where it was scrolled to across redraws
+    const was = el.querySelector('.zoomwrap');
+    const kept = was ? [was.scrollLeft, was.scrollTop] : null;
     const tog = (k, label) => `<label class="tog"><input type="checkbox" data-layer="${k}" id="lay-${k}"${layers[k] ? ' checked' : ''}> ${label}</label>`;
     el.innerHTML = `
       <div class="viz-bar">
@@ -635,8 +654,37 @@
           <figure class="draw">${svg.front}<figcaption>Front end close-up, 10 mm squares</figcaption></figure>
           <figure class="draw">${svg.saddle}<figcaption>Saddle close-up, 10 mm squares</figcaption></figure>
         </div>
-      </div>`;
+      </div>${groundHTML(svg.ground, hasBike)}`;
+    // zooming in keeps the clicked point under the pointer; after that the frame stays where it was scrolled to
+    const w = el.querySelector('.zoomwrap');
+    if (w && svg.groundFocus) {
+      const off = (groundZoom && groundZoom.off) || [w.clientWidth / 2, w.clientHeight / 2];
+      [w.scrollLeft, w.scrollTop] = kept || [svg.groundFocus.x - off[0], svg.groundFocus.y - off[1]];
+    }
   }
+  // the frames on level ground, after the side view; needs a chainstay on both frames
+  function groundHTML(svg, hasBike) {
+    if (svg) {
+      const z = !!groundZoom;
+      const how = z ? 'Zoomed in: squares are 10 mm, values every 50 mm. Scroll to move around; click to zoom out.' : 'Squares are 50 mm. Click the drawing to zoom in to 10 mm squares.';
+      return `<div class="viz viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>Both frames on level ground: the back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
+    }
+    return hasBike ? '<p class="viz-note">Enter the chainstay on the reference bike and this frame to compare them on level ground.</p>' : '';
+  }
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-gzoom]');
+    const pic = !btn && e.target.closest && e.target.closest('#vizWrap svg.ground');
+    if (!btn && !pic) return;
+    if (groundZoom) groundZoom = null;
+    else if (btn) groundZoom = { at: true };
+    else {
+      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(pic.getScreenCTM().inverse()); // SVG y runs down
+      const box = pic.getBoundingClientRect();
+      groundZoom = { at: { x: p.x, y: -p.y }, off: [e.clientX - box.left, e.clientY - box.top] };
+    }
+    renderViz();
+    if (btn) { const again = document.querySelector('[data-gzoom]'); if (again) again.focus(); }
+  });
   // a result tile lights up its dimension in the drawings
   function highlight(key, on) {
     document.querySelectorAll(`#vizWrap [data-dim="${key}"]`).forEach((n) => n.classList.toggle('hl', on));
@@ -1132,8 +1180,10 @@
     }
     const sortBtn = e.target.closest('[data-optsort]');
     if (sortBtn) {
-      optSort = sortBtn.dataset.optsort;
-      try { localStorage.setItem(OPT_SORT_KEY, optSort); } catch (err) { /* this visit only */ }
+      const k = sortBtn.dataset.optsort;
+      optLeast = k !== 'miss' && k === optSort ? !optLeast : false;
+      optSort = k;
+      try { localStorage.setItem(OPT_SORT_KEY, optSort + (optLeast ? '-least' : '')); } catch (err) { /* this visit only */ }
       renderBikeOut();
       const again = document.querySelector(`[data-optsort="${optSort}"]`); if (again) again.focus();
       return;
