@@ -200,12 +200,13 @@ const GBDraw = (() => {
     if (pr && g.csKnown && rg.csKnown) {
       const zoom = !!data.zoomAt;
       // each frame moved from its BB grid onto the ground grid
-      const place = (q) => {
+      const place = (q, p) => {
         const dx = TYRE_R - q.rear.x; const h = -q.groundY; // rear axle one wheel radius from x = 0; BB height
         const at = (pt) => ({ x: pt.x + dx, y: pt.y + h });
-        return { dx, h, rear: at(q.rear), bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T), axis: at(q.axisGround), trail: q.trail };
+        // S: top of the spacers this bike is set up with, where its reach and stack are measured
+        return { dx, h, rear: at(q.rear), bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T), S: at(p.spTop), sp: p.spacers, axis: at(q.axisGround), trail: q.trail };
       };
-      const both = [place(g), place(rg)]; // target, then reference
+      const both = [place(g, pb), place(rg, pr)]; // target, then reference
       const DW = 860;      // design width in px
       const ROW = 22;      // px between rows of dimensions
       const top = Math.max(sad.y + both[0].h, hand.y + both[0].h, sad.y + both[1].h, fp.hand.y + both[1].h);
@@ -235,21 +236,22 @@ const GBDraw = (() => {
           const r1 = rowY(i); const r2 = rowY(2 + i); const rt = rowTop(i);
           const ext = (pt, y) => gv.line(pt, { x: pt.x, y: y + (y < pt.y ? -4 : 4) * k }, 'ext');
           // extension lines: axles and BB down to the rows under the ground, BB and head tube top up to the reach row
-          gr += `<g class="${cls}">${ext(P.rear, r2)}${ext(P.bb, r1)}${ext({ x: P.front.x, y: P.front.y }, r2)}${ext(P.axis, r1)}${ext(P.bb, rt)}${ext(P.T, rt)}</g>`;
+          gr += `<g class="${cls}">${ext(P.rear, r2)}${ext(P.bb, r1)}${ext({ x: P.front.x, y: P.front.y }, r2)}${ext(P.axis, r1)}${ext(P.bb, rt)}${ext(P.S, rt)}</g>`;
           const flat = (xa, xb, y, label) => gv.dim({ x: xa, y }, { x: xb, y }, 0, label, { cls, ext: false });
           gr += flat(P.rear.x, P.bb.x, r1, `Rear centre ${n0(P.bb.x - P.rear.x)}`);
           gr += flat(P.bb.x, P.front.x, r1, `Front centre ${n0(P.front.x - P.bb.x)}`);
           gr += flat(P.front.x, P.axis.x, r1, `Trail ${n0(P.trail)}`);
           gr += flat(P.rear.x, P.front.x, r2, `Wheelbase ${n0(P.front.x - P.rear.x)}`);
-          gr += flat(P.bb.x, P.T.x, rt, `Reach ${n0(P.T.x - P.bb.x)}`);
+          const withSp = P.sp >= 0.5 ? ` with ${n0(P.sp)} mm spacers` : '';
+          gr += flat(P.bb.x, P.S.x, rt, `Reach ${n0(P.S.x - P.bb.x)}${withSp}`);
           // BB height beside the BB, the target's behind it and the reference's ahead
           gr += gv.dim({ x: P.bb.x, y: 0 }, P.bb, i ? -30 : 30, `BB height ${n0(P.h)}`, { cls, ext: false });
           // head tube top: height above the ground, and stack above the BB, out past the front wheels
           const xh = right + (24 + i * 34) * k;
           const xs = right + (92 + i * 34) * k;
-          gr += `<g class="${cls}">${gv.line(P.T, { x: xs + 4 * k, y: P.T.y }, 'ext lvl')}${gv.line(P.bb, { x: xs + 4 * k, y: P.bb.y }, 'ext lvl')}</g>`;
+          gr += `<g class="${cls}">${gv.line(P.T, { x: xh + 4 * k, y: P.T.y }, 'ext lvl')}${gv.line(P.S, { x: xs + 4 * k, y: P.S.y }, 'ext lvl')}${gv.line(P.bb, { x: xs + 4 * k, y: P.bb.y }, 'ext lvl')}</g>`;
           gr += gv.dim({ x: xh, y: 0 }, { x: xh, y: P.T.y }, 0, `HT top ${n0(P.T.y)}`, { cls, ext: false, labelOff: 11 });
-          gr += gv.dim({ x: xs, y: P.bb.y }, { x: xs, y: P.T.y }, 0, `Stack ${n0(P.T.y - P.bb.y)}`, { cls, ext: false, labelOff: 11 });
+          gr += gv.dim({ x: xs, y: P.bb.y }, { x: xs, y: P.S.y }, 0, `Stack ${n0(P.S.y - P.bb.y)}${withSp}`, { cls, ext: false, labelOff: 11 });
         });
       }
       gr += '</svg>';
