@@ -187,4 +187,20 @@ test('the front axle sits level with the rear one, even when the chart stack dis
   near(dt.trail, (340 * Math.cos(GB.rad(72.5)) - 50) / Math.sin(GB.rad(72.5)), 1e-6, 'trail');
 });
 
+test('a chart wheelbase places the front axle exactly, and a far-off one is flagged', () => {
+  // size S of a real chart: its own numbers give 963.7 mm, the chart says 963
+  const b = { sta: 75, hta: 73.5, htLength: 125, ett: 535, seatTube: 535, bbDrop: 57, forkA2C: 370, forkOffset: 40, chainstay: 393, stack: 520, reach: 396 };
+  near(GB.frameDrawing(b).front.x - GB.frameDrawing(b).rear.x, 963.7, 0.05, 'from the frame');
+  const d = GB.frameDrawing(Object.assign({}, b, { wheelbase: 963 }));
+  near(d.front.x - d.rear.x, 963, 1e-9, 'from the chart');
+  near(d.front.y, 57, 1e-9, 'front axle level');
+  const noCs = GB.frameDrawing(Object.assign({}, b, { chainstay: null, wheelbase: 963 }));
+  assert.strictEqual(noCs.wbKnown, false, 'wheelbase needs the chainstay');
+  const fp = GB.fitPoints(ref, fit);
+  const far = GB.solveBike(Object.assign({}, b, { wheelbase: 990, barReach: 80 }), fp, fit, opts);
+  assert.ok(far.checks.some((c) => c.level === 'warn' && c.text.includes('wheelbase')), 'flagged');
+  const close = GB.solveBike(Object.assign({}, b, { wheelbase: 963, barReach: 80 }), fp, fit, opts);
+  assert.ok(!close.checks.some((c) => c.text.includes('wheelbase')), 'not flagged');
+});
+
 console.log(`\n${passed} checks passed`);

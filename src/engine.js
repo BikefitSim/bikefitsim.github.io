@@ -260,7 +260,10 @@ const GB = (() => {
     // than tipping the bike with one wheel off the ground.
     const down = (T.y + bike.forkOffset * n.y - bike.bbDrop) / d.y;
     const axisFoot = along(-down);
-    const front = { x: axisFoot.x + bike.forkOffset * n.x, y: axisFoot.y + bike.forkOffset * n.y };
+    const frontCalc = { x: axisFoot.x + bike.forkOffset * n.x, y: axisFoot.y + bike.forkOffset * n.y };
+    // a wheelbase from the chart places the front axle exactly, measured from a known rear axle
+    const wbKnown = csKnown && fin(bike.wheelbase) && bike.wheelbase > csH;
+    const front = wbKnown ? { x: rear.x + bike.wheelbase, y: bike.bbDrop } : frontCalc;
     // where the steering axis meets the ground, and the trail behind it
     const groundY = bike.bbDrop - WHEEL_R;
     const axisGround = along((groundY - T.y) / d.y);
@@ -269,7 +272,7 @@ const GB = (() => {
     const stTop = onSeatTube(st.ct);
     const ttRear = fin(bike.seatTubeCC) && bike.seatTubeCC > 0 ? onSeatTube(st.cc) : stTop; // top tube meets the seat tube
     const ssJoin = onSeatTube(st.ct - 25);
-    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR: WHEEL_R, groundY, axisGround, trail: axisGround.x - front.x, csKnown };
+    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR: WHEEL_R, groundY, axisGround, trail: axisGround.x - front.x, wbCalc: frontCalc.x - rear.x, wbKnown, csKnown };
   }
 
   /* One target bike: what to change so saddle tip and hand position match the reference. */
@@ -320,6 +323,10 @@ const GB = (() => {
     if (wRef === 0 && fin(bikeIn.barWidth) && bikeIn.barWidth > 0) {
       checks.push({ level: 'warn', text: 'Enter the reference\'s handlebar width in step 1, so this bar width can be compared with it.' });
     }
+    const fd = frameDrawing(bike);
+    if (fd.wbKnown && Math.abs(fd.wbCalc - bike.wheelbase) > 8) {
+      checks.push({ level: 'warn', text: `Chainstay, head tube, fork and reach give a wheelbase of ${fd.wbCalc.toFixed(0)} mm, but the chart says ${bike.wheelbase} mm. Check the fork length and chainstay. The chart value is used in the drawings.` });
+    }
     if (rail.check) checks.push(rail.check);
     if (exposed < 40) {
       checks.push({ level: 'bad', text: `Only about ${exposed.toFixed(0)} mm of seatpost would show${ctNote}. The saddle may not go this low on this frame.` });
@@ -336,7 +343,7 @@ const GB = (() => {
     if (cockpit.steepest && cockpit.steepest.spacers < -2) {
       checks.push({ level: 'warn', text: `The front end is tall for this fit. Even a slammed ${cockpit.steepest.angle}° stem leaves the bar about ${Math.abs(cockpit.steepest.spacers).toFixed(0)} mm higher than wanted.` });
     }
-    return { bike, geo, heightAlong, noseAhead, railMove, railPos, railOver, railTravel, postOffset, tipToRails, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: frameDrawing(bike) };
+    return { bike, geo, heightAlong, noseAhead, railMove, railPos, railOver, railTravel, postOffset, tipToRails, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: fd };
   }
 
   return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE, RAIL_TRAVEL, TIP_TO_RAILS };

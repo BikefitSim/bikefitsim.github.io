@@ -15,8 +15,8 @@
   const finite = (v) => typeof v === 'number' && Number.isFinite(v);
   const isObj = (o) => o && typeof o === 'object';
 
-  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay'];
-  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null, chainstay: null };
+  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay', 'wheelbase'];
+  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null, chainstay: null, wheelbase: null };
   /* Two kinds of reference, each with its own tab. A bike fit (kind 'bike') is a frame plus how
      it is set up (saddle, spacers, stem, bar); a personal fit (kind 'fit') is only the rider's
      numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
@@ -172,6 +172,7 @@
     { k: 'stack', l: 'Stack', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'reach', l: 'Reach', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'chainstay', l: 'Chainstay', u: 'mm', opt: true, h: 'Optional. BB centre to rear axle. Places the rear wheel and adds a ground view.' },
+    { k: 'wheelbase', l: 'Wheelbase', u: 'mm', opt: true, h: 'Optional, with the chainstay. Places the front wheel exactly as the chart has it.' },
   ];
   const FF = {
     saddleHeight: { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
@@ -330,6 +331,7 @@
     if (finite(b.stack) && (b.stack < 300 || b.stack > 800)) c.wrong.push('Stack should be between 300 and 800.');
     if (hasReach && (b.reach < 250 || b.reach > 600)) c.wrong.push('Reach should be between 250 and 600.');
     if (b.chainstay != null && b.chainstay !== '' && !(finite(b.chainstay) && b.chainstay >= 350 && b.chainstay <= 500)) c.wrong.push('Chainstay should be between 350 and 500.');
+    if (b.wheelbase != null && b.wheelbase !== '' && !(finite(b.wheelbase) && b.wheelbase >= 850 && b.wheelbase <= 1300)) c.wrong.push('Wheelbase should be between 850 and 1300.');
     if (withBar) c.chk('barReach', 0, 150, 'Handlebar reach');
     return c.done();
   }
