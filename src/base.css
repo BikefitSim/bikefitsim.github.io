@@ -2,47 +2,33 @@
 /* Layout: a fit-studio work sheet. Step 1 reference bikes (frame + fit), step 2 target bikes with geometry left and changes right, drawings full width, summary last.
    Colour roles: blue = target bike and controls, yellow = reference bike, red = fit points and problems, green = all good. */
 :root {
-  --paper: #ECF0F5;
-  --sheet: #FBFCFD;
-  --well: #F1F4F8;
-  --ink: #131A23;
-  --ink-2: #546072;
-  --rule: #C9D2DE;
-  --rule-2: #E0E6EE;
-  --frame: #1C5FC4;      /* blue */
-  --part: #C99400;       /* yellow, lines and fills */
-  --part-ink: #8C6800;   /* yellow, text on light ground */
-  --laser: #D7302A;      /* red */
-  --focus: #1C5FC4;
-  --good: #1D8648;       /* green */
-  --warn: #B26A00;
-  --bad: #C42A2F;
-  --good-bg: #DFF1E6;
-  --warn-bg: #FBF0D8;
-  --bad-bg: #FBE3E3;
-  --info-bg: #E2EBF8;
-  --sheet-alt: #E3E9F0; /* every other section, to tell them apart */
-  --draw-bg: #EEF2F6;   /* behind the drawings, so the grid shows */
-  --grid-1: #CDD5E0; --grid-2: #AEB9C8; /* drawing grid: minor, major */
-  --gl-halo: #FFFFFF;   /* outline around the grid values */
+  /* dark only */
+  --paper: #0C1016;
+  --sheet: #141A22;
+  --well: #1A222D;
+  --ink: #E5EAF1;
+  --ink-2: #95A2B4;
+  --rule: #2B3542;
+  --rule-2: #212A35;
+  --frame: #6AA6FF;      /* blue */
+  --part: #F4C430;       /* yellow, lines and fills */
+  --part-ink: #F4C430;   /* yellow, text */
+  --laser: #FF5B53;      /* red */
+  --focus: #6AA6FF;
+  --good: #4FCB83;       /* green */
+  --warn: #F2A64A;
+  --bad: #FF6B70;
+  --good-bg: #13291C;
+  --warn-bg: #30260F;
+  --bad-bg: #36191B;
+  --info-bg: #15233A;
+  --sheet-alt: #0F141A; /* every other section, to tell them apart */
+  --draw-bg: #0B0F14;   /* behind the drawings, so the grid shows */
+  --grid-1: #1C242F; --grid-2: #2C3746; /* drawing grid: minor, major */
+  --gl-halo: #000;      /* outline around the grid values */
   --display: 'Saira Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
   --body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #0C1016; --sheet: #141A22; --well: #1A222D; --ink: #E5EAF1; --ink-2: #95A2B4;
-    --rule: #2B3542; --rule-2: #212A35; --frame: #6AA6FF; --part: #F4C430; --part-ink: #F4C430; --laser: #FF5B53; --focus: #6AA6FF;
-    --good: #4FCB83; --warn: #F2A64A; --bad: #FF6B70; --good-bg: #13291C; --warn-bg: #30260F; --bad-bg: #36191B; --info-bg: #15233A;
-    --sheet-alt: #0F141A; --draw-bg: #0B0F14; --grid-1: #1C242F; --grid-2: #2C3746; --gl-halo: #000;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #0C1016; --sheet: #141A22; --well: #1A222D; --ink: #E5EAF1; --ink-2: #95A2B4;
-  --rule: #2B3542; --rule-2: #212A35; --frame: #6AA6FF; --part: #F4C430; --part-ink: #F4C430; --laser: #FF5B53; --focus: #6AA6FF;
-  --good: #4FCB83; --warn: #F2A64A; --bad: #FF6B70; --good-bg: #13291C; --warn-bg: #30260F; --bad-bg: #36191B; --info-bg: #15233A;
-  --sheet-alt: #0F141A; --draw-bg: #0B0F14; --grid-1: #1C242F; --grid-2: #2C3746; --gl-halo: #000;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -87,6 +73,7 @@ h1 { font-size: 40px; font-weight: 700; letter-spacing: .01em; line-height: 1; }
 .step { font: 600 13px var(--mono); color: var(--sheet); background: var(--frame); width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; flex: none; transform: translateY(-3px); }
 .sec-head h2 { font-size: 26px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
 .sec-head p { color: var(--ink-2); font-size: 14px; flex-basis: 100%; max-width: 70ch; }
+[hidden] { display: none !important; } /* e.g. the import banner when there is nothing to import */
 .banner { background: var(--info-bg); border-radius: 4px; padding: 10px 14px; font-size: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 .banner strong { font-weight: 600; }
 
@@ -260,15 +247,5 @@ table.data input[type="radio"] { accent-color: var(--frame); margin: 0; cursor: 
   .tab, .btn, .chip { transition: color .15s, background-color .15s, border-color .15s; }
 }
 
-/* dark mode switch */
 .top-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.theme-btn { position: relative; display: inline-flex; align-items: center; gap: 4px; width: 50px; height: 26px; padding: 0 4px; border: 1px solid var(--rule); background: var(--well); border-radius: 999px; cursor: pointer; flex: none; }
-.theme-btn:hover { border-color: var(--ink-2); }
-.theme-btn .ic { position: relative; width: 18px; height: 18px; padding: 2px; fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.theme-btn .ic.moon path { fill: var(--ink-2); stroke: none; }
-.sw-knob { position: absolute; top: 2px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--sheet); box-shadow: 0 0 0 1px var(--rule); }
-.theme-btn[aria-pressed="false"] .ic.sun { stroke: var(--part-ink); }
-.theme-btn[aria-pressed="true"] .sw-knob { left: 25px; }
-.theme-btn[aria-pressed="true"] .ic.moon path { fill: var(--ink); }
-@media (prefers-reduced-motion: no-preference) { .sw-knob { transition: left .15s; } }
 </style>
