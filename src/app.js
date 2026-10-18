@@ -482,16 +482,22 @@
       <p>Selected: every target bike in step 2 matches this one.</p>`;
   }
 
-  /* Order of the stem and spacer options: by how far forward or how high the bar ends up
-     (most first), or by how close it is. Remembered per browser. */
-  const OPT_SORT_KEY = 'geobike.optSort';
-  const OPT_SORTS = [['reach', 'Most reach'], ['stack', 'Most stack'], ['miss', 'Closest']];
-  let optSort = 'reach';
-  try { const v = localStorage.getItem(OPT_SORT_KEY); if (OPT_SORTS.some(([k]) => k === v)) optSort = v; } catch (e) { /* default */ }
+  /* Order of the stem and spacer options: by how close the bar gets (the default), or by
+     how far forward or how high it ends up. Clicking reach or stack again flips it between
+     most first and least first. Remembered per browser. */
+  const OPT_SORT_KEY = 'geobike.optSort2';
+  const OPT_SORTS = [['miss', 'Closest', 'Closest'], ['reach', 'Most reach', 'Least reach'], ['stack', 'Most stack', 'Least stack']];
+  let optSort = 'miss';
+  let optLeast = false; // reach or stack: least first
+  try {
+    const m = /^(miss|reach|stack)(-least)?$/.exec(localStorage.getItem(OPT_SORT_KEY) || '');
+    if (m) { optSort = m[1]; optLeast = !!m[2] && m[1] !== 'miss'; }
+  } catch (e) { /* default */ }
   function sortOpts(list) {
     if (optSort === 'miss') return list;
     const by = optSort === 'stack' ? (x) => x.dy : (x) => x.dx;
-    return list.slice().sort((p, q) => by(q) - by(p) || p.err - q.err);
+    const dir = optLeast ? -1 : 1;
+    return list.slice().sort((p, q) => dir * (by(q) - by(p)) || p.err - q.err);
   }
 
   function renderBikeOut() {
@@ -537,7 +543,7 @@
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
       <div>
         <div class="sub-h"><h4>Stem and spacer options</h4>
-          <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, label]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}">${label}</button>`).join('')}</div>
+          <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}"${k !== 'miss' ? ` title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first"` : ''}>${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
           <p>The ${r.cockpit.options.length} closest combinations from your stems. Hand fwd and hand up are the offsets from the target (+ is forward or higher); miss is the straight-line distance. Pick one to draw it.</p></div>
         <div class="tbl-wrap">
           <table class="data" id="optTable">
@@ -1132,8 +1138,10 @@
     }
     const sortBtn = e.target.closest('[data-optsort]');
     if (sortBtn) {
-      optSort = sortBtn.dataset.optsort;
-      try { localStorage.setItem(OPT_SORT_KEY, optSort); } catch (err) { /* this visit only */ }
+      const k = sortBtn.dataset.optsort;
+      optLeast = k !== 'miss' && k === optSort ? !optLeast : false;
+      optSort = k;
+      try { localStorage.setItem(OPT_SORT_KEY, optSort + (optLeast ? '-least' : '')); } catch (err) { /* this visit only */ }
       renderBikeOut();
       const again = document.querySelector(`[data-optsort="${optSort}"]`); if (again) again.focus();
       return;
