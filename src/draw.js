@@ -86,11 +86,11 @@ const GBDraw = (() => {
     return { S, H, d, n, T, railY, axisAt, spTop, stemTop, clamp, railMid, postTop: axisAt(railY - POST_HEAD), Q: cockpit.Q, B: cockpit.B, barReach: cockpit.barReach, spacers: cockpit.spacers };
   }
 
-  function drawBike(v, cls, frame, p, sad, { wheels = true, saddle = true } = {}) {
+  function drawBike(v, cls, frame, p, sad, { wheels = true, saddle = true, wheelR = RIM_R } = {}) {
     const g = frame;
     let s = `<g class="bike ${cls}">`;
     if (wheels) {
-      for (const w of [g.rear, g.front]) s += v.circle(w, RIM_R, 'rim');
+      for (const w of [g.rear, g.front]) s += v.circle(w, wheelR, 'rim');
     }
     const ttEnd = add(g.T, p.d, -18);
     const dtEnd = add(g.htBottom, p.d, 25);
@@ -191,7 +191,8 @@ const GBDraw = (() => {
 
     /* ---------- both frames on level ground ---------- */
     // Only with a reference bike and a chainstay on both frames: the rear wheel has to be in place.
-    // Same wheel size on both, rear axles at x = 0, ground at y = 0. Drawn small, with the
+    // Same wheel size on both, the backs of the rear wheels at x = 0, ground at y = 0. The wheels
+    // are drawn at their outside, tyre included, so they touch the ground. Drawn small, with the
     // measurements around the bikes: centres, trail and wheelbase under the ground, reach above,
     // heights to the sides.
     // zoomAt: a point on the ground grid (mm) to zoom in on, from a click on the drawing
@@ -200,9 +201,9 @@ const GBDraw = (() => {
       const zoom = !!data.zoomAt;
       // each frame moved from its BB grid onto the ground grid
       const place = (q) => {
-        const dx = -q.rear.x; const h = -q.groundY; // horizontal chainstay, BB height
+        const dx = TYRE_R - q.rear.x; const h = -q.groundY; // rear axle one wheel radius from x = 0; BB height
         const at = (pt) => ({ x: pt.x + dx, y: pt.y + h });
-        return { dx, h, bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T), axis: at(q.axisGround), trail: q.trail };
+        return { dx, h, rear: at(q.rear), bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T), axis: at(q.axisGround), trail: q.trail };
       };
       const both = [place(g), place(rg)]; // target, then reference
       const DW = 860;      // design width in px
@@ -212,20 +213,20 @@ const GBDraw = (() => {
       // margins in px around the bikes: left for nothing but air, right for two height columns,
       // under the ground for four rows, above for two reach rows
       const M = { l: 40, r: 140, b: 4 * ROW + 40, t: 2 * ROW + 30 };
-      const x0 = -TYRE_R; const span = right - x0;
+      const x0 = 0; const span = right - x0;
       const k = zoom ? 1 / ZOOM_PX : span / (DW - M.l - M.r);
       const gw = zoom ? span * ZOOM_PX + M.l + M.r : DW; // drawing width in px
       const gvb = { x: x0 - M.l * k, y: -M.b * k, w: gw * k, h: top + (M.t + M.b) * k };
       const gv = View(gvb, gw, zoom);
       if (zoom) groundFocus = gv.px(data.zoomAt === true ? both[0].bb : data.zoomAt);
       const lift = (P, body) => `<g transform="translate(${f1(P.dx)} ${f1(-P.h)})">${body}</g>`;
-      gr = gv.open('ground', `role="img" aria-label="${esc(names.bike)} and ${esc(names.ref)} standing on level ground, rear axles at the same point"`);
+      gr = gv.open('ground', `role="img" aria-label="${esc(names.bike)} and ${esc(names.ref)} standing on level ground, the backs of their rear wheels at the same point"`);
       if (show.grid) gr += zoom ? grid(gv, 10, ZOOM_GRID) : grid(gv, 50);
       gr += gv.line({ x: gvb.x + 6 * k, y: 0 }, { x: gvb.x + gvb.w - 6 * k, y: 0 }, 'ground');
       // steering axes down to the ground
       gr += `<g class="axes">${both.map((P, i) => gv.line(P.T, P.axis, i ? 'saxis rfa' : 'saxis')).join('')}</g>`;
-      gr += lift(both[1], drawBike(gv, 'rf', rg, pr, sad));
-      gr += lift(both[0], drawBike(gv, 'bk', g, pb, sad));
+      gr += lift(both[1], drawBike(gv, 'rf', rg, pr, sad, { wheelR: TYRE_R }));
+      gr += lift(both[0], drawBike(gv, 'bk', g, pb, sad, { wheelR: TYRE_R }));
       if (show.dims) {
         const rowY = (n) => -(18 + n * ROW) * k;     // rows under the ground, n = 0 first
         const rowTop = (n) => top + (14 + n * ROW) * k; // rows above everything
@@ -234,12 +235,12 @@ const GBDraw = (() => {
           const r1 = rowY(i); const r2 = rowY(2 + i); const rt = rowTop(i);
           const ext = (pt, y) => gv.line(pt, { x: pt.x, y: y + (y < pt.y ? -4 : 4) * k }, 'ext');
           // extension lines: axles and BB down to the rows under the ground, BB and head tube top up to the reach row
-          gr += `<g class="${cls}">${ext({ x: 0, y: TYRE_R }, r2)}${ext(P.bb, r1)}${ext({ x: P.front.x, y: P.front.y }, r2)}${ext(P.axis, r1)}${ext(P.bb, rt)}${ext(P.T, rt)}</g>`;
+          gr += `<g class="${cls}">${ext(P.rear, r2)}${ext(P.bb, r1)}${ext({ x: P.front.x, y: P.front.y }, r2)}${ext(P.axis, r1)}${ext(P.bb, rt)}${ext(P.T, rt)}</g>`;
           const flat = (xa, xb, y, label) => gv.dim({ x: xa, y }, { x: xb, y }, 0, label, { cls, ext: false });
-          gr += flat(0, P.bb.x, r1, `Rear centre ${n0(P.bb.x)}`);
+          gr += flat(P.rear.x, P.bb.x, r1, `Rear centre ${n0(P.bb.x - P.rear.x)}`);
           gr += flat(P.bb.x, P.front.x, r1, `Front centre ${n0(P.front.x - P.bb.x)}`);
           gr += flat(P.front.x, P.axis.x, r1, `Trail ${n0(P.trail)}`);
-          gr += flat(0, P.front.x, r2, `Wheelbase ${n0(P.front.x)}`);
+          gr += flat(P.rear.x, P.front.x, r2, `Wheelbase ${n0(P.front.x - P.rear.x)}`);
           gr += flat(P.bb.x, P.T.x, rt, `Reach ${n0(P.T.x - P.bb.x)}`);
           // BB height beside the BB, the target's behind it and the reference's ahead
           gr += gv.dim({ x: P.bb.x, y: 0 }, P.bb, i ? -30 : 30, `BB height ${n0(P.h)}`, { cls, ext: false });

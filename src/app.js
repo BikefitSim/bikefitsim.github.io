@@ -667,7 +667,7 @@
     if (svg) {
       const z = !!groundZoom;
       const how = z ? 'Zoomed in: squares are 10 mm, values every 50 mm. Scroll to move around; click to zoom out.' : 'Squares are 50 mm. Click the drawing to zoom in to 10 mm squares.';
-      return `<div class="viz viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>Both frames on level ground: rear axles at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
+      return `<div class="viz viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>Both frames on level ground: the back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
     }
     return hasBike ? '<p class="viz-note">Enter the chainstay on the reference bike and this frame to compare them on level ground.</p>' : '';
   }
