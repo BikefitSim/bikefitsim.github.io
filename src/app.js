@@ -650,7 +650,7 @@
   }
   // the frames on level ground, after the side view; needs a chainstay on both frames
   function groundHTML(svg, hasBike) {
-    if (svg) return `<div class="viz viz-ground"><figure class="draw">${svg}<figcaption>Both frames on level ground, BBs on the same vertical line. Heights from the ground; squares are 50 mm.</figcaption></figure></div>`;
+    if (svg) return `<div class="viz viz-ground"><figure class="draw">${svg}<figcaption>Both frames on level ground: rear axles at x = 0, ground at y = 0. Squares are 50 mm.</figcaption></figure></div>`;
     return hasBike ? '<p class="viz-note">Enter the chainstay on the reference bike and this frame to compare them on level ground.</p>' : '';
   }
   // a result tile lights up its dimension in the drawings
