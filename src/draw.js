@@ -207,7 +207,7 @@ const GBDraw = (() => {
         return { dx, h, rear: at(q.rear), bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T), S: at(p.spTop), sp: p.spacers, axis: at(q.axisGround), trail: q.trail };
       };
       const both = [place(g, pb), place(rg, pr)]; // target, then reference
-      const DW = 860;      // design width in px
+      const DW = 1200;     // design width in px: the full width of the drawings area
       const ROW = 22;      // px between rows of dimensions
       const top = Math.max(sad.y + both[0].h, hand.y + both[0].h, sad.y + both[1].h, fp.hand.y + both[1].h);
       const right = Math.max(...both.map((P) => Math.max(P.front.x, P.axis.x))) + TYRE_R;
@@ -232,7 +232,7 @@ const GBDraw = (() => {
         const rowY = (n) => -(18 + n * ROW) * k;     // rows under the ground, n = 0 first
         const rowTop = (n) => top + (14 + n * ROW) * k; // rows above everything
         both.forEach((P, i) => {
-          const cls = i ? 'dim rfd' : 'dim';
+          const cls = i ? 'dim rfd' : 'dim bkd'; // reference yellow, target blue
           const r1 = rowY(i); const r2 = rowY(2 + i); const rt = rowTop(i);
           const ext = (pt, y) => gv.line(pt, { x: pt.x, y: y + (y < pt.y ? -4 : 4) * k }, 'ext');
           // extension lines: axles and BB down to the rows under the ground, BB and head tube top up to the reach row

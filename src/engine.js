@@ -13,7 +13,6 @@ const GB = (() => {
   const MAX_OFFSET = 40;   // most offset a seatpost is sold with, for the hint when neither fits
   const WHEEL_R = 340;    // drawing only
   const CHAINSTAY = 410;  // drawing only, when the frame has no chainstay length
-  const ANGLE_COST = 0.15; // mm of miss traded per degree away from the reference stem angle
   const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a personal fit)
   const TT_DROP = 18;     // top tube centre below the head tube top, where an actual top tube ends
   const ST_EXT = 20;      // seat tube top above the top tube centre, when only one seat tube length is given
@@ -217,13 +216,15 @@ const GB = (() => {
         }
       }
     }
-    // Rank by miss distance, with a small cost for moving away from the reference stem angle
-    // (0.15 mm per degree), so the angle only changes when another one is clearly closer.
-    for (const c of bestPerStem.values()) c.score = c.err + ANGLE_COST * Math.abs(c.angle - prefAngle);
+    // Rank by miss distance as shown (0.1 mm), so the first option is always the closest;
+    // ties go to the stem angle nearest the reference, then to fewer spacers.
     const ranked = [...bestPerStem.values()].sort((p, q) => {
-      const sp = Math.round(p.score * 2) / 2;
-      const sq = Math.round(q.score * 2) / 2;
-      if (sp !== sq) return sp - sq;
+      const ep = Math.round(p.err * 10);
+      const eq = Math.round(q.err * 10);
+      if (ep !== eq) return ep - eq;
+      const ap = Math.abs(p.angle - prefAngle);
+      const aq = Math.abs(q.angle - prefAngle);
+      if (ap !== aq) return ap - aq;
       return p.spacers - q.spacers;
     });
     const exactFor = (a) => {

@@ -203,4 +203,15 @@ test('a chart wheelbase places the front axle exactly, and a far-off one is flag
   assert.ok(!close.checks.some((c) => c.text.includes('wheelbase')), 'not flagged');
 });
 
+test('the first stem option is the closest one, and the list runs from closest to furthest', () => {
+  for (const [bike, setback] of [[ref, 65], [Object.assign({}, ref, { sta: 75, hta: 73 }), 85], [Object.assign({}, ref, { stack: 600, reach: 370 }), 50]]) {
+    const f = Object.assign({}, fit, { setback });
+    const c = GB.solveBike(Object.assign({}, bike, { barReach: 80 }), GB.fitPoints(ref, f), f, opts).cockpit;
+    const tenths = (o) => Math.round(o.err * 10);
+    assert.strictEqual(c.best, c.options[0], 'best is first');
+    assert.ok(c.all.every((o) => tenths(o) >= tenths(c.best)), 'nothing closer than the best');
+    c.options.forEach((o, i) => i && assert.ok(tenths(o) >= tenths(c.options[i - 1]), 'sorted by miss'));
+  }
+});
+
 console.log(`\n${passed} checks passed`);

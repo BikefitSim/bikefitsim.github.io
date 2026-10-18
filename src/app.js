@@ -486,17 +486,12 @@
       <p>Selected: every target bike in step 2 matches this one.</p>`;
   }
 
-  /* Order of the stem and spacer options: by how close the bar gets (the default), or by
-     how far forward or how high it ends up. Clicking reach or stack again flips it between
-     most first and least first. Remembered per browser. */
-  const OPT_SORT_KEY = 'geobike.optSort2';
+  /* Order of the stem and spacer options: by how close the bar gets (always the default),
+     or by how far forward or how high it ends up. Clicking reach or stack again flips it
+     between most first and least first. */
   const OPT_SORTS = [['miss', 'Closest', 'Closest'], ['reach', 'Most reach', 'Least reach'], ['stack', 'Most stack', 'Least stack']];
   let optSort = 'miss';
   let optLeast = false; // reach or stack: least first
-  try {
-    const m = /^(miss|reach|stack)(-least)?$/.exec(localStorage.getItem(OPT_SORT_KEY) || '');
-    if (m) { optSort = m[1]; optLeast = !!m[2] && m[1] !== 'miss'; }
-  } catch (e) { /* default */ }
   let optsOpen = true; // the options list, shown or hidden with its +/− (kept across redraws)
   document.addEventListener('toggle', (e) => { if (e.target.id === 'optsBox') optsOpen = e.target.open; }, true);
   function sortOpts(list) {
@@ -630,7 +625,7 @@
     const el = $('vizWrap');
     const b = curBike();
     const r = model.res[b.id];
-    if (!r || !r.fp || r.errors) { el.innerHTML = '<div class="empty">The side view appears once the reference and this frame are complete.</div>'; return; }
+    if (!r || !r.fp || r.errors) { el.innerHTML = '<div class="empty">The side view and the ground view appear once the reference and this frame are complete.</div>'; return; }
     const o = chosenFor(b, r);
     const hasBike = !!r.fp.bike;
     const svg = GBDraw.render({ r, o, show: layers, zoomAt: groundZoom && groundZoom.at, names: { bike: b.name || 'This bike', ref: refName(r.ref) } });
@@ -649,12 +644,12 @@
         <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
       <div class="viz">
-        <figure class="draw">${svg.main}<figcaption>Side view on the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
+        <figure class="draw"><div class="fig-t">Side view</div>${svg.main}<figcaption>On the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
         <div class="viz-side">
-          <figure class="draw">${svg.front}<figcaption>Front end close-up, 10 mm squares</figcaption></figure>
-          <figure class="draw">${svg.saddle}<figcaption>Saddle close-up, 10 mm squares</figcaption></figure>
+          <figure class="draw"><div class="fig-t">Front end close-up</div>${svg.front}<figcaption>Squares are 10 mm.</figcaption></figure>
+          <figure class="draw"><div class="fig-t">Saddle close-up</div>${svg.saddle}<figcaption>Squares are 10 mm.</figcaption></figure>
         </div>
-      </div>${groundHTML(svg.ground, hasBike)}`;
+      </div>${groundHTML(svg.ground, r, b)}`;
     // zooming in keeps the clicked point under the pointer; after that the frame stays where it was scrolled to
     const w = el.querySelector('.zoomwrap');
     if (w && svg.groundFocus) {
@@ -662,14 +657,25 @@
       [w.scrollLeft, w.scrollTop] = kept || [svg.groundFocus.x - off[0], svg.groundFocus.y - off[1]];
     }
   }
-  // the frames on level ground, after the side view; needs a chainstay on both frames
-  function groundHTML(svg, hasBike) {
+  // the frames on level ground, after the side view; needs a bike fit reference and a chainstay
+  // on both frames. Without them, the reason takes its place.
+  function groundHTML(svg, r, b) {
     if (svg) {
       const z = !!groundZoom;
       const how = z ? 'Zoomed in: squares are 10 mm, values every 50 mm. Scroll to move around; click to zoom out.' : 'Squares are 50 mm. Click the drawing to zoom in to 10 mm squares.';
-      return `<div class="viz viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>Both frames on level ground: the back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
+      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}"><div class="fig-t">Frames on level ground</div>${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>The back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
     }
-    return hasBike ? '<p class="viz-note">Enter the chainstay on the reference bike and this frame to compare them on level ground.</p>' : '';
+    const ref = refName(r.ref);
+    let why;
+    if (!r.fp.bike) {
+      why = 'A personal fit has no frame to compare this one with. Use a bike fit as the reference in step 1, and enter the chainstay of both frames.';
+    } else {
+      const missing = [];
+      if (!GB.frameDrawing(r.fp.bike).csKnown) missing.push(`${esc(ref)} in step 1`);
+      if (!r.drawing.csKnown) missing.push(`${esc(b.name || 'this bike')} in step 2`);
+      why = `It needs the chainstay of both frames. Enter it for ${missing.join(' and ')}.`;
+    }
+    return `<div class="viz-ground"><div class="ground-off"><b>No ground view</b><span>${why}</span></div></div>`;
   }
   document.addEventListener('click', (e) => {
     const btn = e.target.closest && e.target.closest('[data-gzoom]');
@@ -1021,21 +1027,6 @@
     el.hidden = false;
   }
 
-  /* ---------- dark mode ---------- */
-  const THEME_KEY = 'geobike.theme';
-  const root = document.documentElement;
-  const isDark = () => { const t = root.getAttribute('data-theme'); return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
-  function syncThemeBtn() { const b = $('themeBtn'); if (b) b.setAttribute('aria-pressed', String(isDark())); }
-  try { const t = localStorage.getItem(THEME_KEY); if (t === 'dark' || t === 'light') root.setAttribute('data-theme', t); } catch (e) { /* follow the system */ }
-  syncThemeBtn();
-  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeBtn); } catch (e) { /* older browsers */ }
-  $('themeBtn').addEventListener('click', () => {
-    const t = isDark() ? 'light' : 'dark';
-    root.setAttribute('data-theme', t);
-    try { localStorage.setItem(THEME_KEY, t); } catch (e) { /* this visit only */ }
-    syncThemeBtn();
-  });
-
   /* ---------- events ---------- */
   function parseNum(str) {
     const t = String(str).trim().replace(',', '.').replace(/−/g, '-');
@@ -1183,7 +1174,6 @@
       const k = sortBtn.dataset.optsort;
       optLeast = k !== 'miss' && k === optSort ? !optLeast : false;
       optSort = k;
-      try { localStorage.setItem(OPT_SORT_KEY, optSort + (optLeast ? '-least' : '')); } catch (err) { /* this visit only */ }
       renderBikeOut();
       const again = document.querySelector(`[data-optsort="${optSort}"]`); if (again) again.focus();
       return;

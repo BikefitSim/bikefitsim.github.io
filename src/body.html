@@ -53,7 +53,8 @@ body.loading .f-in { opacity: .55; }
 .gzoom svg.geo { cursor: zoom-in; }
 .gzoom.in svg.geo { cursor: zoom-out; }
 .gzoom figcaption { justify-content: space-between; align-items: center; }
-.viz-note { margin: 12px 0 0; font-size: 13px; color: var(--ink-2); }
+.ground-off { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 160px; padding: 24px 16px; text-align: center; font-size: 14px; color: var(--ink-2); background: var(--draw-bg); border: 1px dashed var(--rule); border-radius: 4px; }
+.ground-off b { color: var(--ink); font-weight: 600; }
 @media (max-width: 980px) { .viz { grid-template-columns: minmax(0, 1fr); } .viz-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); } }
 svg.geo { display: block; width: 100%; height: auto; max-width: 100%; background: var(--draw-bg); }
 svg.geo * { vector-effect: non-scaling-stroke; }
@@ -91,6 +92,7 @@ svg.geo .dim .ext { stroke: var(--ink-2); stroke-opacity: .35; stroke-width: .8p
 svg.geo .dim .plumb, svg.geo .rr { stroke: var(--ink-2); stroke-opacity: .55; stroke-width: 1px; stroke-dasharray: 3 3; }
 svg.geo .dim .lvl { stroke-dasharray: 2 3; stroke-opacity: .6; }
 svg.geo .dim.rfd .dl, svg.geo .dim.rfd .tk, svg.geo .dim.rfd .ext { stroke: var(--part); }
+svg.geo .dim.bkd .dl, svg.geo .dim.bkd .tk, svg.geo .dim.bkd .ext { stroke: var(--frame); }
 svg.geo text.dt { font: 400 calc(var(--k) * 11px) var(--mono); fill: var(--ink); paint-order: stroke; stroke: var(--draw-bg); stroke-width: 3px; stroke-linejoin: round; }
 svg.geo text.bbl { font: 400 calc(var(--k) * 11px) var(--mono); fill: var(--ink); }
 svg.geo .hl .dl, svg.geo .hl .tk, svg.geo .hl .ext, svg.geo .hl .plumb, svg.geo .hl.rr, svg.geo .hl .rr { stroke: var(--laser); stroke-width: 1.8px; stroke-opacity: 1; }
@@ -121,7 +123,6 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
     </div>
     <div class="top-right">
       <span class="save" id="saveState" data-state="example" role="status" aria-live="polite">Nothing saved yet</span>
-      <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="Dark mode" title="Dark mode"><span class="sw-knob" aria-hidden="true"></span><svg class="ic sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"></circle><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"></path></svg><svg class="ic moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.2 10.1A5.6 5.6 0 0 1 5.9 2.8a5.6 5.6 0 1 0 7.3 7.3Z"></path></svg></button>
     </div>
   </header>
 
