@@ -15,6 +15,7 @@ svg .ghost { stroke: var(--ink-2); stroke-opacity: .45; stroke-dasharray: 12 9; 
 .cp .need { color: var(--ink-2); font-size: 13px; }
 .save[data-state="web"]::before { background: var(--part); }
 .save[data-state="file"]::before { background: var(--good); }
+details.parts.opts .sub-h { margin: 12px 0 8px; }
 details.parts .fields { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .cmp th.refcol, .cmp td.refcol { color: var(--ink-2); }
 body.loading .f-in { opacity: .55; }
@@ -147,7 +148,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
       <span class="step">2</span><h2 id="bikeTitle">Target bike</h2>
       <p>Frames to set up like the reference open in step 1. Enter each one's geometry chart and handlebar.</p>
     </div>
-    <details class="parts" id="partsBox">
+    <details class="parts" id="partsBox" open>
       <summary>Stems and spacers you can use <span>lengths, angles, spacer sizes</span></summary>
       <div class="fields" id="optFields"></div>
     </details>

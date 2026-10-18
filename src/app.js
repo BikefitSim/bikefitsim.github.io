@@ -493,6 +493,8 @@
     const m = /^(miss|reach|stack)(-least)?$/.exec(localStorage.getItem(OPT_SORT_KEY) || '');
     if (m) { optSort = m[1]; optLeast = !!m[2] && m[1] !== 'miss'; }
   } catch (e) { /* default */ }
+  let optsOpen = true; // the options list, shown or hidden with its +/− (kept across redraws)
+  document.addEventListener('toggle', (e) => { if (e.target.id === 'optsBox') optsOpen = e.target.open; }, true);
   function sortOpts(list) {
     if (optSort === 'miss') return list;
     const by = optSort === 'stack' ? (x) => x.dy : (x) => x.dx;
@@ -541,10 +543,11 @@
           <span class="t-s">Hand position <b>${o ? missTxt(o) : 'n/a'}</b></span></div>
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
-      <div>
-        <div class="sub-h"><h4>Stem and spacer options</h4>
+      <details class="parts opts" id="optsBox"${optsOpen ? ' open' : ''}>
+        <summary>Stem and spacer options <span>the ${r.cockpit.options.length} closest from your stems</span></summary>
+        <div class="sub-h">
           <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}"${k !== 'miss' ? ` title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first"` : ''}>${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
-          <p>The ${r.cockpit.options.length} closest combinations from your stems. Hand fwd and hand up are the offsets from the target (+ is forward or higher); miss is the straight-line distance. Pick one to draw it.</p></div>
+          <p>Hand fwd and hand up are the offsets from the target (+ is forward or higher); miss is the straight-line distance. Pick one to draw it.</p></div>
         <div class="tbl-wrap">
           <table class="data" id="optTable">
             <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
@@ -557,7 +560,7 @@
             }).join('')}</tbody>
           </table>
         </div>
-      </div>`;
+      </details>`;
   }
 
   function renderCompare() {
