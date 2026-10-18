@@ -644,10 +644,10 @@
         <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
       <div class="viz">
-        <figure class="draw">${svg.main}<figcaption>Side view on the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
+        <figure class="draw"><div class="fig-t">Side view</div>${svg.main}<figcaption>On the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
         <div class="viz-side">
-          <figure class="draw">${svg.front}<figcaption>Front end close-up, 10 mm squares</figcaption></figure>
-          <figure class="draw">${svg.saddle}<figcaption>Saddle close-up, 10 mm squares</figcaption></figure>
+          <figure class="draw"><div class="fig-t">Front end close-up</div>${svg.front}<figcaption>Squares are 10 mm.</figcaption></figure>
+          <figure class="draw"><div class="fig-t">Saddle close-up</div>${svg.saddle}<figcaption>Squares are 10 mm.</figcaption></figure>
         </div>
       </div>${groundHTML(svg.ground, r, b)}`;
     // zooming in keeps the clicked point under the pointer; after that the frame stays where it was scrolled to
@@ -663,7 +663,7 @@
     if (svg) {
       const z = !!groundZoom;
       const how = z ? 'Zoomed in: squares are 10 mm, values every 50 mm. Scroll to move around; click to zoom out.' : 'Squares are 50 mm. Click the drawing to zoom in to 10 mm squares.';
-      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>Both frames on level ground: the back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
+      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}"><div class="fig-t">Frames on level ground</div>${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>The back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
     }
     const ref = refName(r.ref);
     let why;
