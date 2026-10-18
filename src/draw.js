@@ -6,6 +6,7 @@ const GBDraw = (() => {
   const POST_HEAD = 18;   // rails to top of the post shaft
   const TYRE_R = 340;
   const RIM_R = 311;
+  const ZOOM_PX = 2;     // screen px per mm when zoomed: 5 mm squares are 10 px
 
   const f1 = (v) => v.toFixed(1);
   const MINUS = '−';
@@ -18,7 +19,7 @@ const GBDraw = (() => {
   const perp = (v) => ({ x: -v.y, y: v.x }); // 90° counter-clockwise in mm space
 
   /* One renderer per view: knows its user units per screen pixel (k). */
-  function View(vb, designW) {
+  function View(vb, designW, fixed = false) {
     const k = vb.w / designW;
     const P = (p) => `${f1(p.x)},${f1(-p.y)}`;
     const attrs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([a, v]) => ` ${a}="${v}"`).join('');
@@ -60,8 +61,12 @@ const GBDraw = (() => {
       const d = s * 0.55; // a red X
       return `<g class="target">${line({ x: p.x - d, y: p.y - d }, { x: p.x + d, y: p.y + d }, 'tg')}${line({ x: p.x - d, y: p.y + d }, { x: p.x + d, y: p.y - d }, 'tg')}</g>`;
     };
-    const open = (cls, extra = '') => `<svg class="geo ${cls}" viewBox="${f1(vb.x)} ${f1(-(vb.y + vb.h))} ${f1(vb.w)} ${f1(vb.h)}" style="--k:${k.toFixed(4)}" ${extra}>`;
-    return { k, vb, P, line, circle, path, poly, text, dim, target, open };
+    // zoomed views are drawn at a fixed size and scroll in their frame
+    const size = fixed ? `width:${Math.round(designW)}px;max-width:none;` : '';
+    const open = (cls, extra = '') => `<svg class="geo ${cls}" viewBox="${f1(vb.x)} ${f1(-(vb.y + vb.h))} ${f1(vb.w)} ${f1(vb.h)}" style="${size}--k:${k.toFixed(4)}" ${extra}>`;
+    // a point's position in screen px from the top left of the drawing
+    const px = (p) => ({ x: (p.x - vb.x) / k, y: (vb.y + vb.h - p.y) / k });
+    return { k, vb, P, line, circle, path, poly, text, dim, target, open, px };
   }
 
   /* Points for one bike set up with a given stem, spacers and bar reach. */
@@ -122,17 +127,20 @@ const GBDraw = (() => {
     return s + '</g>';
   }
 
-  function grid(v, step = 50) {
+  /* Squares of `step` mm, heavier every `major` mm, values every `lab` mm along the bottom and left
+     edges. A zoomed drawing scrolls, so its values repeat every `rep` mm across it as well. */
+  function grid(v, step = 50, { lab = step * 4, major = step * 2, rep = 0 } = {}) {
     const { x, y, w, h } = v.vb;
     let s = '<g class="grid">';
     const x0 = Math.ceil(x / step) * step; const y0 = Math.ceil(y / step) * step;
-    for (let gx = x0; gx <= x + w; gx += step) s += v.line({ x: gx, y }, { x: gx, y: y + h }, gx === 0 ? 'axis0' : (gx % (step * 2) === 0 ? 'major' : 'minor'));
-    for (let gy = y0; gy <= y + h; gy += step) s += v.line({ x, y: gy }, { x: x + w, y: gy }, gy === 0 ? 'axis0' : (gy % (step * 2) === 0 ? 'major' : 'minor'));
-    const lab = step * 4;
-    for (let gx = Math.ceil(x / lab) * lab; gx <= x + w; gx += lab) s += v.text({ x: gx, y }, n0(gx), 'gl', { dy: -5 });
-    for (let gy = Math.ceil(y / lab) * lab; gy <= y + h; gy += lab) if (gy > y + 20 * v.k) s += v.text({ x, y: gy }, n0(gy), 'gl', { dx: 5, dy: 4, anchor: 'start' });
+    for (let gx = x0; gx <= x + w; gx += step) s += v.line({ x: gx, y }, { x: gx, y: y + h }, gx === 0 ? 'axis0' : (gx % major === 0 ? 'major' : 'minor'));
+    for (let gy = y0; gy <= y + h; gy += step) s += v.line({ x, y: gy }, { x: x + w, y: gy }, gy === 0 ? 'axis0' : (gy % major === 0 ? 'major' : 'minor'));
+    const across = (lo, len) => { const out = [lo]; if (rep) for (let r = Math.ceil(lo / rep) * rep; r < lo + len; r += rep) if (r > lo + 40 * v.k) out.push(r); return out; };
+    for (const ly of across(y, h)) for (let gx = Math.ceil(x / lab) * lab; gx <= x + w; gx += lab) s += v.text({ x: gx, y: ly }, n0(gx), 'gl', { dy: -5 });
+    for (const lx of across(x, w)) for (let gy = Math.ceil(y / lab) * lab; gy <= y + h; gy += lab) if (gy > y + 20 * v.k) s += v.text({ x: lx, y: gy }, n0(gy), 'gl', { dx: 5, dy: 4, anchor: 'start' });
     return s + '</g>';
   }
+  const ZOOM_GRID = { lab: 50, major: 50, rep: 250 };
 
   /* data: { r (solveBike result + ref, fp), o (chosen option), names: {bike, ref}, show: {ref, dims, grid} } */
   function render(data) {
@@ -153,9 +161,10 @@ const GBDraw = (() => {
     const minY = g.groundY - 40;
     const maxY = Math.max(sad.y, hand.y) + 110;
     const vb = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
-    const v = View(vb, 860);
+    const zoom = !!show.zoom;
+    const v = zoom ? View(vb, vb.w * ZOOM_PX, true) : View(vb, 860);
     let m = v.open('main', `role="img" aria-label="${esc(names.bike)} drawn over ${esc(names.ref)} on a millimetre grid centred on the bottom bracket"`);
-    if (show.grid) m += grid(v, 50);
+    if (show.grid) m += zoom ? grid(v, 5, ZOOM_GRID) : grid(v, 50);
     m += v.line({ x: minX + 10, y: g.groundY }, { x: maxX - 10, y: g.groundY }, 'ground');
     m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -(bike.forkA2C + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
     if (showRef) m += drawBike(v, 'rf', rg, pr, sad);
@@ -186,7 +195,7 @@ const GBDraw = (() => {
     // Same wheel size on both, rear axles at x = 0, ground at y = 0. Drawn small, with the
     // measurements around the bikes: centres, trail and wheelbase under the ground, reach above,
     // heights to the sides.
-    let gr = null;
+    let gr = null; let groundBB = null;
     if (pr && g.csKnown && rg.csKnown) {
       // each frame moved from its BB grid onto the ground grid
       const place = (q) => {
@@ -203,12 +212,14 @@ const GBDraw = (() => {
       // under the ground for four rows, above for two reach rows
       const M = { l: 40, r: 140, b: 4 * ROW + 40, t: 2 * ROW + 30 };
       const x0 = -TYRE_R; const span = right - x0;
-      const k = span / (DW - M.l - M.r);
-      const gvb = { x: x0 - M.l * k, y: -M.b * k, w: DW * k, h: top + (M.t + M.b) * k };
-      const gv = View(gvb, DW);
+      const k = zoom ? 1 / ZOOM_PX : span / (DW - M.l - M.r);
+      const gw = zoom ? span * ZOOM_PX + M.l + M.r : DW; // drawing width in px
+      const gvb = { x: x0 - M.l * k, y: -M.b * k, w: gw * k, h: top + (M.t + M.b) * k };
+      const gv = View(gvb, gw, zoom);
+      groundBB = gv.px(both[0].bb);
       const lift = (P, body) => `<g transform="translate(${f1(P.dx)} ${f1(-P.h)})">${body}</g>`;
       gr = gv.open('ground', `role="img" aria-label="${esc(names.bike)} and ${esc(names.ref)} standing on level ground, rear axles at the same point"`);
-      if (show.grid) gr += grid(gv, 50);
+      if (show.grid) gr += zoom ? grid(gv, 5, ZOOM_GRID) : grid(gv, 50);
       gr += gv.line({ x: gvb.x + 6 * k, y: 0 }, { x: gvb.x + gvb.w - 6 * k, y: 0 }, 'ground');
       // steering axes down to the ground
       gr += `<g class="axes">${both.map((P, i) => gv.line(P.T, P.axis, i ? 'saxis rfa' : 'saxis')).join('')}</g>`;
@@ -318,7 +329,8 @@ const GBDraw = (() => {
       s += sv.text(sad, 'Saddle tip', 'dt', { dy: -16 });
     }
     s += '</svg>';
-    return { main: m, front: f, saddle: s, ground: gr };
+    // where the BB is on the zoomed drawings, so they open scrolled to it
+    return { main: m, front: f, saddle: s, ground: gr, focus: { main: v.px({ x: 0, y: 0 }), ground: groundBB } };
   }
 
   return { render };

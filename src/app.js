@@ -630,6 +630,11 @@
     const o = chosenFor(b, r);
     const hasBike = !!r.fp.bike;
     const svg = GBDraw.render({ r, o, show: layers, names: { bike: b.name || 'This bike', ref: refName(r.ref) } });
+    // zoomed drawings scroll in a frame; keep where each one was scrolled to across redraws
+    const kept = {};
+    el.querySelectorAll('.zoomwrap').forEach((w) => { kept[w.dataset.zoom] = [w.scrollLeft, w.scrollTop]; });
+    const zoomed = (body, key) => (layers.zoom && body ? `<div class="zoomwrap" data-zoom="${key}">${body}</div>` : body);
+    const squares = layers.zoom ? 'Squares are 5 mm; values every 50 mm. Scroll to move around.' : 'Squares are 50 mm; labels every 200 mm.';
     const tog = (k, label) => `<label class="tog"><input type="checkbox" data-layer="${k}" id="lay-${k}"${layers[k] ? ' checked' : ''}> ${label}</label>`;
     el.innerHTML = `
       <div class="viz-bar">
@@ -638,19 +643,25 @@
           <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle tip'}</span>
           <span class="lg"><i class="tg"></i>Saddle tip and hand position</span>
         </div>
-        <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
+        <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}${tog('zoom', '5 mm squares')}</div>
       </div>
       <div class="viz">
-        <figure class="draw">${svg.main}<figcaption>Side view on the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
+        <figure class="draw">${zoomed(svg.main, 'main')}<figcaption>Side view on the BB grid. ${squares}</figcaption></figure>
         <div class="viz-side">
           <figure class="draw">${svg.front}<figcaption>Front end close-up, 10 mm squares</figcaption></figure>
           <figure class="draw">${svg.saddle}<figcaption>Saddle close-up, 10 mm squares</figcaption></figure>
         </div>
-      </div>${groundHTML(svg.ground, hasBike)}`;
+      </div>${groundHTML(zoomed(svg.ground, 'ground'), hasBike, squares)}`;
+    // a zoomed drawing opens on the BB, then stays where it was scrolled to
+    el.querySelectorAll('.zoomwrap').forEach((w) => {
+      const at = kept[w.dataset.zoom];
+      const f = svg.focus[w.dataset.zoom];
+      if (at) { w.scrollLeft = at[0]; w.scrollTop = at[1]; } else if (f) { w.scrollLeft = f.x - w.clientWidth / 2; w.scrollTop = f.y - w.clientHeight / 2; }
+    });
   }
   // the frames on level ground, after the side view; needs a chainstay on both frames
-  function groundHTML(svg, hasBike) {
-    if (svg) return `<div class="viz viz-ground"><figure class="draw">${svg}<figcaption>Both frames on level ground: rear axles at x = 0, ground at y = 0. Squares are 50 mm.</figcaption></figure></div>`;
+  function groundHTML(svg, hasBike, squares) {
+    if (svg) return `<div class="viz viz-ground"><figure class="draw">${svg}<figcaption>Both frames on level ground: rear axles at x = 0, ground at y = 0. ${squares}</figcaption></figure></div>`;
     return hasBike ? '<p class="viz-note">Enter the chainstay on the reference bike and this frame to compare them on level ground.</p>' : '';
   }
   // a result tile lights up its dimension in the drawings
