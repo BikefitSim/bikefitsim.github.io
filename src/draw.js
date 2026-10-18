@@ -183,48 +183,60 @@ const GBDraw = (() => {
 
     /* ---------- both frames on level ground ---------- */
     // Only with a reference bike and a chainstay on both frames: the rear wheel has to be in place.
-    // Same wheel size on both, rear axles at x = 0, ground at y = 0.
+    // Same wheel size on both, rear axles at x = 0, ground at y = 0. Drawn small, with the
+    // measurements around the bikes: centres, trail and wheelbase under the ground, reach above,
+    // heights to the sides.
     let gr = null;
     if (pr && g.csKnown && rg.csKnown) {
       // each frame moved from its BB grid onto the ground grid
-      const place = (q, p) => {
+      const place = (q) => {
         const dx = -q.rear.x; const h = -q.groundY; // horizontal chainstay, BB height
         const at = (pt) => ({ x: pt.x + dx, y: pt.y + h });
-        return { q, p, dx, h, at, bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T) };
+        return { dx, h, bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T), axis: at(q.axisGround), trail: q.trail };
       };
-      const B = place(g, pb); const R = place(rg, pr);
-      const both = [B, R];
-      const tops = [sad.y + B.h, hand.y + B.h, sad.y + R.h, fp.hand.y + R.h, B.T.y, R.T.y];
-      const gx0 = -TYRE_R - 30;
-      const col = Math.max(B.front.x, R.front.x) + TYRE_R + 20; // column for the head tube heights
-      const gw = (col - gx0) / (1 - 80 / 860);       // plus room for two dimension columns, in px
-      const below = 125 * gw / 860;                    // room under the ground for four rows of dimensions
-      const gvb = { x: gx0, y: -below, w: gw, h: Math.max(...tops) + 90 + below };
-      const gv = View(gvb, 860);
-      const k = gv.k;
+      const both = [place(g), place(rg)]; // target, then reference
+      const DW = 860;      // design width in px
+      const ROW = 22;      // px between rows of dimensions
+      const top = Math.max(sad.y + both[0].h, hand.y + both[0].h, sad.y + both[1].h, fp.hand.y + both[1].h);
+      const right = Math.max(...both.map((P) => Math.max(P.front.x, P.axis.x))) + TYRE_R;
+      // margins in px around the bikes: left for nothing but air, right for two height columns,
+      // under the ground for four rows, above for two reach rows
+      const M = { l: 40, r: 140, b: 4 * ROW + 40, t: 2 * ROW + 30 };
+      const x0 = -TYRE_R; const span = right - x0;
+      const k = span / (DW - M.l - M.r);
+      const gvb = { x: x0 - M.l * k, y: -M.b * k, w: DW * k, h: top + (M.t + M.b) * k };
+      const gv = View(gvb, DW);
       const lift = (P, body) => `<g transform="translate(${f1(P.dx)} ${f1(-P.h)})">${body}</g>`;
       gr = gv.open('ground', `role="img" aria-label="${esc(names.bike)} and ${esc(names.ref)} standing on level ground, rear axles at the same point"`);
       if (show.grid) gr += grid(gv, 50);
-      gr += gv.line({ x: gx0 + 10, y: 0 }, { x: gvb.x + gw - 10, y: 0 }, 'ground');
-      gr += lift(R, drawBike(gv, 'rf', rg, pr, sad));
-      gr += lift(B, drawBike(gv, 'bk', g, pb, sad));
+      gr += gv.line({ x: gvb.x + 6 * k, y: 0 }, { x: gvb.x + gvb.w - 6 * k, y: 0 }, 'ground');
+      // steering axes down to the ground
+      gr += `<g class="axes">${both.map((P, i) => gv.line(P.T, P.axis, i ? 'saxis rfa' : 'saxis')).join('')}</g>`;
+      gr += lift(both[1], drawBike(gv, 'rf', rg, pr, sad));
+      gr += lift(both[0], drawBike(gv, 'bk', g, pb, sad));
       if (show.dims) {
-        const rows = { B: [-30, -78], R: [-54, -102] }; // px under the ground: centres, then wheelbase
+        const rowY = (n) => -(18 + n * ROW) * k;     // rows under the ground, n = 0 first
+        const rowTop = (n) => top + (14 + n * ROW) * k; // rows above everything
         both.forEach((P, i) => {
           const cls = i ? 'dim rfd' : 'dim';
-          const [r1, r2] = rows[i ? 'R' : 'B'];
-          // extension lines from the axles and the BB down to this bike's rows
-          const ext = (x, y0, off) => gv.line({ x, y: y0 }, { x, y: (off - 4) * k }, 'ext');
-          gr += `<g class="${cls}">${ext(0, TYRE_R, r2)}${ext(P.bb.x, P.bb.y, r1)}${ext(P.front.x, P.front.y, r2)}</g>`;
-          gr += gv.dim({ x: 0, y: 0 }, { x: P.bb.x, y: 0 }, r1, `Rear centre ${n0(P.bb.x)}`, { cls, ext: false });
-          gr += gv.dim({ x: P.bb.x, y: 0 }, { x: P.front.x, y: 0 }, r1, `Front centre ${n0(P.front.x - P.bb.x)}`, { cls, ext: false });
-          gr += gv.dim({ x: 0, y: 0 }, { x: P.front.x, y: 0 }, r2, `Wheelbase ${n0(P.front.x)}`, { cls, ext: false });
+          const r1 = rowY(i); const r2 = rowY(2 + i); const rt = rowTop(i);
+          const ext = (pt, y) => gv.line(pt, { x: pt.x, y: y + (y < pt.y ? -4 : 4) * k }, 'ext');
+          // extension lines: axles and BB down to the rows under the ground, BB and head tube top up to the reach row
+          gr += `<g class="${cls}">${ext({ x: 0, y: TYRE_R }, r2)}${ext(P.bb, r1)}${ext({ x: P.front.x, y: P.front.y }, r2)}${ext(P.axis, r1)}${ext(P.bb, rt)}${ext(P.T, rt)}</g>`;
+          const flat = (xa, xb, y, label) => gv.dim({ x: xa, y }, { x: xb, y }, 0, label, { cls, ext: false });
+          gr += flat(0, P.bb.x, r1, `Rear centre ${n0(P.bb.x)}`);
+          gr += flat(P.bb.x, P.front.x, r1, `Front centre ${n0(P.front.x - P.bb.x)}`);
+          gr += flat(P.front.x, P.axis.x, r1, `Trail ${n0(P.trail)}`);
+          gr += flat(0, P.front.x, r2, `Wheelbase ${n0(P.front.x)}`);
+          gr += flat(P.bb.x, P.T.x, rt, `Reach ${n0(P.T.x - P.bb.x)}`);
           // BB height beside the BB, the target's behind it and the reference's ahead
-          gr += gv.dim({ x: P.bb.x, y: 0 }, P.bb, i ? -34 : 34, `BB height ${n0(P.h)}`, { cls, ext: false });
-          // head tube top above the ground, out past the front wheels
-          const x = col + i * 40 * k;
-          gr += `<g class="${cls}">${gv.line(P.T, { x: x + 4 * k, y: P.T.y }, 'ext lvl')}</g>`;
-          gr += gv.dim({ x, y: 0 }, { x, y: P.T.y }, 0, `HT top ${n0(P.T.y)}`, { cls, ext: false, labelOff: 12 });
+          gr += gv.dim({ x: P.bb.x, y: 0 }, P.bb, i ? -30 : 30, `BB height ${n0(P.h)}`, { cls, ext: false });
+          // head tube top: height above the ground, and stack above the BB, out past the front wheels
+          const xh = right + (24 + i * 34) * k;
+          const xs = right + (92 + i * 34) * k;
+          gr += `<g class="${cls}">${gv.line(P.T, { x: xs + 4 * k, y: P.T.y }, 'ext lvl')}${gv.line(P.bb, { x: xs + 4 * k, y: P.bb.y }, 'ext lvl')}</g>`;
+          gr += gv.dim({ x: xh, y: 0 }, { x: xh, y: P.T.y }, 0, `HT top ${n0(P.T.y)}`, { cls, ext: false, labelOff: 11 });
+          gr += gv.dim({ x: xs, y: P.bb.y }, { x: xs, y: P.T.y }, 0, `Stack ${n0(P.T.y - P.bb.y)}`, { cls, ext: false, labelOff: 11 });
         });
       }
       gr += '</svg>';

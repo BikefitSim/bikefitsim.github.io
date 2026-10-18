@@ -254,14 +254,22 @@ const GB = (() => {
     const rear = { x: -csH, y: bike.bbDrop };
     const along = (t) => ({ x: T.x + t * d.x, y: T.y + t * d.y });
     const htBottom = along(-bike.htLength);
-    const axisFoot = along(-(bike.htLength + bike.forkA2C));
+    // Front axle level with the rear one, as a geometry chart has them: on the fork's offset line,
+    // BB drop above the BB. With stack from the tubes that is head tube plus fork length down the
+    // steering axis; a chart stack that disagrees with them changes the fork length here, rather
+    // than tipping the bike with one wheel off the ground.
+    const down = (T.y + bike.forkOffset * n.y - bike.bbDrop) / d.y;
+    const axisFoot = along(-down);
     const front = { x: axisFoot.x + bike.forkOffset * n.x, y: axisFoot.y + bike.forkOffset * n.y };
+    // where the steering axis meets the ground, and the trail behind it
+    const groundY = bike.bbDrop - WHEEL_R;
+    const axisGround = along((groundY - T.y) / d.y);
     const st = seatTubes(bike);
     const onSeatTube = (l) => ({ x: -l * Math.cos(S), y: l * Math.sin(S) });
     const stTop = onSeatTube(st.ct);
     const ttRear = fin(bike.seatTubeCC) && bike.seatTubeCC > 0 ? onSeatTube(st.cc) : stTop; // top tube meets the seat tube
     const ssJoin = onSeatTube(st.ct - 25);
-    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR: WHEEL_R, groundY: bike.bbDrop - WHEEL_R, csKnown };
+    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR: WHEEL_R, groundY, axisGround, trail: axisGround.x - front.x, csKnown };
   }
 
   /* One target bike: what to change so saddle tip and hand position match the reference. */

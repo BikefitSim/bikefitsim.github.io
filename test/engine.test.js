@@ -173,4 +173,18 @@ test('a chainstay places the rear axle; without one the drawing keeps its defaul
   near(d.rear.y, ref.bbDrop, 1e-9, 'axle BB drop above the BB');
 });
 
+test('the front axle sits level with the rear one, even when the chart stack disagrees with the tubes', () => {
+  // a chart where fork and head tube give 4 mm less stack than the chart (size 1 of a real chart)
+  const b = { sta: 74.5, hta: 72.5, htLength: 115, ett: 535, seatTube: 490, bbDrop: 45, forkA2C: 370, forkOffset: 45, chainstay: 401, stack: 498, reach: 396 };
+  const d = GB.frameDrawing(b);
+  near(d.front.y, 45, 1e-9, 'front axle height');
+  near(d.front.x - d.rear.x, 984.5, 0.1, 'wheelbase (chart says 985)');
+  // stack from the tubes: the fork length is used as it is
+  const t = Object.assign({}, ref, GB.frameGeometry(Object.assign({}, ref, { stack: null, reach: null })));
+  const dt = GB.frameDrawing(t);
+  const foot = { x: dt.front.x - 50 * Math.sin(GB.rad(72.5)), y: dt.front.y - 50 * Math.cos(GB.rad(72.5)) };
+  near(Math.hypot(foot.x - dt.T.x, foot.y - dt.T.y), 163 + 385, 1e-6, 'head tube plus fork down the axis');
+  near(dt.trail, (340 * Math.cos(GB.rad(72.5)) - 50) / Math.sin(GB.rad(72.5)), 1e-6, 'trail');
+});
+
 console.log(`\n${passed} checks passed`);
