@@ -50,6 +50,7 @@
     example: true, // nothing entered yet
     refs: [blankRef('bike', 'r1', 'Reference bike 1'), blankRef('fit', 'r2', 'Personal fit 1')],
     lastRef: { bike: 'r1', fit: 'r2' }, // the one last open in each tab
+    defaults: { tipToRails: null, barWidth: null, barReach: null }, // empty: the built-in DEF_BUILTIN
     opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, maxSpacers: 40 },
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' })],
     selected: 'b1',
@@ -82,6 +83,7 @@
     });
     for (const k of KINDS) if (!out.refs.some((r) => r.kind === k)) out.refs.push(blankRef(k, uid('r'), `${DEFAULT_NAME[k]} 1`));
     out.opts = Object.assign({}, base.opts, isObj(s.opts) ? s.opts : {});
+    out.defaults = Object.assign({}, base.defaults, isObj(s.defaults) ? s.defaults : {});
     const ids = new Set(out.refs.map((r) => r.id));
     const bikeT = Object.assign({}, base.bikes[0], { name: 'Target bike', pick: '' });
     out.bikes = (Array.isArray(s.bikes) ? s.bikes : []).filter(isObj).map((b) => {
@@ -180,6 +182,24 @@
     { k: 'chainstay', l: 'Chainstay', u: 'mm', opt: true, h: 'Optional. BB centre to rear axle. Places the rear wheel and adds a ground view.' },
     { k: 'wheelbase', l: 'Wheelbase', u: 'mm', opt: true, h: 'Optional, with the chainstay. Places the front wheel exactly as the chart has it.' },
   ];
+  /* Saddle and handlebar defaults, at the top of the page. Any of these left empty on a
+     reference or a target bike takes the default here, or the built-in one when that is empty too. */
+  const DEF_BUILTIN = { tipToRails: 125, barWidth: 380, barReach: 80 };
+  const DEF_KEYS = Object.keys(DEF_BUILTIN);
+  const defVal = (k) => { const v = state.defaults && state.defaults[k]; return finite(v) ? v : DEF_BUILTIN[k]; };
+  const orDef = (v, k) => (v == null || v === '' ? defVal(k) : v);
+  const DEF_FIELDS = [
+    { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, ph: `${DEF_BUILTIN.tipToRails}`, h: 'Horizontal, saddle level: tip to above the middle of the rail markings.' },
+    { k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barWidth}`, h: 'Centre to centre at the hoods.' },
+    { k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barReach}`, h: 'Clamp centre to the base of the hoods. 0 for a flat bar.' },
+  ];
+  // a reference or target bike with the defaults filled in, for the calculation
+  function effRef(r) {
+    const fit = Object.assign({}, r.fit);
+    for (const k of DEF_KEYS) fit[k] = orDef(fit[k], k);
+    return Object.assign({}, r, { fit });
+  }
+  const effBike = (b) => Object.assign({}, b, { barReach: orDef(b.barReach, 'barReach') });
   const FF = {
     saddleHeight: { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
     saddleLine: { k: 'saddleLine', l: 'Saddle height', u: 'mm', h: 'Straight line from the BB centre to the saddle tip, not along the seat tube' },
@@ -189,10 +209,10 @@
     stemLength: { k: 'stemLength', l: 'Stem length', u: 'mm', h: 'The stem fitted on this bike' },
     stemAngle: { k: 'stemAngle', l: 'Stem angle', u: '°', h: 'Negative points down, for example −6', neg: true },
     spacers: { k: 'spacers', l: 'Spacers under stem', u: 'mm', h: 'Head tube top to stem, top cap included' },
-    barReach: { k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar on this bike. 0 for a flat bar.' },
-    barWidthBike: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods' },
-    tipToRails: { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, ph: `${GB.TIP_TO_RAILS}`, h: `Horizontal, saddle level: tip to above the middle of the rail markings. Empty means ${GB.TIP_TO_RAILS}.` },
-    barWidthFit: { k: 'barWidth', l: 'Handlebar width', u: 'mm', h: 'Centre to centre at the hoods. 0 if you measured personal reach in side view.' },
+    barReach: { k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, get ph() { return `${defVal('barReach')}`; }, h: 'Of the bar on this bike. 0 for a flat bar. Empty means the default.' },
+    barWidthBike: { k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, get ph() { return `${defVal('barWidth')}`; }, h: 'Centre to centre at the hoods. Empty means the default.' },
+    tipToRails: { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, get ph() { return `${defVal('tipToRails')}`; }, h: 'Horizontal, saddle level: tip to above the middle of the rail markings. Empty means the default.' },
+    barWidthFit: { k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, get ph() { return `${defVal('barWidth')}`; }, h: 'Centre to centre at the hoods. 0 if you measured personal reach in side view. Empty means the default.' },
   };
   const BIKE_FIT_FIELDS = [FF.saddleHeight, FF.setback, FF.tipToRails, FF.spacers, FF.stemLength, FF.stemAngle, FF.barReach, FF.barWidthBike];
   const FIT_SADDLE_FIELDS = [FF.saddleLine, FF.setback, FF.tipToRails];
@@ -282,6 +302,9 @@
       <button class="btn" type="button" id="dupRef">Copy as new ${kindName(r)}</button>
       <button class="btn danger" type="button" id="delRef"${last ? ` disabled title="Keep at least one ${kindName(r)}"` : ''}>Delete ${kindName(r)}</button>`;
   }
+  function renderDefFields() {
+    $('defFields').innerHTML = DEF_FIELDS.map((f) => fieldHTML(f, 'defaults', state.defaults)).join('');
+  }
   function renderOptFields() {
     $('optFields').innerHTML = OPT_FIELDS.map((f) => fieldHTML(f, 'opts', state.opts)).join('');
   }
@@ -294,14 +317,16 @@
     $('bikeForm').innerHTML = `
       <div class="grp ref-name">${nameHTML('bike', b.name)}</div>
       <div class="grp"><h4>Frame geometry</h4><div class="fields">${geoFieldsHTML('bike', b)}</div></div>
-      <div class="grp"><h4>Handlebar</h4><div class="fields">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', h: 'Of the bar this bike will use. 0 for a flat bar.' }, 'bike', b)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, finite(curRef().fit.barWidth) && curRef().fit.barWidth > 0 ? `same: ${curRef().fit.barWidth}` : 'same as reference')}</div></div>
+      <div class="grp"><h4>Handlebar</h4><div class="fields">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, h: 'Of the bar this bike will use. 0 for a flat bar. Empty means the default.' }, 'bike', b, `${defVal('barReach')}`)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, sameWidthPh())}</div></div>
       <div class="row-actions">
         <button class="btn" type="button" id="dupBike">Copy as new target bike</button>
         <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' disabled title="Keep at least one target bike"' : ''}>Delete target bike</button>
       </div>`;
   }
+  // the target bike's empty bar width: the reference's, defaults included
+  function sameWidthPh() { const w = orDef(curRef().fit.barWidth, 'barWidth'); return finite(w) && w > 0 ? `same: ${w}` : 'same as reference'; }
   function renderInputs() {
-    renderRefTabs(); renderRefForm(); renderOptFields(); renderTabs(); renderBikeForm();
+    renderDefFields(); renderRefTabs(); renderRefForm(); renderOptFields(); renderTabs(); renderBikeForm();
     document.body.classList.toggle('loading', !loaded);
     if (!loaded) document.querySelectorAll('[data-bind]').forEach((el) => { if (el.tagName === 'SELECT') el.disabled = true; else el.readOnly = true; });
   }
@@ -374,19 +399,21 @@
   function compute() {
     const oe = optErrors();
     const refs = {};
-    for (const r of state.refs) {
+    for (const r0 of state.refs) {
+      const r = effRef(r0);
       const errs = [...(isFitRef(r) ? [] : geoErrors(r)), ...fitErrors(r), ...oe];
       let fp = null;
       if (!errs.length) {
         fp = GB.fitPoints(r, isFitRef(r) ? r.fit : Object.assign({}, r.fit, { handFrom: 'stem' }));
         if (!fp.ok) { errs.push(fp.error); fp = null; }
       }
-      refs[r.id] = { errs, fp };
+      refs[r.id] = { errs, fp, eff: r };
     }
     const res = {};
-    for (const b of state.bikes) {
-      const ref = curRef();
-      const rm = refs[ref.id];
+    for (const b0 of state.bikes) {
+      const b = effBike(b0);
+      const rm = refs[curRef().id];
+      const ref = rm.eff;
       const be = geoErrors(b, true);
       if (b.barWidth != null && (!finite(b.barWidth) || b.barWidth < 250 || b.barWidth > 600)) be.push('Handlebar width should be between 250 and 600, or left empty.');
       if (!rm.fp) res[b.id] = { refErrors: rm.errs, ref };
@@ -463,7 +490,7 @@
     }
     const { saddle, hand, reachH, drop, riderReach } = m.fp;
     const halfW = m.fp.half;
-    const f = r.fit;
+    const f = m.eff.fit;
     let text;
     if (fitRef) {
       text = `
@@ -576,7 +603,7 @@
     // reference column: the selected reference as set up today
     const refCols = [curRef()].map((ref) => {
       const fp = model.refs[ref.id].fp;
-      const f = ref.fit;
+      const f = model.refs[ref.id].eff.fit;
       return {
         id: ref.id, name: refName(ref), isRef: true,
         vals: fp && !fp.bike ? {
@@ -602,7 +629,7 @@
           rails: r.railOver > 0.5 ? '<span class="miss-bad">past the rails</span>' : `${esc(postTxt(r.postOffset))}, ${railPosTxt(r.railPos).replace(' of the middle of its rails', ' of centre').replace(' on its rails', '')}`,
           stem: o ? esc(stemTxt(o)) : na,
           spacers: o ? `${n1(o.spacers)} mm${r.fp.bike ? ` <span class="calc-mark">${sgn(o.spacers - f.spacers, 1)}</span>` : ''}` : na,
-          bar: `${n1(b.barReach)} mm`, width: r.barWidth > 0 ? `${n0(r.barWidth)} mm${Math.abs(r.handShift) >= 0.5 ? ` <span class="calc-mark">hands ${sgn(r.handShift, 1)}</span>` : ''}` : na,
+          bar: `${n1(orDef(b.barReach, 'barReach'))} mm`, width: r.barWidth > 0 ? `${n0(r.barWidth)} mm${Math.abs(r.handShift) >= 0.5 ? ` <span class="calc-mark">hands ${sgn(r.handShift, 1)}</span>` : ''}` : na,
           hand: o ? `<span class="${o.err > 5 ? 'miss-bad' : 'miss-ok'}">${esc(missTxt(o))}</span>` : na,
         },
       };
@@ -1071,7 +1098,8 @@
     }
     if (scope === 'bike' || scope === 'ref') refreshPlaceholders(scope, obj);
     if (scope === 'fit' && (key === 'stemLength' || key === 'stemAngle')) delete obj.stemImplied;
-    if (scope === 'fit' && key === 'barWidth') { const w = $('bike-barWidth'); if (w) w.placeholder = finite(v) && v > 0 ? `same: ${v}` : 'same as reference'; }
+    if (scope === 'fit' && key === 'barWidth') { const w = $('bike-barWidth'); if (w) w.placeholder = sameWidthPh(); }
+    if (scope === 'defaults') { renderRefForm(); renderBikeForm(); } // placeholders show the defaults
     renderOutputs();
     scheduleSave();
   });
@@ -1144,8 +1172,8 @@
         made = blankRef('bike', uid('r'), nextDefaultName('bike'));
         for (const k of GEO_KEYS) made[k] = b[k];
         Object.assign(made.fit, {
-          saddleHeight: r1(r.heightAlong), setback: r.ref.fit.setback, tipToRails: r.ref.fit.tipToRails,
-          spacers: o.spacers, stemLength: o.length, stemAngle: o.angle, barReach: b.barReach, barWidth: r.barWidth,
+          saddleHeight: r1(r.heightAlong), setback: r.ref.fit.setback, tipToRails: src.fit.tipToRails,
+          spacers: o.spacers, stemLength: o.length, stemAngle: o.angle, barReach: b.barReach, barWidth: b.barWidth != null ? b.barWidth : src.fit.barWidth,
         });
       } else if (dupR) {
         made = Object.assign(clone(src), { id: uid('r'), name: `${refName(src)} copy` });

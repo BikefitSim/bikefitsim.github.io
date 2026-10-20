@@ -9,7 +9,7 @@ const GB = (() => {
   const RAIL_H = 45;      // saddle top to rails, for the seatpost check only
   const POSTS = [20, 0];   // seatpost offsets the app chooses from: 20 mm setback or inline
   const RAIL_TRAVEL = 60;  // adjusting area marked on saddle rails, end to end
-  const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is entered
+  const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is passed (the app passes its Defaults)
   const MAX_OFFSET = 40;   // most offset a seatpost is sold with, for the hint when neither fits
   const WHEEL_R = 340;    // drawing only
   const CHAINSTAY = 410;  // drawing only, when the frame has no chainstay length
