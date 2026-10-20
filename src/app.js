@@ -39,6 +39,12 @@
     const m = /^(?:Bike reference|Reference bike|Fit reference|Bike fit|Personal fit) (\d+)$/.exec(String(name || ''));
     return m ? `${DEFAULT_NAME[kind]} ${m[1]}` : name;
   }
+  // the next free default name for a new reference: one more than the highest number in use
+  function nextDefaultName(kind) {
+    const re = new RegExp(`^${DEFAULT_NAME[kind]} (\\d+)$`);
+    const nums = state.refs.filter((r) => r.kind === kind).map((r) => { const m = re.exec(r.name || ''); return m ? +m[1] : 0; });
+    return `${DEFAULT_NAME[kind]} ${Math.max(nums.length, ...nums) + 1}`;
+  }
   const BLANK = () => ({
     v: 3,
     example: true, // nothing entered yet
@@ -542,6 +548,7 @@
           <span class="t-s">Hand position <b>${o ? missTxt(o) : 'n/a'}</b></span></div>
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
+      ${o ? `<div class="row-actions"><button class="btn" type="button" id="toRefBike" title="A new bike fit in step 1: this frame with the saddle, stem and spacers above">Copy as reference bike</button></div>` : ''}
       <details class="parts opts" id="optsBox"${optsOpen ? ' open' : ''}>
         <summary>Stem and spacer options <span>the ${r.cockpit.options.length} closest from your stems</span></summary>
         <div class="sub-h">
@@ -621,6 +628,8 @@
   try { const l = JSON.parse(localStorage.getItem(LAYER_KEY) || 'null'); if (l && typeof l === 'object') layers = Object.assign(layers, l); } catch (e) { /* defaults */ }
   // the ground view zooms in where it is clicked (or on the BB, from its button) and out on the next click
   let groundZoom = null; // null, or { at: point on the ground grid in mm, or true for the BB; off: click position in the drawing, px }
+  // drawing title: what it shows, then what is compared and how it is lined up
+  const figT = (t, sub) => `<div class="fig-t">${t}<span class="fig-s">${sub}</span></div>`;
   function renderViz() {
     const el = $('vizWrap');
     const b = curBike();
@@ -644,10 +653,10 @@
         <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
       <div class="viz">
-        <figure class="draw"><div class="fig-t">Side view</div>${svg.main}<figcaption>On the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
+        <figure class="draw">${figT('Side view', hasBike ? 'both bikes aligned on the BB' : 'this bike and your fit, from the BB')}${svg.main}<figcaption>On the BB grid. Squares are 50 mm; labels every 200 mm.</figcaption></figure>
         <div class="viz-side">
-          <figure class="draw"><div class="fig-t">Front end close-up</div>${svg.front}<figcaption>Squares are 10 mm.</figcaption></figure>
-          <figure class="draw"><div class="fig-t">Saddle close-up</div>${svg.saddle}<figcaption>Squares are 10 mm.</figcaption></figure>
+          <figure class="draw">${figT('Front end close-up', 'stem and spacers, aligned on the BB')}${svg.front}<figcaption>Squares are 10 mm.</figcaption></figure>
+          <figure class="draw">${figT('Saddle close-up', 'saddle and seat tube, aligned on the BB')}${svg.saddle}<figcaption>Squares are 10 mm.</figcaption></figure>
         </div>
       </div>${groundHTML(svg.ground, r, b)}`;
     // zooming in keeps the clicked point under the pointer; after that the frame stays where it was scrolled to
@@ -663,7 +672,7 @@
     if (svg) {
       const z = !!groundZoom;
       const how = z ? 'Zoomed in: squares are 10 mm, values every 50 mm. Scroll to move around; click to zoom out.' : 'Squares are 50 mm. Click the drawing to zoom in to 10 mm squares.';
-      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}"><div class="fig-t">Frames on level ground</div>${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>The back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
+      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${figT('Frames on level ground', 'both bikes, rear wheels aligned')}${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>The back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
     }
     const ref = refName(r.ref);
     let why;
@@ -1122,11 +1131,22 @@
     }
     const addR = e.target.closest('#addRef'); const addKind = addR ? addR.dataset.kind : '';
     const dupR = e.target.closest('#dupRef'); const toFit = e.target.closest('#toFitRef');
-    if (addKind || dupR || toFit) {
+    const toRef = e.target.closest('#toRefBike');
+    if (addKind || dupR || toFit || toRef) {
       const src = curRef();
       let made;
       if (addKind) {
-        made = blankRef(addKind, uid('r'), `${DEFAULT_NAME[addKind]} ${ofKind(addKind).length + 1}`);
+        made = blankRef(addKind, uid('r'), nextDefaultName(addKind));
+      } else if (toRef) {
+        // the target bike as the results set it up, kept as a new bike fit; the reference it came from stays as it is
+        const b = curBike(); const r = model && model.res[b.id]; const o = chosenFor(b, r);
+        if (!o) return;
+        made = blankRef('bike', uid('r'), nextDefaultName('bike'));
+        for (const k of GEO_KEYS) made[k] = b[k];
+        Object.assign(made.fit, {
+          saddleHeight: r1(r.heightAlong), setback: r.ref.fit.setback, tipToRails: r.ref.fit.tipToRails,
+          spacers: o.spacers, stemLength: o.length, stemAngle: o.angle, barReach: b.barReach, barWidth: r.barWidth,
+        });
       } else if (dupR) {
         made = Object.assign(clone(src), { id: uid('r'), name: `${refName(src)} copy` });
       } else {

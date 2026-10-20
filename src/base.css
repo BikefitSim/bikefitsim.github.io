@@ -159,6 +159,7 @@ details.parts .fields { margin-top: 14px; }
 figure.draw { margin: 0; border: 1px solid var(--rule-2); border-radius: 4px; background: var(--sheet); overflow: hidden; }
 figure.draw svg { display: block; width: 100%; height: auto; max-width: 100%; }
 figure.draw .fig-t { padding: 8px 12px; border-bottom: 1px solid var(--rule-2); font: 600 13px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
+figure.draw .fig-s { margin-left: 8px; font: 400 13px var(--body); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
 figure.draw figcaption { display: flex; gap: 16px; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--rule-2); font-size: 12.5px; color: var(--ink-2); }
 .lg { display: inline-flex; gap: 6px; align-items: center; }
 .lg i { width: 16px; height: 4px; border-radius: 2px; display: inline-block; }
