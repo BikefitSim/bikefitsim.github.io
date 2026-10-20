@@ -131,6 +131,25 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
 
   <div class="banner" id="importBanner" role="status" hidden></div>
 
+  <section class="sheet" aria-labelledby="useTitle">
+    <div class="sec-head"><h2 id="useTitle">How to use</h2></div>
+    <div class="how use">
+      <div><h4>Defaults</h4><p>Set your saddle's tip to rail centre and rail length, and your usual handlebar width and reach, once. Any bike or fit that leaves them empty uses these.</p></div>
+      <div><h4>Step 1: Reference</h4><p>Enter where you sit now: a bike fit (a bike that fits you, from its geometry chart, and how it is set up) or a personal fit (your measurements only).</p></div>
+      <div><h4>Step 2: Target bike</h4><p>Enter the geometry chart and handlebar of the frame you want to set up, and the stems and spacers you can use.</p></div>
+      <div><h4>Step 3: Changes</h4><p>Read the saddle height, setback, stem and spacers that put you in the same position. Pick another stem option to see it drawn. "Copy as reference bike" keeps the result as a reference for another frame.</p></div>
+      <div><h4>Keep a copy</h4><p>Save your bikes and fits to a file with the buttons at the top, and open it again next time.</p></div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="defTitle">
+    <div class="sec-head">
+      <h2 id="defTitle">Defaults</h2>
+      <p>Saddle and handlebar sizes used wherever a bike or fit leaves them empty.</p>
+    </div>
+    <div class="fields" id="defFields"></div>
+  </section>
+
   <section class="sheet" aria-labelledby="refTitle">
     <div class="sec-head">
       <span class="step">1</span><h2 id="refTitle">Reference</h2>
@@ -203,7 +222,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
         <li>Handlebar reach 0 means a flat bar, hands over the bar centre.</li>
         <li>Bar rise and drop are not modelled. A riser bar, or hoods above or below the bar top, moves the hands by that amount.</li>
         <li>Positions use the saddle tip, so results assume the same saddle on every bike. A saddle 20 mm shorter, tip in the same place, puts you 20 mm forward: slide it back 20 mm.</li>
-        <li>Whether the saddle fits on its rails is an estimate: 60 mm of rail adjustment, an inline or 20 mm offset seatpost, and the tip to rail centre (150 mm when empty).</li>
+        <li>Whether the saddle fits on its rails is an estimate: an inline or 20 mm offset seatpost, with the saddle rail length and tip to rail centre from Defaults.</li>
         <li>Results are estimates. Check the setup on the bike before riding.</li>
       </ul>
     </div>

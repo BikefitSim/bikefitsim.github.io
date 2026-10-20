@@ -8,8 +8,8 @@ const GB = (() => {
   const BAR_R = 15.9;     // 31.8 mm bar
   const RAIL_H = 45;      // saddle top to rails, for the seatpost check only
   const POSTS = [20, 0];   // seatpost offsets the app chooses from: 20 mm setback or inline
-  const RAIL_TRAVEL = 60;  // adjusting area marked on saddle rails, end to end
-  const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is entered
+  const RAIL_TRAVEL = 60;  // adjusting area marked on saddle rails, end to end, when none is passed
+  const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is passed (the app passes its Defaults)
   const MAX_OFFSET = 40;   // most offset a seatpost is sold with, for the hint when neither fits
   const WHEEL_R = 340;    // drawing only
   const CHAINSTAY = 410;  // drawing only, when the frame has no chainstay length
@@ -30,7 +30,8 @@ const GB = (() => {
      check when neither post keeps the saddle within its rails. */
   function railFit(noseAhead, S, fit, onWhat) {
     const tipToRails = fin(fit.tipToRails) && fit.tipToRails > 0 ? fit.tipToRails : TIP_TO_RAILS;
-    const half = RAIL_TRAVEL / 2;
+    const railTravel = fin(fit.railTravel) && fit.railTravel > 0 ? fit.railTravel : RAIL_TRAVEL;
+    const half = railTravel / 2;
     const tries = POSTS.map((postOffset) => {
       const tipClamp = tipAheadOfClamp(noseAhead, S, postOffset);
       const railPos = tipClamp - tipToRails;
@@ -44,9 +45,9 @@ const GB = (() => {
       const need = best.postOffset + (fwd ? -1 : 1) * best.railOver * Math.sin(S);
       const post = best.postOffset ? `a ${best.postOffset} mm offset seatpost` : 'an inline seatpost';
       const hint = need > 0.5 && need <= MAX_OFFSET ? ` It would take a seatpost with about ${Math.ceil(need / 5) * 5} mm offset.` : '';
-      check = { level: 'bad', text: `This saddle setback can't be reached on ${onWhat}. Even with ${post}, the saddle would have to sit ${best.railOver.toFixed(0)} mm further ${fwd ? 'forward' : 'back'} than its ${RAIL_TRAVEL} mm of rail adjustment allows.${hint}` };
+      check = { level: 'bad', text: `This saddle setback can't be reached on ${onWhat}. Even with ${post}, the saddle would have to sit ${best.railOver.toFixed(0)} mm further ${fwd ? 'forward' : 'back'} than its ${railTravel} mm of rail adjustment allows.${hint}` };
     }
-    return Object.assign({ railTravel: RAIL_TRAVEL, tipToRails, check }, best);
+    return Object.assign({ railTravel, tipToRails, check }, best);
   }
 
   function parseList(str, { min = -Infinity, max = Infinity } = {}) {
