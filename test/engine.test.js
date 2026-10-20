@@ -184,7 +184,7 @@ test('the front axle sits level with the rear one, even when the chart stack dis
   const dt = GB.frameDrawing(t);
   const foot = { x: dt.front.x - 50 * Math.sin(GB.rad(72.5)), y: dt.front.y - 50 * Math.cos(GB.rad(72.5)) };
   near(Math.hypot(foot.x - dt.T.x, foot.y - dt.T.y), 163 + 385, 1e-6, 'head tube plus fork down the axis');
-  near(dt.trail, (340 * Math.cos(GB.rad(72.5)) - 50) / Math.sin(GB.rad(72.5)), 1e-6, 'trail');
+  near(dt.trail, (341 * Math.cos(GB.rad(72.5)) - 50) / Math.sin(GB.rad(72.5)), 1e-6, 'trail, 30 mm tyre');
 });
 
 test('a chart wheelbase places the front axle exactly, and a far-off one is flagged', () => {
@@ -212,6 +212,18 @@ test('the first stem option is the closest one, and the list runs from closest t
     assert.ok(c.all.every((o) => tenths(o) >= tenths(c.best)), 'nothing closer than the best');
     c.options.forEach((o, i) => i && assert.ok(tenths(o) >= tenths(c.options[i - 1]), 'sorted by miss'));
   }
+});
+
+test('the tyre width sets the wheel size, and with it BB height and trail', () => {
+  const b = { sta: 74.5, hta: 72.5, htLength: 115, ett: 535, seatTube: 490, bbDrop: 70, forkA2C: 370, forkOffset: 45, chainstay: 405, stack: 498, reach: 396 };
+  const plain = GB.frameDrawing(b);
+  near(plain.wheelR, 311 + 30, 1e-9, 'default tyre');
+  const t25 = GB.frameDrawing(Object.assign({}, b, { tyre: 25 }));
+  const t32 = GB.frameDrawing(Object.assign({}, b, { tyre: 32 }));
+  near(-t25.groundY, 311 + 25 - 70, 1e-9, 'BB height with 25 mm tyres');
+  near(-t32.groundY, 311 + 32 - 70, 1e-9, 'BB height with 32 mm tyres');
+  assert.ok(t32.trail > t25.trail, 'a bigger wheel has more trail');
+  near(t32.front.x - t32.rear.x, t25.front.x - t25.rear.x, 1e-9, 'wheelbase unchanged');
 });
 
 console.log(`\n${passed} checks passed`);

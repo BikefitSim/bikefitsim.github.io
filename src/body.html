@@ -72,7 +72,7 @@ svg.geo .bike .tube { stroke: var(--c); stroke-width: 2.6px; stroke-linecap: rou
 svg.geo .bike .ht { stroke-width: 4.5px; }
 svg.geo .bike .cs, svg.geo .bike .ss, svg.geo .bike .fork { stroke-width: 1.8px; }
 svg.geo .bike.rf .tube { stroke-dasharray: 9 4; stroke-linecap: butt; }
-svg.geo .bike .tyre { stroke: var(--c); stroke-opacity: .32; stroke-width: 1.3px; fill: none; }
+svg.geo .bike .tyre { stroke: var(--c); stroke-opacity: .4; stroke-width: 1.3px; fill: var(--c); fill-opacity: .1; fill-rule: evenodd; }
 svg.geo .bike .rim { stroke: var(--c); stroke-opacity: .4; stroke-width: 1.3px; fill: none; }
 svg.geo .bike .hub { fill: var(--c); stroke: none; }
 svg.geo .bike .spacer { fill: var(--c); fill-opacity: .14; stroke: var(--c); stroke-width: 1.2px; }
@@ -134,7 +134,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
   <section class="sheet" aria-labelledby="useTitle">
     <div class="sec-head"><h2 id="useTitle">How to use</h2></div>
     <div class="how use">
-      <div><h4>Defaults</h4><p>Set your saddle's tip to rail centre and rail length, and your usual handlebar width and reach, once. Any bike or fit that leaves them empty uses these.</p></div>
+      <div><h4>Defaults</h4><p>Set your saddle's tip to rail centre and rail length, your usual handlebar width and reach, and your tyre width, once. Any bike or fit that leaves them empty uses these.</p></div>
       <div><h4>Step 1: Reference</h4><p>Enter where you sit now: a bike fit (a bike that fits you, from its geometry chart, and how it is set up) or a personal fit (your measurements only).</p></div>
       <div><h4>Step 2: Target bike</h4><p>Enter the geometry chart and handlebar of the frame you want to set up, and the stems and spacers you can use.</p></div>
       <div><h4>Step 3: Changes</h4><p>Read the saddle height, setback, stem and spacers that put you in the same position. Pick another stem option to see it drawn. "Copy as reference bike" keeps the result as a reference for another frame.</p></div>
@@ -145,7 +145,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
   <section class="sheet" aria-labelledby="defTitle">
     <div class="sec-head">
       <h2 id="defTitle">Defaults</h2>
-      <p>Saddle and handlebar sizes used wherever a bike or fit leaves them empty.</p>
+      <p>Saddle, handlebar and tyre sizes used wherever a bike or fit leaves them empty.</p>
     </div>
     <div class="fields" id="defFields"></div>
   </section>
