@@ -181,11 +181,11 @@
     { k: 'reach', l: 'Reach', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'chainstay', l: 'Chainstay', u: 'mm', opt: true, h: 'Optional. BB centre to rear axle. Places the rear wheel and adds a ground view.' },
     { k: 'wheelbase', l: 'Wheelbase', u: 'mm', opt: true, h: 'Optional, with the chainstay. Places the front wheel exactly as the chart has it.' },
-    { k: 'tyre', l: 'Tyre width', u: 'mm', opt: true, get ph() { return `${defVal('tyre')}`; }, h: 'Optional. On a 700c rim: sets the wheel size, BB height and trail in the ground view. Empty means the default.' },
+    { k: 'tyre', l: 'Tyre width', u: 'mm', opt: true, get ph() { return `${defVal('tyre')}`; }, h: 'Optional. On a 700c rim: sets the wheel size in the drawings, and the BB height and trail on the ground view. Empty means the default.' },
   ];
   /* Saddle and handlebar defaults, at the top of the page. Any of these left empty on a
      reference or a target bike takes the default here, or the built-in one when that is empty too. */
-  const DEF_BUILTIN = { tipToRails: 125, railTravel: 60, barWidth: 380, barReach: 80, tyre: 28 };
+  const DEF_BUILTIN = { tipToRails: 125, railTravel: 60, barWidth: 380, barReach: 80, tyre: 30 };
   const FIT_DEF_KEYS = ['tipToRails', 'railTravel', 'barWidth', 'barReach']; // the rest are frame sizes
   const defVal = (k) => { const v = state.defaults && state.defaults[k]; return finite(v) ? v : DEF_BUILTIN[k]; };
   const orDef = (v, k) => (v == null || v === '' ? defVal(k) : v);
@@ -194,7 +194,7 @@
     { k: 'railTravel', l: 'Saddle rail length', u: 'mm', opt: true, ph: `${DEF_BUILTIN.railTravel}`, h: 'Length of the adjustment markings on the rails, end to end.' },
     { k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barWidth}`, h: 'Centre to centre at the hoods.' },
     { k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barReach}`, h: 'Clamp centre to the base of the hoods. 0 for a flat bar.' },
-    { k: 'tyre', l: 'Tyre width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.tyre}`, h: 'On a 700c rim. Sets the wheel size in the ground view.' },
+    { k: 'tyre', l: 'Tyre width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.tyre}`, h: 'On a 700c rim. Sets the wheel size in the drawings.' },
   ];
   // a reference or target bike with the defaults filled in, for the calculation
   function effRef(r) {
@@ -704,7 +704,7 @@
     if (svg) {
       const z = !!groundZoom;
       const how = z ? 'Zoomed in: squares are 10 mm, values every 50 mm. Scroll to move around; click to zoom out.' : 'Squares are 50 mm. Click the drawing to zoom in to 10 mm squares.';
-      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${figT('Frames on level ground', 'both bikes, rear wheels aligned')}${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>The back of the rear wheels at x = 0, ground at y = 0. Wheels are a 700c rim plus each bike's tyre width. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
+      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${figT('Frames on level ground', 'both bikes, rear wheels aligned')}${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>The back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
     }
     const ref = refName(r.ref);
     let why;

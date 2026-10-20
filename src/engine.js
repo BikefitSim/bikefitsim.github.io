@@ -12,7 +12,7 @@ const GB = (() => {
   const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is passed (the app passes its Defaults)
   const MAX_OFFSET = 40;   // most offset a seatpost is sold with, for the hint when neither fits
   const RIM_R = 311;      // 700c rim, bead seat radius
-  const TYRE = 28;        // tyre width when the frame has none; the wheel's radius is the rim's plus this
+  const TYRE = 30;        // tyre width when the frame has none; the wheel's radius is the rim's plus this
   const CHAINSTAY = 410;  // drawing only, when the frame has no chainstay length
   const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a personal fit)
   const TT_DROP = 18;     // top tube centre below the head tube top, where an actual top tube ends

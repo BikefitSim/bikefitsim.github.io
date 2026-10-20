@@ -85,11 +85,17 @@ const GBDraw = (() => {
     return { S, H, d, n, T, railY, axisAt, spTop, stemTop, clamp, railMid, postTop: axisAt(railY - POST_HEAD), Q: cockpit.Q, B: cockpit.B, barReach: cockpit.barReach, spacers: cockpit.spacers };
   }
 
-  function drawBike(v, cls, frame, p, sad, { wheels = true, saddle = true, wheelR = RIM_R } = {}) {
+  // a tyre: the ring between the rim and the wheel's outside
+  function tyreRing(c, r1, r2) {
+    const ring = (r) => `M${f1(c.x + r)},${f1(-c.y)}a${f1(r)},${f1(r)} 0 1 0 ${f1(-2 * r)},0a${f1(r)},${f1(r)} 0 1 0 ${f1(2 * r)},0Z`;
+    return `<path class="tyre" d="${ring(r2)}${ring(r1)}"></path>`;
+  }
+
+  function drawBike(v, cls, frame, p, sad, { wheels = true, saddle = true } = {}) {
     const g = frame;
     let s = `<g class="bike ${cls}">`;
     if (wheels) {
-      for (const w of [g.rear, g.front]) s += v.circle(w, wheelR, 'rim');
+      for (const w of [g.rear, g.front]) s += tyreRing(w, RIM_R, g.wheelR) + v.circle(w, RIM_R, 'rim');
     }
     const ttEnd = add(g.T, p.d, -18);
     const dtEnd = add(g.htBottom, p.d, 25);
@@ -191,7 +197,7 @@ const GBDraw = (() => {
     /* ---------- both frames on level ground ---------- */
     // Only with a reference bike and a chainstay on both frames: the rear wheel has to be in place.
     // Each bike on its own wheel size (rim plus its tyre), the backs of the rear wheels at x = 0,
-    // ground at y = 0. The wheels are drawn at their outside, tyre included, so they touch the ground. Drawn small, with the
+    // ground at y = 0, where the tyres touch it. Drawn small, with the
     // measurements around the bikes: centres, trail and wheelbase under the ground, reach above,
     // heights to the sides.
     // zoomAt: a point on the ground grid (mm) to zoom in on, from a click on the drawing
@@ -225,8 +231,8 @@ const GBDraw = (() => {
       gr += gv.line({ x: gvb.x + 6 * k, y: 0 }, { x: gvb.x + gvb.w - 6 * k, y: 0 }, 'ground');
       // steering axes down to the ground
       gr += `<g class="axes">${both.map((P, i) => gv.line(P.T, P.axis, i ? 'saxis rfa' : 'saxis')).join('')}</g>`;
-      gr += lift(both[1], drawBike(gv, 'rf', rg, pr, sad, { wheelR: rg.wheelR }));
-      gr += lift(both[0], drawBike(gv, 'bk', g, pb, sad, { wheelR: g.wheelR }));
+      gr += lift(both[1], drawBike(gv, 'rf', rg, pr, sad));
+      gr += lift(both[0], drawBike(gv, 'bk', g, pb, sad));
       if (show.dims) {
         const rowY = (n) => -(18 + n * ROW) * k;     // rows under the ground, n = 0 first
         const rowTop = (n) => top + (14 + n * ROW) * k; // rows above everything
