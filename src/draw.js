@@ -4,7 +4,6 @@
 const GBDraw = (() => {
   const RAIL_DROP = 45;   // saddle top to rails
   const POST_HEAD = 18;   // rails to top of the post shaft
-  const TYRE_R = 340;
   const RIM_R = 311;
   const ZOOM_PX = 1.5;   // screen px per mm on the zoomed ground view: 10 mm squares are 15 px
 
@@ -156,8 +155,8 @@ const GBDraw = (() => {
 
     /* ---------- main view ---------- */
     const frames = rg ? [g, rg] : [g];
-    const minX = Math.min(...frames.map((q) => q.rear.x)) - TYRE_R - 40;
-    const maxX = Math.max(...frames.map((q) => q.front.x)) + TYRE_R + 40;
+    const minX = Math.min(...frames.map((q) => q.rear.x - q.wheelR)) - 40;
+    const maxX = Math.max(...frames.map((q) => q.front.x + q.wheelR)) + 40;
     const minY = g.groundY - 40;
     const maxY = Math.max(sad.y, hand.y) + 110;
     const vb = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
@@ -191,8 +190,8 @@ const GBDraw = (() => {
 
     /* ---------- both frames on level ground ---------- */
     // Only with a reference bike and a chainstay on both frames: the rear wheel has to be in place.
-    // Same wheel size on both, the backs of the rear wheels at x = 0, ground at y = 0. The wheels
-    // are drawn at their outside, tyre included, so they touch the ground. Drawn small, with the
+    // Each bike on its own wheel size (rim plus its tyre), the backs of the rear wheels at x = 0,
+    // ground at y = 0. The wheels are drawn at their outside, tyre included, so they touch the ground. Drawn small, with the
     // measurements around the bikes: centres, trail and wheelbase under the ground, reach above,
     // heights to the sides.
     // zoomAt: a point on the ground grid (mm) to zoom in on, from a click on the drawing
@@ -201,16 +200,16 @@ const GBDraw = (() => {
       const zoom = !!data.zoomAt;
       // each frame moved from its BB grid onto the ground grid
       const place = (q, p) => {
-        const dx = TYRE_R - q.rear.x; const h = -q.groundY; // rear axle one wheel radius from x = 0; BB height
+        const dx = q.wheelR - q.rear.x; const h = -q.groundY; // rear axle one wheel radius from x = 0; BB height
         const at = (pt) => ({ x: pt.x + dx, y: pt.y + h });
         // S: top of the spacers this bike is set up with, where its reach and stack are measured
-        return { dx, h, rear: at(q.rear), bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T), S: at(p.spTop), sp: p.spacers, axis: at(q.axisGround), trail: q.trail };
+        return { dx, h, rear: at(q.rear), bb: at({ x: 0, y: 0 }), front: at(q.front), T: at(q.T), S: at(p.spTop), sp: p.spacers, axis: at(q.axisGround), trail: q.trail, wR: q.wheelR };
       };
       const both = [place(g, pb), place(rg, pr)]; // target, then reference
       const DW = 1200;     // design width in px: the full width of the drawings area
       const ROW = 22;      // px between rows of dimensions
       const top = Math.max(sad.y + both[0].h, hand.y + both[0].h, sad.y + both[1].h, fp.hand.y + both[1].h);
-      const right = Math.max(...both.map((P) => Math.max(P.front.x, P.axis.x))) + TYRE_R;
+      const right = Math.max(...both.map((P) => Math.max(P.front.x, P.axis.x) + P.wR));
       // margins in px around the bikes: left for nothing but air, right for two height columns,
       // under the ground for four rows, above for two reach rows
       const M = { l: 40, r: 140, b: 4 * ROW + 40, t: 2 * ROW + 30 };
@@ -226,8 +225,8 @@ const GBDraw = (() => {
       gr += gv.line({ x: gvb.x + 6 * k, y: 0 }, { x: gvb.x + gvb.w - 6 * k, y: 0 }, 'ground');
       // steering axes down to the ground
       gr += `<g class="axes">${both.map((P, i) => gv.line(P.T, P.axis, i ? 'saxis rfa' : 'saxis')).join('')}</g>`;
-      gr += lift(both[1], drawBike(gv, 'rf', rg, pr, sad, { wheelR: TYRE_R }));
-      gr += lift(both[0], drawBike(gv, 'bk', g, pb, sad, { wheelR: TYRE_R }));
+      gr += lift(both[1], drawBike(gv, 'rf', rg, pr, sad, { wheelR: rg.wheelR }));
+      gr += lift(both[0], drawBike(gv, 'bk', g, pb, sad, { wheelR: g.wheelR }));
       if (show.dims) {
         const rowY = (n) => -(18 + n * ROW) * k;     // rows under the ground, n = 0 first
         const rowTop = (n) => top + (14 + n * ROW) * k; // rows above everything

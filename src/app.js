@@ -15,8 +15,8 @@
   const finite = (v) => typeof v === 'number' && Number.isFinite(v);
   const isObj = (o) => o && typeof o === 'object';
 
-  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay', 'wheelbase'];
-  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null, chainstay: null, wheelbase: null };
+  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay', 'wheelbase', 'tyre'];
+  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null, chainstay: null, wheelbase: null, tyre: null };
   /* Two kinds of reference, each with its own tab. A bike fit (kind 'bike') is a frame plus how
      it is set up (saddle, spacers, stem, bar); a personal fit (kind 'fit') is only the rider's
      numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
@@ -50,7 +50,7 @@
     example: true, // nothing entered yet
     refs: [blankRef('bike', 'r1', 'Reference bike 1'), blankRef('fit', 'r2', 'Personal fit 1')],
     lastRef: { bike: 'r1', fit: 'r2' }, // the one last open in each tab
-    defaults: { tipToRails: null, railTravel: null, barWidth: null, barReach: null }, // empty: the built-in DEF_BUILTIN
+    defaults: { tipToRails: null, railTravel: null, barWidth: null, barReach: null, tyre: null }, // empty: the built-in DEF_BUILTIN
     opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, maxSpacers: 40 },
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' })],
     selected: 'b1',
@@ -181,11 +181,12 @@
     { k: 'reach', l: 'Reach', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'chainstay', l: 'Chainstay', u: 'mm', opt: true, h: 'Optional. BB centre to rear axle. Places the rear wheel and adds a ground view.' },
     { k: 'wheelbase', l: 'Wheelbase', u: 'mm', opt: true, h: 'Optional, with the chainstay. Places the front wheel exactly as the chart has it.' },
+    { k: 'tyre', l: 'Tyre width', u: 'mm', opt: true, get ph() { return `${defVal('tyre')}`; }, h: 'Optional. On a 700c rim: sets the wheel size, BB height and trail in the ground view. Empty means the default.' },
   ];
   /* Saddle and handlebar defaults, at the top of the page. Any of these left empty on a
      reference or a target bike takes the default here, or the built-in one when that is empty too. */
-  const DEF_BUILTIN = { tipToRails: 125, railTravel: 60, barWidth: 380, barReach: 80 };
-  const DEF_KEYS = Object.keys(DEF_BUILTIN);
+  const DEF_BUILTIN = { tipToRails: 125, railTravel: 60, barWidth: 380, barReach: 80, tyre: 28 };
+  const FIT_DEF_KEYS = ['tipToRails', 'railTravel', 'barWidth', 'barReach']; // the rest are frame sizes
   const defVal = (k) => { const v = state.defaults && state.defaults[k]; return finite(v) ? v : DEF_BUILTIN[k]; };
   const orDef = (v, k) => (v == null || v === '' ? defVal(k) : v);
   const DEF_FIELDS = [
@@ -193,14 +194,15 @@
     { k: 'railTravel', l: 'Saddle rail length', u: 'mm', opt: true, ph: `${DEF_BUILTIN.railTravel}`, h: 'Length of the adjustment markings on the rails, end to end.' },
     { k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barWidth}`, h: 'Centre to centre at the hoods.' },
     { k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barReach}`, h: 'Clamp centre to the base of the hoods. 0 for a flat bar.' },
+    { k: 'tyre', l: 'Tyre width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.tyre}`, h: 'On a 700c rim. Sets the wheel size in the ground view.' },
   ];
   // a reference or target bike with the defaults filled in, for the calculation
   function effRef(r) {
     const fit = Object.assign({}, r.fit);
-    for (const k of DEF_KEYS) fit[k] = orDef(fit[k], k);
-    return Object.assign({}, r, { fit });
+    for (const k of FIT_DEF_KEYS) fit[k] = orDef(fit[k], k);
+    return Object.assign({}, r, { fit, tyre: orDef(r.tyre, 'tyre') });
   }
-  const effBike = (b) => Object.assign({}, b, { barReach: orDef(b.barReach, 'barReach') });
+  const effBike = (b) => Object.assign({}, b, { barReach: orDef(b.barReach, 'barReach'), tyre: orDef(b.tyre, 'tyre') });
   const FF = {
     saddleHeight: { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
     saddleLine: { k: 'saddleLine', l: 'Saddle height', u: 'mm', h: 'Straight line from the BB centre to the saddle tip, not along the seat tube' },
@@ -364,6 +366,7 @@
     if (hasReach && (b.reach < 250 || b.reach > 600)) c.wrong.push('Reach should be between 250 and 600.');
     if (b.chainstay != null && b.chainstay !== '' && !(finite(b.chainstay) && b.chainstay >= 350 && b.chainstay <= 500)) c.wrong.push('Chainstay should be between 350 and 500.');
     if (b.wheelbase != null && b.wheelbase !== '' && !(finite(b.wheelbase) && b.wheelbase >= 850 && b.wheelbase <= 1300)) c.wrong.push('Wheelbase should be between 850 and 1300.');
+    if (b.tyre != null && b.tyre !== '' && !(finite(b.tyre) && b.tyre >= 18 && b.tyre <= 60)) c.wrong.push('Tyre width should be between 18 and 60.');
     if (withBar) c.chk('barReach', 0, 150, 'Handlebar reach');
     return c.done();
   }
@@ -701,7 +704,7 @@
     if (svg) {
       const z = !!groundZoom;
       const how = z ? 'Zoomed in: squares are 10 mm, values every 50 mm. Scroll to move around; click to zoom out.' : 'Squares are 50 mm. Click the drawing to zoom in to 10 mm squares.';
-      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${figT('Frames on level ground', 'both bikes, rear wheels aligned')}${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>The back of the rear wheels at x = 0, ground at y = 0. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
+      return `<div class="viz-ground"><figure class="draw gzoom${z ? ' in' : ''}">${figT('Frames on level ground', 'both bikes, rear wheels aligned')}${z ? `<div class="zoomwrap">${svg}</div>` : svg}<figcaption><span>The back of the rear wheels at x = 0, ground at y = 0. Wheels are a 700c rim plus each bike's tyre width. ${how}</span><button class="sort-btn" type="button" data-gzoom>${z ? 'Zoom out' : 'Zoom in'}</button></figcaption></figure></div>`;
     }
     const ref = refName(r.ref);
     let why;

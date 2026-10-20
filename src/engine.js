@@ -11,7 +11,8 @@ const GB = (() => {
   const RAIL_TRAVEL = 60;  // adjusting area marked on saddle rails, end to end, when none is passed
   const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is passed (the app passes its Defaults)
   const MAX_OFFSET = 40;   // most offset a seatpost is sold with, for the hint when neither fits
-  const WHEEL_R = 340;    // drawing only
+  const RIM_R = 311;      // 700c rim, bead seat radius
+  const TYRE = 28;        // tyre width when the frame has none; the wheel's radius is the rim's plus this
   const CHAINSTAY = 410;  // drawing only, when the frame has no chainstay length
   const PLAIN_ANGLE = -6;  // stem angle preferred when the reference has no stem (a personal fit)
   const TT_DROP = 18;     // top tube centre below the head tube top, where an actual top tube ends
@@ -266,15 +267,17 @@ const GB = (() => {
     // a wheelbase from the chart places the front axle exactly, measured from a known rear axle
     const wbKnown = csKnown && fin(bike.wheelbase) && bike.wheelbase > csH;
     const front = wbKnown ? { x: rear.x + bike.wheelbase, y: bike.bbDrop } : frontCalc;
-    // where the steering axis meets the ground, and the trail behind it
-    const groundY = bike.bbDrop - WHEEL_R;
+    // where the steering axis meets the ground, and the trail behind it; the wheel's outside is
+    // the rim plus the tyre width, so the tyre sets the BB height and the trail
+    const wheelR = RIM_R + (fin(bike.tyre) && bike.tyre > 0 ? bike.tyre : TYRE);
+    const groundY = bike.bbDrop - wheelR;
     const axisGround = along((groundY - T.y) / d.y);
     const st = seatTubes(bike);
     const onSeatTube = (l) => ({ x: -l * Math.cos(S), y: l * Math.sin(S) });
     const stTop = onSeatTube(st.ct);
     const ttRear = fin(bike.seatTubeCC) && bike.seatTubeCC > 0 ? onSeatTube(st.cc) : stTop; // top tube meets the seat tube
     const ssJoin = onSeatTube(st.ct - 25);
-    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR: WHEEL_R, groundY, axisGround, trail: axisGround.x - front.x, wbCalc: frontCalc.x - rear.x, wbKnown, csKnown };
+    return { T, rear, front, htBottom, crown: htBottom, stTop, ttRear, ssJoin, wheelR, groundY, axisGround, trail: axisGround.x - front.x, wbCalc: frontCalc.x - rear.x, wbKnown, csKnown };
   }
 
   /* One target bike: what to change so saddle tip and hand position match the reference. */
