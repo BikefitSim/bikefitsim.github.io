@@ -50,7 +50,7 @@
     example: true, // nothing entered yet
     refs: [blankRef('bike', 'r1', 'Reference bike 1'), blankRef('fit', 'r2', 'Personal fit 1')],
     lastRef: { bike: 'r1', fit: 'r2' }, // the one last open in each tab
-    defaults: { tipToRails: null, barWidth: null, barReach: null }, // empty: the built-in DEF_BUILTIN
+    defaults: { tipToRails: null, railTravel: null, barWidth: null, barReach: null }, // empty: the built-in DEF_BUILTIN
     opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, maxSpacers: 40 },
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' })],
     selected: 'b1',
@@ -184,12 +184,13 @@
   ];
   /* Saddle and handlebar defaults, at the top of the page. Any of these left empty on a
      reference or a target bike takes the default here, or the built-in one when that is empty too. */
-  const DEF_BUILTIN = { tipToRails: 125, barWidth: 380, barReach: 80 };
+  const DEF_BUILTIN = { tipToRails: 125, railTravel: 60, barWidth: 380, barReach: 80 };
   const DEF_KEYS = Object.keys(DEF_BUILTIN);
   const defVal = (k) => { const v = state.defaults && state.defaults[k]; return finite(v) ? v : DEF_BUILTIN[k]; };
   const orDef = (v, k) => (v == null || v === '' ? defVal(k) : v);
   const DEF_FIELDS = [
     { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, ph: `${DEF_BUILTIN.tipToRails}`, h: 'Horizontal, saddle level: tip to above the middle of the rail markings.' },
+    { k: 'railTravel', l: 'Saddle rail length', u: 'mm', opt: true, ph: `${DEF_BUILTIN.railTravel}`, h: 'Length of the adjustment markings on the rails, end to end.' },
     { k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barWidth}`, h: 'Centre to centre at the hoods.' },
     { k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barReach}`, h: 'Clamp centre to the base of the hoods. 0 for a flat bar.' },
   ];
@@ -368,6 +369,7 @@
   }
   function saddleChk(c, f) {
     if (f.tipToRails != null) c.chk('tipToRails', 50, 300, 'Tip to rail centre', ' mm');
+    if (f.railTravel != null) c.chk('railTravel', 20, 120, 'Saddle rail length', ' mm');
   }
   function fitErrors(r) {
     const f = r.fit;
