@@ -178,7 +178,18 @@ const GBDraw = (() => {
     m += v.target(sad) + v.target(hand);
     if (show.dims) {
       const hl = fp.half > 0 ? ` (${n0(r.reachH)} side view)` : '';
-      m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text({ x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 }, `Personal reach ${n0(fp.riderReach)}${hl}`, 'dt', { dy: -7, rot: Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI })}</g>`;
+      const mid = { x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 };
+      const rot = Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI;
+      // the target bike's personal reach with the stem picked, where its bar puts the hands
+      let tgt = '';
+      if (o) {
+        const th = { x: bikeCock.B.x + GB.gripAhead(bike.barReach), y: bikeCock.B.y + GB.BAR_R };
+        const tr = Math.hypot(th.x - sad.x, sad.y - th.y, fp.half > 0 ? r.barWidth / 2 : 0);
+        const dd = Math.round((tr - fp.riderReach) * 10) / 10;
+        const diff = dd === 0 ? 'same as reference' : `${dd > 0 ? '+' : MINUS}${Math.abs(dd).toFixed(1)} vs reference`;
+        tgt = v.text(mid, `Target bike ${n0(tr)} (${diff})`, 'dt', { dy: 15, rot });
+      }
+      m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text(mid, `Personal reach ${n0(fp.riderReach)}${hl}`, 'dt', { dy: -7, rot })}${tgt}</g>`;
       // saddle height along this bike's seat tube, offset behind it
       m += v.dim({ x: 0, y: 0 }, pb.axisAt(sad.y), 30, `Saddle height ${n0(r.heightAlong)}`, { key: 'height' });
       // setback: plumb line from the saddle tip, measured at BB height
