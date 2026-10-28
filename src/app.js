@@ -51,7 +51,7 @@
     refs: [blankRef('bike', 'r1', 'Reference bike 1'), blankRef('fit', 'r2', 'Personal fit 1')],
     lastRef: { bike: 'r1', fit: 'r2' }, // the one last open in each tab
     defaults: { tipToRails: null, railTravel: null, barWidth: null, barReach: null, tyre: null }, // empty: the built-in DEF_BUILTIN
-    opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, maxSpacers: 40 },
+    opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-17, -10, -6, 6, 10, 17', spacerStep: 5, minSpacers: null, maxSpacers: 40 }, // minSpacers empty: 0
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' })],
     selected: 'b1',
     selectedRef: 'r1',
@@ -193,7 +193,7 @@
     { k: 'tipToRails', l: 'Tip to rail centre', u: 'mm', opt: true, ph: `${DEF_BUILTIN.tipToRails}`, h: 'Horizontal, saddle level: tip to above the middle of the rail markings.' },
     { k: 'railTravel', l: 'Saddle rail length', u: 'mm', opt: true, ph: `${DEF_BUILTIN.railTravel}`, h: 'Length of the adjustment markings on the rails, end to end.' },
     { k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barWidth}`, h: 'Centre to centre at the hoods.' },
-    { k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barReach}`, h: 'Clamp centre to the base of the hoods. 0 for a flat bar.' },
+    { k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, ph: `${DEF_BUILTIN.barReach}`, h: 'From the bar\'s spec: clamp centre to the front of the drop. 0 for a flat bar.' },
     { k: 'tyre', l: 'Tyre width', u: 'mm', opt: true, ph: `${DEF_BUILTIN.tyre}`, h: 'On a 700c rim. Sets the wheel size in the drawings.' },
   ];
   // a reference or target bike with the defaults filled in, for the calculation
@@ -207,7 +207,7 @@
     saddleHeight: { k: 'saddleHeight', l: 'Saddle height', u: 'mm', h: 'BB centre to saddle top, along the seat tube' },
     saddleLine: { k: 'saddleLine', l: 'Saddle height', u: 'mm', h: 'Straight line from the BB centre to the saddle tip, not along the seat tube' },
     setback: { k: 'setback', l: 'Saddle setback', u: 'mm', h: 'Plumb line from the saddle tip back to the BB centre', neg: true },
-    riderReach: { k: 'riderReach', l: 'Personal reach', u: 'mm', h: 'Saddle tip to the base of the hoods, straight line. No hoods: to where your hands sit.' },
+    riderReach: { k: 'riderReach', l: 'Personal reach', u: 'mm', h: 'Straight line from the saddle tip to where the web between thumb and index finger touches the top of the bar, just before the drop.' },
     drop: { k: 'drop', l: 'Handlebar drop', u: 'mm', h: 'Saddle top to top of the bar, vertical. Negative if the bar is higher.', neg: true },
     stemLength: { k: 'stemLength', l: 'Stem length', u: 'mm', h: 'The stem fitted on this bike' },
     stemAngle: { k: 'stemAngle', l: 'Stem angle', u: '°', h: 'Negative points down, for example −6', neg: true },
@@ -224,6 +224,7 @@
     { k: 'stemLengths', l: 'Stem lengths', type: 'list', u: 'mm', h: 'Separate with commas' },
     { k: 'stemAngles', l: 'Stem angles', type: 'list', u: '°', h: 'Negative points down. Remove the positives if you won\'t flip a stem.' },
     { k: 'spacerStep', l: 'Spacer step', u: 'mm', h: 'Smallest spacer you have' },
+    { k: 'minSpacers', l: 'Min spacers', u: 'mm', opt: true, ph: '0', h: 'Least you would run under a stem. Empty means 0.' },
     { k: 'maxSpacers', l: 'Max spacers', u: 'mm', h: 'Most you would run under a stem' },
   ];
 
@@ -397,6 +398,8 @@
     if (!GB.parseList(o.stemAngles, { min: -45, max: 45 }).length) e.push('Add at least one stem angle.');
     if (!finite(o.spacerStep) || o.spacerStep <= 0) e.push('Spacer step should be a positive number.');
     if (!finite(o.maxSpacers) || o.maxSpacers < 0) e.push('Max spacers should be 0 or more.');
+    if (finite(o.minSpacers) && o.minSpacers < 0) e.push('Min spacers should be 0 or more.');
+    else if (finite(o.minSpacers) && finite(o.maxSpacers) && o.minSpacers > o.maxSpacers) e.push('Min spacers should not be more than max spacers.');
     return e;
   }
 
@@ -681,6 +684,7 @@
           <span class="lg"><i class="sw bk"></i>${esc(b.name || 'This bike')}</span>
           <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle tip'}</span>
           <span class="lg"><i class="tg"></i>Saddle tip and hand position</span>
+          <span class="lg"><i class="tg got"></i>Hands with the picked stem, when it misses</span>
         </div>
         <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
@@ -1013,7 +1017,7 @@
     const geo = GB.frameGeometry(newRef);
     const refBike = Object.assign({}, newRef, { stack: geo.stack, reach: geo.reach });
     const hand = { x: -fit.setback + Math.sqrt(fit.riderReach ** 2 - fit.drop ** 2 - (fit.barWidth / 2) ** 2), y: fit.saddleHeight * Math.sin(GB.rad(newRef.sta)) - fit.drop };
-    const target = { x: hand.x - fit.barReach, y: hand.y - GB.BAR_R };
+    const target = { x: hand.x - GB.gripAhead(fit.barReach), y: hand.y - GB.BAR_R };
     const best = GB.solveCockpit(refBike, Object.assign({}, state.opts, { maxSpacers: 80 }), target, -6).best;
     if (best) fit.spacers = best.spacers;
     return fit;

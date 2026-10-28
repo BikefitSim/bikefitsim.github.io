@@ -55,10 +55,10 @@ const GBDraw = (() => {
       s += text(lift, label, 'dt', { rot: ang, anchor });
       return s + '</g>';
     };
-    const target = (p, size = 14) => {
+    const target = (p, size = 14, cls = '') => {
       const s = size * k;
       const d = s * 0.55; // a red X
-      return `<g class="target">${line({ x: p.x - d, y: p.y - d }, { x: p.x + d, y: p.y + d }, 'tg')}${line({ x: p.x - d, y: p.y + d }, { x: p.x + d, y: p.y - d }, 'tg')}</g>`;
+      return `<g class="target${cls ? ` ${cls}` : ''}">${line({ x: p.x - d, y: p.y - d }, { x: p.x + d, y: p.y + d }, 'tg')}${line({ x: p.x - d, y: p.y + d }, { x: p.x + d, y: p.y - d }, 'tg')}</g>`;
     };
     // zoomed views are drawn at a fixed size and scroll in their frame
     const size = fixed ? `width:${Math.round(designW)}px;max-width:none;` : '';
@@ -157,6 +157,9 @@ const GBDraw = (() => {
     const bikeCock = o ? Object.assign(GB.barFor(bike, o.angle, o.length, o.spacers), { spacers: o.spacers, barReach: bike.barReach })
       : { Q: add(g.T, GB.steerer(bike.hta).d, 20), B: r.target, spacers: 0, barReach: bike.barReach };
     const pb = bikeParts(bike, g, sad, bikeCock, r);
+    // where the picked stem puts the hands on the target bike, when it misses the hand position
+    const got = o && o.err >= 0.5 ? { x: hand.x + o.dx, y: hand.y + o.dy } : null;
+    const off = (d) => `${o.dx >= 0 ? '+' : MINUS}${Math.abs(o.dx).toFixed(d)}, ${o.dy >= 0 ? '+' : MINUS}${Math.abs(o.dy).toFixed(d)}`;
     const pr = ref ? bikeParts(ref, rg, sad, { Q: fp.stem.Q, B: fp.stem.B, spacers: fp.spacers, barReach: r.ref.fit.barReach }, { postOffset: fp.rail.postOffset, tipToRails: r.tipToRails }) : null;
 
     /* ---------- main view ---------- */
@@ -176,9 +179,18 @@ const GBDraw = (() => {
     // a personal fit's saddle height: the straight line from the BB to the saddle tip
     if (!ref) m += v.dim({ x: 0, y: 0 }, sad, 0, `BB to saddle tip ${n0(Math.hypot(sad.x, sad.y))}`, { key: 'height', cls: 'dim rfd', ext: false, labelOff: 8 });
     m += v.target(sad) + v.target(hand);
+    if (got) m += v.target(got, 14, 'got');
     if (show.dims) {
-      const hl = fp.half > 0 ? ` (${n0(r.reachH)} side view)` : '';
-      m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text({ x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 }, `Personal reach ${n0(fp.riderReach)}${hl}`, 'dt', { dy: -7, rot: Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI })}</g>`;
+      const mid = { x: (sad.x + hand.x) / 2, y: (sad.y + hand.y) / 2 };
+      const rot = Math.atan2(hand.y - sad.y, hand.x - sad.x) * 180 / Math.PI;
+      // the target bike's personal reach with the stem picked, where its bar puts the hands
+      let tgt = '';
+      if (o) {
+        const th = { x: bikeCock.B.x + GB.gripAhead(bike.barReach), y: bikeCock.B.y + GB.BAR_R };
+        const tr = Math.hypot(th.x - sad.x, sad.y - th.y, fp.half > 0 ? r.barWidth / 2 : 0);
+        tgt = v.text(mid, `Target bike ${n0(tr)}`, 'dt', { dy: 15, rot });
+      }
+      m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text(mid, `Personal reach ${n0(fp.riderReach)}`, 'dt', { dy: -7, rot })}${tgt}</g>`;
       // saddle height along this bike's seat tube, offset behind it
       m += v.dim({ x: 0, y: 0 }, pb.axisAt(sad.y), 30, `Saddle height ${n0(r.heightAlong)}`, { key: 'height' });
       // setback: plumb line from the saddle tip, measured at BB height
@@ -186,6 +198,7 @@ const GBDraw = (() => {
       m += v.dim({ x: sad.x, y: 0 }, { x: 0, y: 0 }, -40, `Setback ${n0(-sad.x)}`, { key: 'setback', ext: false });
       // hand position on the grid, next to its X
       m += v.text(hand, `Hand ${n0(hand.x)}, ${n0(hand.y)}`, 'dt', { dx: 12, dy: 18, anchor: 'start', key: 'hand' });
+      if (got) m += v.text(hand, `Target bike ${off(0)}`, 'dt', { dx: 12, dy: 32, anchor: 'start', key: 'hand' });
       m += v.text(sad, `Saddle tip ${n0(sad.x)}, ${n0(sad.y)}`, 'dt', { dx: -14, dy: -14, anchor: 'end' });
       // drop from saddle top to the top of the bar
       m += v.dim({ x: hand.x + 70, y: sad.y }, { x: hand.x + 70, y: hand.y }, 0, `Drop ${n0(sad.y - hand.y)}`, { key: 'drop', anchor: 'middle', labelOff: 14 });
@@ -292,6 +305,7 @@ const GBDraw = (() => {
     if (showRef) f += frontOnly(fv, 'rf', rg, pr);
     f += frontOnly(fv, 'bk', g, pb);
     f += fv.target(hand, 12);
+    if (got) f += fv.target(got, 12, 'got');
     if (show.dims) {
       if (showRef && pr.spacers > 0.5) f += fv.dim(pr.T, pr.spTop, 26, `${n0(pr.spacers)}`, { key: 'spacers', cls: 'dim rfd' });
       if (pb.spacers > 0.5) f += fv.dim(pb.T, pb.spTop, showRef ? 46 : 26, `${n0(pb.spacers)}`, { key: 'spacers' });
@@ -301,7 +315,8 @@ const GBDraw = (() => {
         const rs = { length: Math.round(fp.stem.length), angle: Math.round(fp.stem.angle * 2) / 2 };
         f += stemLbl(pr, `${rs.length} mm ${rs.angle > 0 ? '+' : rs.angle < 0 ? MINUS : ''}${Math.abs(rs.angle)}°`, 'rft', 20);
       }
-      f += fv.text(hand, 'Hand', 'dt', { dy: -16 });
+      if (got) f += fv.text(hand, 'Hand', 'dt', { dx: 8, dy: -32, anchor: 'end' }) + fv.text(hand, `Target bike ${off(1)}`, 'dt', { dx: 8, dy: -17, anchor: 'end' });
+      else f += fv.text(hand, 'Hand', 'dt', { dy: -16 });
       f += fv.text(pb.T, 'HT top', 'dt', { dx: 10, dy: 14, anchor: 'start' });
     }
     f += '</svg>';
