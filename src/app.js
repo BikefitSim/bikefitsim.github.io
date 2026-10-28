@@ -684,6 +684,7 @@
           <span class="lg"><i class="sw bk"></i>${esc(b.name || 'This bike')}</span>
           <span class="lg"><i class="sw rf"></i>${esc(refName(r.ref))}${hasBike ? ', reference' : ': BB to saddle tip'}</span>
           <span class="lg"><i class="tg"></i>Saddle tip and hand position</span>
+          <span class="lg"><i class="tg got"></i>Hands with the picked stem, when it misses</span>
         </div>
         <div class="toggles">${hasBike ? tog('ref', 'Reference bike') : ''}${tog('dims', 'Dimensions')}${tog('grid', 'Grid')}</div>
       </div>
