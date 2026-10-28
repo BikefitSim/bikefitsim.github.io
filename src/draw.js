@@ -188,9 +188,7 @@ const GBDraw = (() => {
       if (o) {
         const th = { x: bikeCock.B.x + GB.gripAhead(bike.barReach), y: bikeCock.B.y + GB.BAR_R };
         const tr = Math.hypot(th.x - sad.x, sad.y - th.y, fp.half > 0 ? r.barWidth / 2 : 0);
-        const dd = Math.round((tr - fp.riderReach) * 10) / 10;
-        const diff = dd === 0 ? '' : ` ${dd > 0 ? '+' : MINUS}${Math.abs(dd).toFixed(1)}`;
-        tgt = v.text(mid, `Target bike ${n0(tr)}${diff}`, 'dt', { dy: 15, rot });
+        tgt = v.text(mid, `Target bike ${n0(tr)}`, 'dt', { dy: 15, rot });
       }
       m += `<g class="dim reachline" data-dim="reach">${v.line(sad, hand, 'rr')}${v.text(mid, `Personal reach ${n0(fp.riderReach)}`, 'dt', { dy: -7, rot })}${tgt}</g>`;
       // saddle height along this bike's seat tube, offset behind it
