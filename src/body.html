@@ -136,7 +136,7 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
     <div class="how use">
       <div><h4>Defaults</h4><p>Set your saddle's tip to rail centre and rail length, your usual handlebar width and reach, and your tyre width, once. Any bike or fit that leaves them empty uses these.</p></div>
       <div><h4>Step 1: Reference</h4><p>Enter where you sit now: a bike fit (a bike that fits you, from its geometry chart, and how it is set up) or a personal fit (your measurements only).</p></div>
-      <div><h4>Step 2: Target bike</h4><p>Enter the geometry chart and handlebar of the frame you want to set up, and the stems and spacers you can use.</p></div>
+      <div><h4>Step 2: Target bike</h4><p>Enter the geometry chart and handlebar of the frame you want to set up, and the stems and spacers you can use, with the least and most spacers you would run.</p></div>
       <div><h4>Step 3: Changes</h4><p>Read the saddle height, setback, stem and spacers that put you in the same position. Pick another stem option to see it drawn. "Copy as reference bike" keeps the result as a reference for another frame.</p></div>
       <div><h4>Keep a copy</h4><p>Save your bikes and fits to a file with the buttons at the top, and open it again next time.</p></div>
     </div>
@@ -206,11 +206,11 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
       <div><h4>Saddle height on a personal fit</h4><p>Straight line from the BB centre to the saddle tip. With the setback, it places the tip without the seat angle. Expect about 30 mm less than along the seat tube.</p></div>
       <div><h4>Saddle setback</h4><p>With the bike level, hang a plumb line from the saddle tip. Setback is the horizontal distance from the line back to the BB centre.</p></div>
       <div><h4>Tip to rail centre</h4><p>With the saddle level, the horizontal distance from the saddle tip back to a point directly above the middle of the rail markings. Not the slanted line down to the rails.</p></div>
-      <div><h4>Personal reach and bar width</h4><p>Straight line from the saddle tip to the base of the hoods (no hoods: where your hands sit). Half the bar width and the drop are taken out to get the side-view distance. Bar width is centre to centre at the hoods.</p></div>
+      <div><h4>Personal reach and bar width</h4><p>Straight line from the saddle tip to the hand position: where the web between thumb and index finger touches the top of the bar, just before the drop. Half the bar width and the drop are taken out to get the side-view distance. Bar width is centre to centre at the hoods.</p></div>
       <div><h4>Stem on a bike fit</h4><p>A bike fit uses the fitted stem instead of personal reach and drop. The panel shows the reach and drop it gives. "Copy as personal fit" keeps them without the bike.</p></div>
-      <div><h4>Handlebar reach</h4><p>Clamp centre forward to the base of the hoods, from the bar's spec. 0 means a flat bar.</p></div>
+      <div><h4>Handlebar reach</h4><p>Clamp centre forward to the front of the drop, from the bar's spec. 0 means a flat bar. The hands sit 30 mm behind that point, where the drop starts.</p></div>
       <div><h4>Handlebar drop</h4><p>Vertical, from the saddle top down to the top of the bar, with a level. Negative if the bar is higher.</p></div>
-      <div><h4>Spacers</h4><p>Everything between the head tube top and the stem, top cap included. Results use the same measure.</p></div>
+      <div><h4>Spacers</h4><p>Everything between the head tube top and the stem, top cap included. Results use the same measure, and never go below Min spacers (empty means 0) or above Max spacers.</p></div>
       <div><h4>Stack from the tubes</h4><p>Stack = BB drop + (fork length + head tube length) × sin(head angle) − fork offset × cos(head angle). Reach = top tube − stack ÷ tan(seat angle). Chart stack and reach take priority when given.</p></div>
     </div>
     <div class="limits">
@@ -218,9 +218,9 @@ svg.geo .hl text.dt, svg.geo text.dt.hl { fill: var(--ink); font-weight: 600; }
       <ul>
         <li>You need frame geometry charts and a few measurements, so some knowledge of bike geometry helps.</li>
         <li id="dataNote">Nothing you enter is sent to a server.</li>
-        <li>Hands sit at the base of the hoods, level with the bar top. Drops and tops are not modelled.</li>
+        <li>Hands sit on top of the bar where the web between thumb and index finger touches it, just before the drop, taken as 30 mm behind the bar's reach point. Hoods, drops and tops are not modelled.</li>
         <li>Handlebar reach 0 means a flat bar, hands over the bar centre.</li>
-        <li>Bar rise and drop are not modelled. A riser bar, or hoods above or below the bar top, moves the hands by that amount.</li>
+        <li>Bar rise and drop are not modelled. A riser bar moves the hands by its rise.</li>
         <li>Positions use the saddle tip, so results assume the same saddle on every bike. A saddle 20 mm shorter, tip in the same place, puts you 20 mm forward: slide it back 20 mm.</li>
         <li>Whether the saddle fits on its rails is an estimate: an inline or 20 mm offset seatpost, with the saddle rail length and tip to rail centre from Defaults.</li>
         <li>Results are estimates. Check the setup on the bike before riding.</li>

@@ -6,6 +6,7 @@ const GB = (() => {
   const fin = (v) => typeof v === 'number' && Number.isFinite(v);
   const STEM_CLAMP = 40;  // stem height on the steerer; its centre sits 20 mm above the spacers
   const BAR_R = 15.9;     // 31.8 mm bar
+  const DROP_BEND = 30;   // a drop bar starts bending down this far behind its reach point
   const RAIL_H = 45;      // saddle top to rails, for the seatpost check only
   const POSTS = [20, 0];   // seatpost offsets the app chooses from: 20 mm setback or inline
   const RAIL_TRAVEL = 60;  // adjusting area marked on saddle rails, end to end, when none is passed
@@ -110,6 +111,10 @@ const GB = (() => {
     };
   }
 
+  /* How far ahead of the bar centre the hands sit: on top of the bar, where the web between thumb
+     and index finger meets it, just before the drop bends down. Not at the bar's reach point. */
+  const gripAhead = (barReach) => Math.max(0, barReach - DROP_BEND);
+
   /* Bar centre for a stem on a bike that carries resolved stack and reach. */
   function barFor(bike, angle, length, spacers) {
     const { d } = steerer(bike.hta);
@@ -161,7 +166,7 @@ const GB = (() => {
     let hand; let reachH; let drop; let riderReach; let stem;
     if (fit.handFrom === 'stem') {
       const B = barFor(bike, fit.stemAngle, fit.stemLength, fit.spacers).B;
-      hand = { x: B.x + fit.barReach, y: B.y + BAR_R }; // the bar's reach point, level with the top of the bar
+      hand = { x: B.x + gripAhead(fit.barReach), y: B.y + BAR_R }; // on top of the bar, just before the drop
       reachH = hand.x - xs;
       if (reachH <= 0) return { ok: false, error: 'With this stem the hands would sit behind the saddle tip. Check the stem and the setback.' };
       drop = ys - hand.y;
@@ -174,7 +179,7 @@ const GB = (() => {
       drop = fit.drop;
       riderReach = fit.riderReach;
       hand = { x: xs + reachH, y: ys - drop };
-      const B = { x: hand.x - fit.barReach, y: hand.y - BAR_R };
+      const B = { x: hand.x - gripAhead(fit.barReach), y: hand.y - BAR_R };
       const vx = B.x - Q.x;
       const vy = B.y - Q.y;
       stem = { length: Math.hypot(vx, vy), angle: deg(Math.atan2(vy, vx)) - (90 - ref.hta), Q, B };
@@ -196,7 +201,8 @@ const GB = (() => {
     const angles = parseList(opts.stemAngles, { min: -45, max: 45 });
     const lengths = parseList(opts.stemLengths, { min: 20, max: 200 });
     const step = opts.spacerStep > 0 ? opts.spacerStep : 5;
-    const maxS = Math.max(0, opts.maxSpacers);
+    const minS = fin(opts.minSpacers) && opts.minSpacers > 0 ? opts.minSpacers : 0; // empty means none
+    const maxS = Math.max(minS, opts.maxSpacers);
     const k0 = STEM_CLAMP / 2;
     const bestPerStem = new Map();
     for (const a of angles) {
@@ -207,7 +213,7 @@ const GB = (() => {
         const py = target.y - bike.stack - k0 * d.y - L * e.y;
         const sStar = px * d.x + py * d.y;
         for (let s of [Math.floor(sStar / step) * step, Math.ceil(sStar / step) * step]) {
-          s = Math.round(Math.min(maxS, Math.max(0, s)) * 10) / 10;
+          s = Math.round(Math.min(maxS, Math.max(minS, s)) * 10) / 10;
           const { B, Q } = barFor(bike, a, L, s);
           const dx = B.x - target.x;
           const dy = B.y - target.y;
@@ -243,6 +249,7 @@ const GB = (() => {
       best: ranked[0] || null,
       exactFor,
       steepest: angles.length ? exactFor(angles[0]) : null,
+      minSpacers: minS,
     };
   }
 
@@ -306,7 +313,7 @@ const GB = (() => {
     const st = seatTubes(bike);
     const exposed = (y - RAIL_H) / Math.sin(S) - st.ct;
     const ctNote = st.ctEst ? ', taking the seat tube c-t as the c-c plus 20 mm' : '';
-    const target = { x: hand.x - bike.barReach, y: hand.y - BAR_R };
+    const target = { x: hand.x - gripAhead(bike.barReach), y: hand.y - BAR_R };
     const cockpit = solveCockpit(bike, opts, target, fp.stem ? fp.stem.angle : PLAIN_ANGLE);
     const checks = [];
 
@@ -345,12 +352,13 @@ const GB = (() => {
       if (Math.abs(b.dy) >= 1) bits.push(`${Math.abs(b.dy).toFixed(0)} mm ${b.dy > 0 ? 'too high' : 'too low'}`);
       checks.push({ level: 'bad', text: `No stem and spacer combination reaches the hand position. The closest leaves it ${bits.join(' and ')}.` });
     }
-    if (cockpit.steepest && cockpit.steepest.spacers < -2) {
-      checks.push({ level: 'warn', text: `The front end is tall for this fit. Even a slammed ${cockpit.steepest.angle}° stem leaves the bar about ${Math.abs(cockpit.steepest.spacers).toFixed(0)} mm higher than wanted.` });
+    if (cockpit.steepest && cockpit.steepest.spacers < cockpit.minSpacers - 2) {
+      const stemTxt = cockpit.minSpacers > 0 ? `${cockpit.steepest.angle}° stem on the minimum ${cockpit.minSpacers} mm of spacers` : `slammed ${cockpit.steepest.angle}° stem`;
+      checks.push({ level: 'warn', text: `The front end is tall for this fit. Even a ${stemTxt} leaves the bar about ${(cockpit.minSpacers - cockpit.steepest.spacers).toFixed(0)} mm higher than wanted.` });
     }
     return { bike, geo, heightAlong, noseAhead, railMove, railPos, railOver, railTravel, postOffset, tipToRails, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: fd };
   }
 
-  return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, PLAIN_ANGLE, RAIL_TRAVEL, TIP_TO_RAILS };
+  return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, gripAhead, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, DROP_BEND, PLAIN_ANGLE, RAIL_TRAVEL, TIP_TO_RAILS };
 })();
 if (typeof module !== 'undefined') module.exports = GB;

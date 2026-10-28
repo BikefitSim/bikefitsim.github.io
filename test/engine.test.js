@@ -17,7 +17,7 @@ test('stack and reach from the tubes', () => {
 test('a known stem on the reference bike comes back from the fit numbers', () => {
   const rb = Object.assign({}, ref, GB.frameGeometry(ref));
   const B = GB.barFor(rb, -6, 110, 20).B;
-  const hand = { x: B.x + 80, y: B.y + GB.BAR_R };
+  const hand = { x: B.x + 50, y: B.y + GB.BAR_R }; // 80 mm bar reach: hands 30 mm behind it, before the drop
   const ys = 745 * Math.sin(GB.rad(73.5)); const xs = -65; const half = 200;
   const drop = ys - hand.y;
   const riderReach = Math.sqrt((hand.x - xs) ** 2 + drop ** 2 + half ** 2); // tape runs out to the side
@@ -31,7 +31,7 @@ const fit = { saddleHeight: 745, setback: 65, riderReach: 654, drop: 58, barWidt
 test('an identical target bike needs no changes', () => {
   const rb = Object.assign({}, ref, GB.frameGeometry(ref));
   const B = GB.barFor(rb, -6, 110, 20).B;
-  const hand = { x: B.x + 80, y: B.y + GB.BAR_R };
+  const hand = { x: B.x + 50, y: B.y + GB.BAR_R }; // 80 mm bar reach: hands 30 mm behind it, before the drop
   const ys = 745 * Math.sin(GB.rad(73.5));
   const f = Object.assign({}, fit, { drop: ys - hand.y, riderReach: Math.sqrt((hand.x + 65) ** 2 + (ys - hand.y) ** 2 + 200 ** 2) });
   const fp = GB.fitPoints(ref, f);
@@ -72,7 +72,7 @@ test('the stem fitted on the reference bike gives the same hand position as the 
   const rb = Object.assign({}, ref, GB.frameGeometry(ref));
   const B = GB.barFor(rb, -6, 110, 20).B;
   const byStem = GB.fitPoints(ref, { saddleHeight: 745, setback: 65, handFrom: 'stem', stemLength: 110, stemAngle: -6, barWidth: 400, spacers: 20, barReach: 80 });
-  near(byStem.hand.x, B.x + 80, 1e-9, 'hand x');
+  near(byStem.hand.x, B.x + 50, 1e-9, 'hand x');
   near(byStem.hand.y, B.y + GB.BAR_R, 1e-9, 'hand y');
   const byTape = GB.fitPoints(ref, { saddleHeight: 745, setback: 65, riderReach: byStem.riderReach, drop: byStem.drop, barWidth: 400, spacers: 20, barReach: 80 });
   near(byTape.hand.x, byStem.hand.x, 1e-9, 'same hand x');
@@ -149,7 +149,7 @@ test('an ordinary personal fit sits within the rails', () => {
 test('the app picks the post that keeps the saddle nearest the middle of its rails', () => {
   const fp = GB.fitPoints(ref, fit); // tip about 154 mm ahead of a 20 mm post's clamp
   assert.strictEqual(fp.rail.postOffset, 20);
-  const back = GB.fitPoints(ref, Object.assign({}, fit, { setback: 45 })); // tip 20 mm further forward
+  const back = GB.fitPoints(ref, Object.assign({}, fit, { setback: 45, riderReach: 624 })); // tip 20 mm further forward, hands where the 140 mm stem reaches
   assert.strictEqual(back.rail.postOffset, 0, 'an inline post for a forward saddle');
   const r = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), back, fit, opts);
   assert.ok(!r.checks.some((c) => c.level === 'bad'), 'fits');
@@ -224,6 +224,35 @@ test('the tyre width sets the wheel size, and with it BB height and trail', () =
   near(-t32.groundY, 311 + 32 - 70, 1e-9, 'BB height with 32 mm tyres');
   assert.ok(t32.trail > t25.trail, 'a bigger wheel has more trail');
   near(t32.front.x - t32.rear.x, t25.front.x - t25.rear.x, 1e-9, 'wheelbase unchanged');
+});
+
+test('the hands sit on top of the bar just before the drop, 30 mm behind the bar reach point', () => {
+  near(GB.gripAhead(80), 50, 1e-9, '80 mm bar');
+  near(GB.gripAhead(0), 0, 1e-9, 'flat bar');
+  near(GB.gripAhead(20), 0, 1e-9, 'never behind the bar centre');
+  // a longer-reach bar on the target moves the stem back by the same amount
+  const fp = GB.fitPoints(ref, fit);
+  const a = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, fit, opts);
+  const b = GB.solveBike(Object.assign({}, ref, { barReach: 90 }), fp, fit, opts);
+  near(a.target.x - b.target.x, 10, 1e-9, 'bar centre 10 mm further back');
+});
+
+test('stem options never use fewer spacers than the minimum; empty means 0', () => {
+  const fp = GB.fitPoints(ref, fit);
+  const bike = Object.assign({}, ref, { barReach: 80 });
+  const none = GB.solveBike(bike, fp, fit, opts).cockpit;
+  assert.ok(none.all.some((o) => o.spacers < 15), 'some options under 15 mm without a minimum');
+  assert.strictEqual(none.minSpacers, 0);
+  for (const minSpacers of [15, 12.5]) {
+    const c = GB.solveBike(bike, fp, fit, Object.assign({}, opts, { minSpacers })).cockpit;
+    assert.ok(c.all.every((o) => o.spacers >= minSpacers && o.spacers <= 40), `all between ${minSpacers} and 40 mm`);
+  }
+  const empty = GB.solveBike(bike, fp, fit, Object.assign({}, opts, { minSpacers: null })).cockpit;
+  assert.deepStrictEqual(empty.all.map((o) => o.spacers), none.all.map((o) => o.spacers), 'empty is the same as 0');
+  // a tall front end is judged against the minimum, not a slammed stem
+  const tall = Object.assign({}, ref, { stack: 640, barReach: 80 });
+  const t = GB.solveBike(tall, fp, fit, Object.assign({}, opts, { minSpacers: 20 }));
+  assert.ok(t.checks.some((ch) => ch.text.includes('minimum 20 mm of spacers')), 'tall front end flagged with the minimum');
 });
 
 console.log(`\n${passed} checks passed`);
