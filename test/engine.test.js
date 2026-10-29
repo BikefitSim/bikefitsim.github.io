@@ -255,4 +255,18 @@ test('stem options never use fewer spacers than the minimum; empty means 0', () 
   assert.ok(t.checks.some((ch) => ch.text.includes('minimum 20 mm of spacers')), 'tall front end flagged with the minimum');
 });
 
+test('fork length from the chart stack when it is empty', () => {
+  near(GB.forkFromStack(ref), 385.4, 0.1, 'fork from stack');
+  const noFork = Object.assign({}, ref, { forkA2C: null });
+  assert.strictEqual(GB.forkLength(ref), 385, 'an entered fork length is kept');
+  near(GB.forkLength(noFork), 385.4, 0.1, 'empty fork length is worked out');
+  assert.strictEqual(GB.forkFromStack(Object.assign({}, ref, { stack: null })), null, 'no stack, no fork length');
+  // the bike solves without a fork length, the same as with one
+  const fp = GB.fitPoints(ref, fit);
+  const a = GB.solveBike(Object.assign({}, ref, { barReach: 80 }), fp, fit, opts);
+  const b = GB.solveBike(Object.assign({}, noFork, { barReach: 80 }), fp, fit, opts);
+  near(b.cockpit.best.err, a.cockpit.best.err, 1e-9, 'same stem miss');
+  assert.ok(!b.checks.some((ch) => ch.text.includes('Check the fork length')), 'no fork warning without a fork length');
+});
+
 console.log(`\n${passed} checks passed`);

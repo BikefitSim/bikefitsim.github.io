@@ -81,6 +81,16 @@ const GB = (() => {
     };
   }
 
+  /* Fork length (axle to crown plus any lower headset cup) that puts the head tube top at the
+     chart stack, with the front axle BB drop above the BB on the fork's offset line. */
+  function forkFromStack(b) {
+    if (![b.stack, b.htLength, b.forkOffset, b.bbDrop, b.hta].every(fin) || !(b.stack > 0)) return null;
+    const H = rad(b.hta);
+    return (b.stack - b.bbDrop + b.forkOffset * Math.cos(H)) / Math.sin(H) - b.htLength;
+  }
+  // the fork length as entered or, when it is empty, worked out from the chart stack
+  const forkLength = (b) => (fin(b.forkA2C) ? b.forkA2C : forkFromStack(b));
+
   /* Stack and reach: from the chart when given, otherwise from head tube, fork and BB drop, and
      the effective top tube or, without one, the actual top tube. The actual top tube runs centre
      to centre from the seat tube, at its c-c length, to the head tube, 18 mm below its top. */
@@ -359,6 +369,6 @@ const GB = (() => {
     return { bike, geo, heightAlong, noseAhead, railMove, railPos, railOver, railTravel, postOffset, tipToRails, exposed, target, hand, reachH, handShift, barWidth: wBike, cockpit, checks, drawing: fd };
   }
 
-  return { fitPoints, bodyPoints, frameGeometry, seatTubes, solveBike, solveCockpit, barFor, gripAhead, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, DROP_BEND, PLAIN_ANGLE, RAIL_TRAVEL, TIP_TO_RAILS };
+  return { fitPoints, bodyPoints, frameGeometry, forkFromStack, forkLength, seatTubes, solveBike, solveCockpit, barFor, gripAhead, parseList, frameDrawing, steerer, rad, STEM_CLAMP, BAR_R, DROP_BEND, PLAIN_ANGLE, RAIL_TRAVEL, TIP_TO_RAILS };
 })();
 if (typeof module !== 'undefined') module.exports = GB;
