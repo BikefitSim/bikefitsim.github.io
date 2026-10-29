@@ -173,7 +173,7 @@ const GBDraw = (() => {
     let m = v.open('main', `role="img" aria-label="${esc(names.bike)} drawn over ${esc(names.ref)} on a millimetre grid centred on the bottom bracket"`);
     if (show.grid) m += grid(v, 50);
     m += v.line({ x: minX + 10, y: g.groundY }, { x: maxX - 10, y: g.groundY }, 'ground');
-    m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -(bike.forkA2C + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
+    m += `<g class="axes">${v.line({ x: 0, y: 0 }, pb.axisAt(sad.y + 60), 'saxis')}${v.line(add(g.htBottom, pb.d, -((GB.forkLength(bike) ?? 370) + 30)), add(pb.stemTop, pb.d, 50), 'saxis')}</g>`;
     if (showRef) m += drawBike(v, 'rf', rg, pr, sad);
     m += drawBike(v, 'bk', g, pb, sad);
     // a personal fit's saddle height: the straight line from the BB to the saddle tip

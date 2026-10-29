@@ -175,7 +175,7 @@
     { k: 'att', l: 'Top tube (actual)', u: 'mm', opt: true, h: 'Centre to centre, along the tube' },
     { k: 'seatTube', l: 'Seat tube (c-t)', u: 'mm', opt: true, h: 'BB centre to the top of the tube. Either seat tube will do.' },
     { k: 'seatTubeCC', l: 'Seat tube (c-c)', u: 'mm', opt: true, h: 'BB centre to the top tube centre' },
-    { k: 'forkA2C', l: 'Fork length', u: 'mm', h: 'Axle to crown, plus any lower headset cup' },
+    { k: 'forkA2C', l: 'Fork length', u: 'mm', opt: true, h: 'Axle to crown, plus any lower headset cup. Can be left empty when the stack is given.' },
     { k: 'forkOffset', l: 'Fork offset', u: 'mm', h: 'Also called rake' },
     { k: 'stack', l: 'Stack', u: 'mm', opt: true, h: 'Optional, from the chart' },
     { k: 'reach', l: 'Reach', u: 'mm', opt: true, h: 'Optional, from the chart' },
@@ -248,7 +248,8 @@
   }
   function calcPlaceholders(b) {
     const g = GB.frameGeometry(Object.assign({}, b, { stack: null, reach: null }));
-    return { stack: g.stackCalc != null ? `calc. ${Math.round(g.stackCalc)}` : '', reach: g.reachCalc != null ? `calc. ${Math.round(g.reachCalc)}` : '' };
+    const fork = GB.forkFromStack(b);
+    return { stack: g.stackCalc != null ? `calc. ${Math.round(g.stackCalc)}` : '', reach: g.reachCalc != null ? `calc. ${Math.round(g.reachCalc)}` : '', forkA2C: fork != null ? `calc. ${Math.round(fork)}` : '' };
   }
   function geoFieldsHTML(scope, b) {
     const ph = calcPlaceholders(b);
@@ -256,7 +257,7 @@
   }
   function refreshPlaceholders(scope, b) {
     const ph = calcPlaceholders(b);
-    for (const k of ['stack', 'reach']) { const el = $(`${scope}-${k}`); if (el) el.placeholder = ph[k]; }
+    for (const k of ['stack', 'reach', 'forkA2C']) { const el = $(`${scope}-${k}`); if (el) el.placeholder = ph[k]; }
   }
 
   /* ---------- rendering: inputs ---------- */
@@ -304,7 +305,7 @@
     const last = ofKind(r.kind).length < 2;
     $('refActions').innerHTML = `
       <button class="btn" type="button" id="dupRef">Copy as new ${kindName(r)}</button>
-      <button class="btn danger" type="button" id="delRef"${last ? ` disabled title="Keep at least one ${kindName(r)}"` : ''}>Delete ${kindName(r)}</button>`;
+      <button class="btn danger" type="button" id="delRef"${last ? ` title="The last ${kindName(r)}: it is replaced by an empty one"` : ''}>Delete ${kindName(r)}</button>`;
   }
   function renderDefFields() {
     $('defFields').innerHTML = DEF_FIELDS.map((f) => fieldHTML(f, 'defaults', state.defaults)).join('');
@@ -324,7 +325,7 @@
       <div class="grp"><h4>Handlebar</h4><div class="fields">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, h: 'Of the bar this bike will use. 0 for a flat bar. Empty means the default.' }, 'bike', b, `${defVal('barReach')}`)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, sameWidthPh())}</div></div>
       <div class="row-actions">
         <button class="btn" type="button" id="dupBike">Copy as new target bike</button>
-        <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' disabled title="Keep at least one target bike"' : ''}>Delete target bike</button>
+        <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' title="The last target bike: it is replaced by an empty one"' : ''}>Delete target bike</button>
       </div>`;
   }
   // the target bike's empty bar width: the reference's, defaults included
@@ -353,7 +354,14 @@
     if (b.seatTube == null && b.seatTubeCC == null) c.missing.push('seat tube, c-t or c-c');
     if (b.seatTube != null) c.chk('seatTube', 200, 750, 'Seat tube (c-t)');
     if (b.seatTubeCC != null) c.chk('seatTubeCC', 200, 750, 'Seat tube (c-c)');
-    c.chk('bbDrop', -40, 110, 'BB drop'); c.chk('forkA2C', 300, 600, 'Fork length'); c.chk('forkOffset', 0, 80, 'Fork offset');
+    c.chk('bbDrop', -40, 110, 'BB drop'); c.chk('forkOffset', 0, 80, 'Fork offset');
+    const hasStack = finite(b.stack) && b.stack > 0;
+    if (b.forkA2C != null && b.forkA2C !== '') c.chk('forkA2C', 300, 600, 'Fork length');
+    else if (!hasStack) c.missing.push('fork length (or stack from the chart)');
+    else if (finite(b.htLength) && finite(b.forkOffset) && finite(b.bbDrop) && finite(b.hta)) {
+      const fork = GB.forkFromStack(b);
+      if (fork < 300 || fork > 600) c.wrong.push(`The stack gives a fork length of ${Math.round(fork)} mm, outside 300 to 600. Check the stack, head tube length and BB drop.`);
+    }
     const hasReach = finite(b.reach) && b.reach > 0;
     if (!hasReach) {
       if (b.ett == null && b.att == null) c.missing.push('top tube, effective or actual (or reach from the chart)');
@@ -1199,10 +1207,12 @@
       return;
     }
     const delR = e.target.closest('#delRef');
-    if (delR && ofKind(curRef().kind).length > 1) {
+    if (delR) {
       if (!armed(delR, 'Click again to delete', `Delete ${kindName(curRef())}`)) return;
       const gone = state.selectedRef; const kind = curRef().kind;
       state.refs = state.refs.filter((r) => r.id !== gone);
+      // the last of its kind leaves an empty one in its place
+      if (!ofKind(kind).length) state.refs.push(blankRef(kind, uid('r'), nextDefaultName(kind)));
       for (const b of state.bikes) if (b.refId === gone) b.refId = state.refs[0].id;
       selectRef(ofKind(kind)[0].id);
       renderAll(); scheduleSave();
@@ -1219,9 +1229,11 @@
       return;
     }
     const del = e.target.closest('#delBike');
-    if (del && state.bikes.length > 1) {
+    if (del) {
       if (!armed(del, 'Click again to delete', 'Delete target bike')) return;
       state.bikes = state.bikes.filter((b) => b.id !== state.selected);
+      // the last target bike leaves an empty one in its place
+      if (!state.bikes.length) state.bikes.push(Object.assign({ id: uid(), name: 'Target bike 1', refId: curRef().id }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' }));
       state.selected = state.bikes[0].id;
       renderAll(); scheduleSave();
       return;
