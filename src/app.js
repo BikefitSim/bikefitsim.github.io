@@ -305,7 +305,7 @@
     const last = ofKind(r.kind).length < 2;
     $('refActions').innerHTML = `
       <button class="btn" type="button" id="dupRef">Copy as new ${kindName(r)}</button>
-      <button class="btn danger" type="button" id="delRef"${last ? ` disabled title="Keep at least one ${kindName(r)}"` : ''}>Delete ${kindName(r)}</button>`;
+      <button class="btn danger" type="button" id="delRef"${last ? ` title="The last ${kindName(r)}: it is replaced by an empty one"` : ''}>Delete ${kindName(r)}</button>`;
   }
   function renderDefFields() {
     $('defFields').innerHTML = DEF_FIELDS.map((f) => fieldHTML(f, 'defaults', state.defaults)).join('');
@@ -325,7 +325,7 @@
       <div class="grp"><h4>Handlebar</h4><div class="fields">${fieldHTML({ k: 'barReach', l: 'Handlebar reach', u: 'mm', opt: true, h: 'Of the bar this bike will use. 0 for a flat bar. Empty means the default.' }, 'bike', b, `${defVal('barReach')}`)}${fieldHTML({ k: 'barWidth', l: 'Handlebar width', u: 'mm', opt: true, h: 'Centre to centre at the hoods. Empty means the same as the reference.' }, 'bike', b, sameWidthPh())}</div></div>
       <div class="row-actions">
         <button class="btn" type="button" id="dupBike">Copy as new target bike</button>
-        <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' disabled title="Keep at least one target bike"' : ''}>Delete target bike</button>
+        <button class="btn danger" type="button" id="delBike"${state.bikes.length < 2 ? ' title="The last target bike: it is replaced by an empty one"' : ''}>Delete target bike</button>
       </div>`;
   }
   // the target bike's empty bar width: the reference's, defaults included
@@ -1207,10 +1207,12 @@
       return;
     }
     const delR = e.target.closest('#delRef');
-    if (delR && ofKind(curRef().kind).length > 1) {
+    if (delR) {
       if (!armed(delR, 'Click again to delete', `Delete ${kindName(curRef())}`)) return;
       const gone = state.selectedRef; const kind = curRef().kind;
       state.refs = state.refs.filter((r) => r.id !== gone);
+      // the last of its kind leaves an empty one in its place
+      if (!ofKind(kind).length) state.refs.push(blankRef(kind, uid('r'), nextDefaultName(kind)));
       for (const b of state.bikes) if (b.refId === gone) b.refId = state.refs[0].id;
       selectRef(ofKind(kind)[0].id);
       renderAll(); scheduleSave();
@@ -1227,9 +1229,11 @@
       return;
     }
     const del = e.target.closest('#delBike');
-    if (del && state.bikes.length > 1) {
+    if (del) {
       if (!armed(del, 'Click again to delete', 'Delete target bike')) return;
       state.bikes = state.bikes.filter((b) => b.id !== state.selected);
+      // the last target bike leaves an empty one in its place
+      if (!state.bikes.length) state.bikes.push(Object.assign({ id: uid(), name: 'Target bike 1', refId: curRef().id }, BLANK_GEO, { barReach: null, barWidth: null, pick: '' }));
       state.selected = state.bikes[0].id;
       renderAll(); scheduleSave();
       return;
