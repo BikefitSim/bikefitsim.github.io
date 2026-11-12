@@ -1,0 +1,242 @@
+<style>
+/* 90s look after the classic DOS screens of Borland Turbo Pascal and Norton Commander, in the
+   standard PC colours with a purplish blue in place of their blue: a dotted purplish blue desktop,
+   purplish blue windows with white double frames, titles set
+   in the top frame and hard black shadows; grey bars with black text, green push buttons, cyan for
+   whatever is selected. Text is white and light grey. Drawings are on black like a DOS CAD screen:
+   target bike bright blue, reference yellow dashed, fit points red. OK green, warnings yellow,
+   problems red. Loaded after the other styles, so it only overrides them. No animation. */
+:root {
+  --paper: #2A00AA;
+  --sheet: #2A00AA;      /* window: purplish blue */
+  --well: #000000;       /* fields, panels and cells */
+  --ink: #FFFFFF;
+  --ink-2: #AAAAAA;
+  --rule: #AAAAAA;
+  --rule-2: #00AAAA;
+  --frame: #5555FF;      /* target bike in the drawings: bright blue */
+  --part: #FFFF55;       /* reference bike: yellow */
+  --laser: #FF5555;      /* fit points: bright red */
+  --focus: #FFFFFF;
+  --good: #55FF55;
+  --warn: #FFFF55;
+  --bad: #FF5555;
+  --good-bg: #000000;
+  --warn-bg: #000000;
+  --bad-bg: #AA0000;
+  --info-bg: #000000;
+  --draw-bg: #000000;
+  --grid-1: #1C1C1C; --grid-2: #3A3A3A;  /* dark grey grid, so the blue bike stands out */
+  --gl-halo: #000000;
+  --bar: #AAAAAA;        /* menu and status bars, headers, tabs */
+  --push: #00AA00;       /* push buttons */
+  --pick: #00AAAA;       /* selected */
+  --hotkey: #AA0000;
+  --mono: Consolas, 'Lucida Console', 'DejaVu Sans Mono', Menlo, 'Courier New', monospace;
+  --display: var(--mono);
+  --body: var(--mono);
+  --shade: 10px 10px 0 #000000;   /* Turbo Vision window shadow */
+  --shade-s: 5px 4px 0 #000000;   /* button shadow */
+  color-scheme: dark;
+}
+body {
+  font-size: 13px; line-height: 1.45;
+  /* the dotted desktop: light grey dots on purplish blue */
+  background: #2A00AA url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%232A00AA'/%3E%3Crect width='1' height='1' fill='%23AAAAAA'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23AAAAAA'/%3E%3C/svg%3E");
+}
+::selection { background: var(--pick); color: #000; }
+a, a:visited { color: inherit; text-decoration: underline; }
+:focus-visible { outline: 1px dotted var(--focus); outline-offset: 2px; }
+
+/* no spaced-out capitals */
+.f-l, .t-l, .grp h4, .tab, .kind-tab, figure.draw .fig-t, table.data th, details.parts summary,
+.sub-h h4, .checks li::before { text-transform: none; letter-spacing: 0; }
+.sec-head h2 { text-transform: uppercase; letter-spacing: 0; }  /* window titles in capitals (Z) */
+
+/* windows: purplish blue, white double frame, title in the frame, black shadow */
+.top, .sheet {
+  background: var(--sheet); border: 3px double #FFFFFF; border-radius: 0; box-shadow: var(--shade);
+}
+.page { gap: 26px; }
+.top { padding: 14px 18px; align-items: center; justify-content: center; }
+.sheet { padding: 14px 18px 18px; gap: 16px; }
+.sec-head {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px 0;
+  margin-top: -26px;
+}
+.sec-head h2, .sec-head h2:first-child { grid-row: 1; grid-column: 2; font: bold 15px/20px var(--mono); color: #FFFFFF; background: var(--sheet); padding: 0 8px; }
+.sec-head .step { grid-row: 1; grid-column: 3; justify-self: end; margin-right: 6px; width: auto; height: auto; padding: 0 6px; border-radius: 0; transform: none; background: var(--sheet); color: #FFFFFF; font: bold 13px/20px var(--mono); }
+.sheet.sub { border: 1px solid #FFFFFF; box-shadow: none; }  /* Reference and Target inside Input (Z) */
+.sheet.sub .sec-head { margin-top: -24px; }
+.sec-head h3 { grid-row: 1; grid-column: 2; margin: 0; font: bold 13px/20px var(--mono); color: #FFFFFF; background: var(--sheet); padding: 0 8px; text-transform: uppercase; }
+.sec-head p { grid-row: 2; grid-column: 1 / -1; color: var(--ink-2); font-size: 13px; max-width: 80ch; }
+
+/* header: logo, title, status */
+/* centred: the logo, the title and subtitle, and the logo again mirrored on the right (Z) */
+.brand { grid-template-columns: auto minmax(0, max-content) auto; column-gap: 18px; justify-content: center; text-align: center; }
+.mark.px { width: 96px; height: 80px; grid-row: 1 / span 2; align-self: center; }  /* beside both the title and the subtitle */
+.mark.px.flip { grid-column: 3; transform: scaleX(-1); }
+.brand h1 { grid-column: 2; }
+.brand .tag { grid-column: 2; }
+.px-ol, .px-ring { fill: #000000; }  /* thin black outline around the lines, and a ring around each point */
+.px-line { fill: #FFFFFF; } .px-p1, .px-p2, .px-p3 { fill: #FFFF55; }
+h1 { font: bold 40px/1 var(--mono); color: #FFFFFF; }
+/* a black outline round the title, like the logo's (Z) */
+.brand h1 { text-shadow: -2px -2px 0 #000, 0 -2px 0 #000, 2px -2px 0 #000, 2px 0 0 #000, 2px 2px 0 #000, 0 2px 0 #000, -2px 2px 0 #000, -2px 0 0 #000; }
+.tag { font: 14px var(--mono); color: #D4D4D4; }  /* lighter grey than the labels (Z) */
+/* the title sits down on the subtitle (Z) */
+.brand h1 { align-self: end; }
+.brand .tag { align-self: start; margin-top: 4px; }
+.brand .tag { text-shadow: -1px -1px 0 #000, 0 -1px 0 #000, 1px -1px 0 #000, 1px 0 0 #000, 1px 1px 0 #000, 0 1px 0 #000, -1px 1px 0 #000, -1px 0 0 #000; }  /* outlined like the title (Z) */
+.tag::after { content: "_"; color: #FFFF55; margin-left: 2px; }  /* the cursor in the yellow of the logo's points (Z) */
+
+/* the file line is a grey status bar on the desktop */
+.filebar { background: var(--bar); box-shadow: var(--shade-s); padding: 6px 10px; margin-top: -6px; }
+.file-status, .file-status b { color: #000; }
+.file-status.ok::before, .file-status.warn::before { border-radius: 0; }
+.file-status.ok::before { background: #00AA00; } .file-status.warn::before { background: #AA5500; }
+
+/* fields: black input lines with white type */
+.f-l { font: 13px var(--mono); color: #FFFFFF; }
+/* optional fields in steps 1 and 2 (and either-or fields once a partner is filled): a grey "optional" after the name; not in the field help (Z) */
+#frameForm .f.opt .f-l::after { content: "optional"; margin-left: 8px; font: 12px var(--mono); color: var(--ink-2); white-space: nowrap; }
+.fields .f { justify-content: flex-end; }  /* a name that wraps onto two lines keeps its input level with the rest of the row */
+.f-in { border: 1px solid #000; border-radius: 0; background: var(--well); }
+.f-in:focus-within { border-color: #FFFFFF; box-shadow: none; }
+.f-in input, .f-in select { font: 14px var(--mono); padding: 5px 7px; color: #FFFFFF; caret-color: #FFFFFF; }
+.f-in select { background: var(--well); }
+.f-in input::placeholder { color: var(--ink-2); opacity: 1; }
+.f-in input[aria-invalid="true"] { color: var(--bad); }
+.f.bad .f-in { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+.f.ro .f-in { background: transparent; border: 1px dashed var(--ink-2); }
+.f.ro input { color: var(--ink-2); }
+.u { font: 12px var(--mono); color: var(--ink-2); }
+
+/* push buttons: green, black text, black shadow; pressing moves them into the shadow */
+.btn {
+  background: var(--push); color: #000; border: 0; border-radius: 0; box-shadow: var(--shade-s);
+  font: 13px var(--mono); padding: 4px 14px; cursor: pointer;
+}
+.btn:hover { border-color: transparent; background: #55FF55; }
+.btn:active { transform: translate(5px, 4px); box-shadow: none; }
+.btn.danger { background: var(--hotkey); color: #FFFFFF; }
+.btn.danger:hover { background: #FF5555; color: #000; }
+.btn.danger.armed { background: #FF5555; color: #000; }
+.filebar .btn { padding: 3px 11px; font-size: 12px; }
+
+/* grey bar items: tabs, bike fit / personal fit, sort and step buttons; cyan when selected */
+.tabs { gap: 4px; border-bottom: 1px solid var(--rule); margin-bottom: 0; align-items: flex-end; padding-bottom: 0; }
+#refTabs, #tabs, #frameTabs, #saddleTabs, #barTabs { border-bottom: 0; }  /* no line under the bike, frame, saddle and cockpit tabs (Z) */
+.tab, .kind-tab, .sort-btn, .stepnav button {
+  background: var(--bar); color: #000; border: 0; border-radius: 0; box-shadow: none; font: 13px var(--mono); cursor: pointer;
+}
+.tab { padding: 3px 12px; margin: 0; }
+.tab:hover, .kind-tab:hover, .sort-btn:hover, .stepnav button:hover { background: #FFFFFF; color: #000; border-color: transparent; }
+.tab[aria-selected="true"], .kind-tab[aria-selected="true"], .sort-btn[aria-pressed="true"], .stepnav button[aria-current="step"],
+.tab[aria-selected="true"]:hover, .kind-tab[aria-selected="true"]:hover, .sort-btn[aria-pressed="true"]:hover {
+  background: var(--pick); color: #000; box-shadow: none; border-color: transparent;
+}
+.tab[aria-selected="true"] { font-weight: bold; border-bottom: 0; }
+.tab .ref { font: bold 10px var(--mono); color: var(--hotkey); }
+.tab[aria-selected="true"] .ref { color: #000; }
+.tab.add { background: var(--push); color: #000; margin-left: 6px; }
+.tab.add:hover { background: #55FF55; }
+/* Bikefit / Personal fit: a switch across the whole window, unlike the bike tabs (Z) */
+.kinds-row { display: block; }
+.kinds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; border: 1px solid var(--rule); border-radius: 0; background: #000; padding: 0; gap: 0; }
+.kinds .kind-tab, .kinds .kind-tab:hover { background: #000; color: var(--ink-2); padding: 6px 10px; font-weight: bold; text-align: center; }
+.kinds .kind-tab:hover { color: #FFFFFF; }
+.kinds .kind-tab[aria-selected="true"], .kinds .kind-tab[aria-selected="true"]:hover { background: var(--part); color: #000; }
+.kind-tab .n { font: 11px var(--mono); color: inherit; }
+.sort { color: var(--ink-2); }
+.sort-btn { padding: 2px 10px; font-size: 12px; }
+.opt-count { margin-left: auto; font: 12px var(--mono); color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
+.opt-count input { width: 64px; background: var(--well); color: var(--ink); border: 1px solid var(--rule); font: 12px var(--mono); padding: 2px 4px; }
+
+/* groups: single grey rules */
+details.parts { border-top: 1px solid var(--rule); }
+details.parts summary { font: bold 13px var(--mono); color: #FFFFFF; }
+/* the open/close toggle: a small green push button, like the other buttons */
+details.parts summary::before { content: "+"; width: 22px; height: 18px; border: 0; border-radius: 0; background: var(--push); color: #000; font: bold 13px/18px var(--mono); text-align: center; box-shadow: 3px 3px 0 #000; margin-right: 4px; }
+details.parts summary:hover::before { background: #55FF55; }
+details.parts[open] summary::before { content: "\2212"; }
+.grp h4, .sub-h h4 { font: bold 13px var(--mono); color: #FFFFFF; }
+.grp h4 { border-bottom: 1px solid var(--rule); }
+.limits li { color: var(--ink-2); font-size: 13px; }
+.tip { background: var(--bar); color: #000; border: 1px solid #000; border-radius: 0; box-shadow: var(--shade-s); font: 12px/1.45 var(--mono); }
+.tip b { color: #000; }
+.sub-h p, .grp p.note { color: var(--ink-2); }
+
+/* results: black cells under grey headers */
+.tiles { border: 1px solid var(--rule); border-radius: 0; background: var(--well); }
+.tile { padding: 0 10px 10px; }
+.tile + .tile { border-left: 1px solid var(--rule); }
+.t-l { display: block; margin: 0 -10px 8px; padding: 1px 8px; background: var(--bar); color: #000; font: 12px var(--mono); text-align: center; }
+.t-v { font: bold 30px/1.05 var(--mono); color: #FFFFFF; }
+.t-v small { font: 13px var(--mono); color: var(--ink-2); }
+.t-d { font: bold 12px var(--mono); color: var(--ink-2); }
+.t-d.over { color: var(--bad); }
+.calc-mark { color: var(--ink-2); }
+
+/* checks: black lines with a coloured tag; problems on red like a DOS error box */
+.checks li { border-radius: 0; border: 1px solid; font-size: 13px; color: #FFFFFF; }
+.checks li::before { font: bold 12px var(--mono); }
+.checks .ok { border-color: var(--good); } .checks .ok::before { content: "OK"; color: var(--good); }
+.checks .warn { border-color: var(--warn); } .checks .warn::before { content: "Check"; color: var(--warn); }
+.checks .info { border-color: var(--ink-2); } .checks .info::before { content: "Note"; color: var(--ink-2); }
+.checks .bad { border-color: #FFFFFF; background: var(--bad-bg); } .checks .bad::before { content: "Problem"; color: #FFFFFF; }
+.empty { border-radius: 0; border: 1px dashed var(--rule); background: #000; color: #FFFFFF; }
+
+/* tables: black grid, grey header row, cyan bar on the picked row */
+table.data { background: var(--well); font: 13px var(--mono); border: 1px solid var(--rule); color: #FFFFFF; }
+table.data th { background: var(--bar); color: #000; font: 12px var(--mono); padding: 2px 8px; border: 1px solid #000; }
+table.data td { padding: 3px 8px; border: 1px solid #555555; }
+table.data tbody tr.opt:hover td { background: #150055; }
+table.data tbody tr.pick td, table.data tbody tr.pick:hover td { background: var(--pick); color: #000; }  /* tbody: beats the row hover */
+table.data tr.pick td:first-child { box-shadow: none; }
+table.data input[type="radio"], .tog input { accent-color: var(--pick); }
+.cmp td:first-child { background: var(--bar); color: #000; font: 12px var(--mono); }
+.cmp td.sel, .cmp th.sel { background: var(--well); }
+.cmp th.refcol, .cmp td.refcol { color: var(--ink-2); }
+.cmp th .tab, .cmp th.refcol .tab { background: var(--bar); color: #000; margin: 0; padding: 2px 10px !important; font: bold 13px var(--mono) !important; text-decoration: none; }
+.cmp th.sel .tab, .cmp th.sel .tab:hover { background: var(--pick); color: #000; }
+.cmp tr.match td { color: var(--ink-2); }
+.cmp tr.match td:first-child { color: #000; }
+.cmp .miss-ok { color: var(--good); }
+.cmp .miss-bad { color: var(--bad); }
+
+/* drawings: black screens in single-framed windows with a grey title bar */
+figure.draw { border: 1px solid var(--rule); border-radius: 0; background: #000; }
+figure.draw .fig-t { background: var(--bar); color: #000; font: bold 12px var(--mono); padding: 2px 8px; border-bottom: 0; }
+/* the Zoom in/out button: grey, inside the Ground aligned drawing at its top right */
+.gz-pane { position: relative; }
+.gz-pane [data-gzoom] { position: absolute; top: 10px; right: 10px; box-shadow: 2px 2px 0 #000; }
+.gzoom.in .gz-pane [data-gzoom] { right: 28px; }  /* clear of the zoomed drawing's scrollbar */
+.ground-off { border-radius: 0; border: 1px dashed var(--rule); background: #000; color: var(--ink-2); }
+.ground-off b { color: #FFFFFF; }
+svg.geo .bike .barc, svg.geo .bike .joint { fill: #000; }
+.legend, .toggles { color: var(--ink-2); font-size: 12px; }
+/* the legend: a small black window that stays at the top of the screen over the drawings */
+.viz-wrap { border-top: 1px solid var(--rule); }
+.viz-bar { background: #000; border: 1px solid var(--rule); box-shadow: var(--shade-s); padding: 6px 10px; }
+.tog { color: #FFFFFF; }
+
+/* footer: a grey status line */
+.credits p { display: inline-block; background: var(--bar); color: #000; font: 13px var(--mono); padding: 3px 12px; box-shadow: var(--shade-s); }
+.credits a { color: #000; }
+
+/* step buttons: a small black panel */
+.stepnav { background: #000; border: 1px solid var(--rule); border-radius: 0; box-shadow: var(--shade-s); padding: 4px; gap: 4px; }
+.stepnav button { width: 30px; height: 26px; font: bold 13px var(--mono); }
+.stepnav button[data-top] { font-size: 17px; line-height: 1; }  /* the arrow reads small at 13px */
+
+@media (max-width: 520px) {
+  .top, .sheet { box-shadow: 6px 6px 0 #000; }
+  .sheet { padding: 14px 10px 14px; }
+  h1 { font-size: 28px; }
+  .brand { column-gap: 12px; }
+  .mark.px { width: 48px; height: 40px; }
+  .brand h1 { text-shadow: -1.5px -1.5px 0 #000, 0 -1.5px 0 #000, 1.5px -1.5px 0 #000, 1.5px 0 0 #000, 1.5px 1.5px 0 #000, 0 1.5px 0 #000, -1.5px 1.5px 0 #000, -1.5px 0 0 #000; }
+  .top { padding: 10px 12px; }
+}
+</style>

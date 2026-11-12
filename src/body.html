@@ -1,0 +1,321 @@
+<style>
+/* additions for the reference-bike layout */
+.ref-name { padding-top: 8px; padding-bottom: 14px; border-bottom: 1px solid #FFFFFF; }  /* a white line under every Name field (Z) */
+.ref-name:empty { display: none; }
+.ref-name .f { max-width: 420px; }
+.t-d { font: 500 12.5px var(--mono); color: var(--frame); }
+.t-d.same { color: var(--ink-2); }
+.t-d.over { color: var(--bad); }
+.tip { position: fixed; z-index: 50; max-width: 340px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; pointer-events: none; background: var(--well); color: var(--ink-2); border: 1px solid var(--rule); }
+.tip b { display: block; color: var(--ink); margin-bottom: 2px; }
+details.parts.opts .sub-h { margin: 12px 0 8px; }
+details.parts .fields { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.cmp th.refcol, .cmp td.refcol { color: var(--ink-2); }
+.cmp tr.match td { font-size: 13px; color: var(--ink-2); }
+.cmp th.refcol .tab { color: var(--ink-2); }
+.sel-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; align-items: stretch; }
+@media (max-width: 900px) { .sel-pair { grid-template-columns: minmax(0, 1fr); } }
+.kinds-row { display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap; }
+.kinds { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; padding: 3px; gap: 3px; background: var(--well); }
+.kind-tab { border: 0; border-radius: 4px; background: none; cursor: pointer; padding: 7px 16px; white-space: nowrap; font: 600 17px var(--display); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+.kind-tab:hover { color: var(--ink); }
+.kind-tab[aria-selected="true"] { background: var(--sheet); color: var(--ink); box-shadow: 0 0 0 1px var(--rule), inset 0 -3px 0 var(--part); }
+.kind-tab .n { font: 500 11px var(--mono); color: var(--ink-2); margin-left: 7px; vertical-align: 2px; }
+@media (prefers-reduced-motion: no-preference) { .kind-tab { transition: color .15s, background-color .15s; } }
+.credits { padding: 4px 4px 0; text-align: center; }
+.credits p { font-size: 13px; color: var(--ink-2); }
+.credits a { color: inherit; }
+.limits { display: flex; flex-direction: column; gap: 6px; }
+.limits ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.limits li { font-size: 13.5px; color: var(--ink-2); max-width: 90ch; }
+
+/* technical drawings */
+.viz-wrap { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--rule-2); padding-top: 18px; }
+.viz-bar { display: flex; justify-content: space-between; gap: 10px 20px; flex-wrap: wrap; align-items: center; }
+.viz-bar { position: sticky; top: 0; z-index: 5; } /* the legend stays in view while the drawings scroll past (Z) */
+.h1-sim { color: var(--part); } /* "Sim" in the title in the yellow of the logo's points (Z) */
+.legend, .toggles { display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--ink-2); }
+.lg i.sw { width: 22px; height: 0; border-top: 3px solid var(--frame); border-radius: 0; }
+.lg i.sw.rf { border-top: 3px dashed var(--part); }
+.tog { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; color: var(--ink); }
+.tog input { accent-color: var(--frame); margin: 0; }
+/* BB aligned and Ground aligned full width, the two close-ups side by side between them */
+.viz { display: flex; flex-direction: column; gap: 14px; }
+.viz-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+figure.draw .fig-t { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.zoomwrap { overflow: auto; max-height: 70vh; overscroll-behavior: contain; }
+.gzoom svg.geo { cursor: zoom-in; }
+.gzoom.in svg.geo { cursor: zoom-out; }
+.ground-off { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 160px; padding: 24px 16px; text-align: center; font-size: 14px; color: var(--ink-2); background: var(--draw-bg); border: 1px dashed var(--rule); border-radius: 4px; }
+.ground-off b { color: var(--ink); font-weight: 600; }
+@media (max-width: 700px) { .viz-side { grid-template-columns: minmax(0, 1fr); } }
+svg.geo { display: block; width: 100%; height: auto; max-width: 100%; background: var(--draw-bg); }
+svg.geo * { vector-effect: non-scaling-stroke; }
+svg.geo .grid .minor { stroke: var(--grid-1); stroke-width: .7px; }
+svg.geo .grid .major { stroke: var(--grid-2); stroke-width: 1.1px; }
+svg.geo .grid .axis0 { stroke: var(--grid-2); stroke-width: 1.6px; }
+svg.geo .gl { font: 500 calc(var(--k) * 10px) var(--mono); fill: var(--ink-2); paint-order: stroke; stroke: var(--gl-halo); stroke-width: 2.5px; stroke-linejoin: round; }
+svg.geo .ground { stroke: var(--rule); stroke-width: 1.2px; stroke-dasharray: 6 5; }
+svg.geo .saxis { stroke: var(--frame); stroke-opacity: .5; stroke-width: 1px; stroke-dasharray: 2 4; fill: none; }
+svg.geo .saxis.rfa { stroke: var(--part); }
+svg.geo .bike.bk { --c: var(--frame); }
+svg.geo .bike.rf { --c: var(--part); }
+svg.geo .bike.sdl { --c: var(--ink-2); }
+/* see-through bikes (Z), so the reference shows where the target lies over it */
+svg.geo .bike.bk { opacity: .72; }
+svg.geo .bike.rf, svg.geo .bike.sdl { opacity: .85; }
+/* solid again while the pointer is on it, or on its name in the legend */
+/* a hovered bike (or its name in the legend) is solid and in front, the other fades (Z) */
+svg.geo.hov-bk .bike.bk, svg.geo.hov-rf .bike.rf { opacity: 1; }
+svg.geo.hov-bk .bike.rf, svg.geo.hov-rf .bike.bk { opacity: .25; }
+/* each bike's wide see-through copy of its lines catches the pointer near them */
+svg.geo .bike .hit * { fill: none; stroke: transparent; stroke-width: 18px; pointer-events: stroke; }
+.lg[data-solid] { cursor: default; }
+svg.geo .bike .tube { stroke: var(--c); stroke-width: 2.6px; stroke-linecap: round; fill: none; }
+svg.geo .bike .ht { stroke-width: 4.5px; }
+svg.geo .bike .cs, svg.geo .bike .ss, svg.geo .bike .fork { stroke-width: 1.8px; }
+svg.geo .bike.rf .tube { stroke-dasharray: 9 4; stroke-linecap: butt; }
+svg.geo .bike .tyre { stroke: var(--c); stroke-opacity: .4; stroke-width: 1.3px; fill: var(--c); fill-opacity: .1; fill-rule: evenodd; }
+svg.geo .bike .rim { stroke: var(--c); stroke-opacity: .4; stroke-width: 1.3px; fill: none; }
+svg.geo .bike .spacer { fill: var(--c); fill-opacity: .14; stroke: var(--c); stroke-width: 1.2px; }
+svg.geo .bike .part { fill: var(--c); fill-opacity: .32; stroke: var(--c); stroke-width: 1.2px; }
+svg.geo .bike .stem { stroke: var(--c); stroke-width: 3.2px; stroke-linecap: round; }
+svg.geo .bike .post { stroke: var(--c); stroke-width: 2.6px; stroke-linecap: round; fill: none; }
+svg.geo .bike .saddle { fill: var(--c); fill-opacity: .14; stroke: var(--c); stroke-width: 1.4px; }
+svg.geo .bike .rail { fill: none; stroke: var(--c); stroke-opacity: .7; stroke-width: 1px; }
+/* frame, saddle and cockpit one under the other, no line under their titles (Z) */
+.pick-grid { display: grid; grid-template-columns: minmax(0, 420px); gap: 18px; }
+.pick-grid .grp h4 { border-bottom: 0; padding-bottom: 0; }
+.pick-grid h4.h-pick label { flex: 0 0 76px; }
+.pick-grid h4.h-pick .f-in { flex: 1 1 auto; }
+.lib-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; }
+.pick-grid .fields { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }  /* a group's fields on one line (Z) */
+.lib-form { display: flex; flex-direction: column; gap: 14px; margin-top: 4px; }
+h4.h-pick { display: flex; align-items: center; gap: 12px; }
+/* every group title as tall as one with a picker, so the titles line up side by side (Z) */
+.grp h4 { display: flex; align-items: center; min-height: 37px; }
+/* no rule above Component options (Z) */
+details.parts.opts, details.parts.lib { border-top: 0; padding-top: 0; }
+/* Frame, Saddle and Cockpit in Library open and close like Component options (Z) */
+details.parts.lib > .tabs { margin-top: 12px; }
+details.parts.lib .fields { margin-top: 0; }
+#optFields .fields.lists { grid-template-columns: repeat(2, minmax(0, 1fr)); }  /* stem lengths and angles on their own wide line (Z) */
+#optFields .fields + .fields { margin-top: 14px; }
+#optCard { margin-top: 16px; }  /* clear of the spacer fields (Z) */
+@media (max-width: 600px) { #optFields .fields.lists { grid-template-columns: minmax(0, 1fr); } }
+h4.h-pick label { cursor: pointer; }
+h4.h-pick .f-in { flex: 0 1 260px; }
+h4.h-pick select { width: 100%; text-transform: none; letter-spacing: normal; font-weight: normal; }
+.lib-form .fields { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.f.ro .f-in { background: transparent; border-style: dashed; }
+.f.ro input { color: var(--ink-2); cursor: default; }
+svg.geo .bike .railmk { stroke: var(--c); stroke-width: 3px; }
+svg.geo .bike.rf .saddle { stroke-dasharray: 6 3; }
+svg.geo .bike .clamp { fill: var(--c); stroke: none; }
+svg.geo .bike .bar { stroke: var(--c); stroke-width: 2.4px; fill: none; stroke-linecap: round; }
+svg.geo .bike .stemln { stroke: var(--c); stroke-opacity: .55; stroke-width: 1px; }
+svg.geo .bike .bartube { fill: var(--c); fill-opacity: .16; stroke: var(--c); stroke-width: 1.4px; stroke-linejoin: round; }
+svg.geo .bike .barcl { fill: none; stroke: var(--c); stroke-opacity: .4; stroke-width: .8px; stroke-dasharray: 4 3; }
+svg.geo .bike .barc { fill: var(--sheet); stroke: var(--c); stroke-width: 1.6px; }
+svg.geo .bike .joint { fill: var(--sheet); stroke: var(--c); stroke-width: 1.4px; }
+/* fit point markers (diamond: hand, disc: saddle tip) in their bike's colour, white rim and soft halo (Z):
+   reference yellow; target blue (its saddle tip and where the picked stem puts its hands); red the
+   target's expected hand position, when its cockpit differs and no stem and spacers come within 10 mm of it */
+svg.geo .target { --mc: var(--part); }
+svg.geo .target.got { --mc: var(--frame); }
+svg.geo .target.exp { --mc: var(--laser); }
+svg.geo .target .mkh { fill: var(--mc); fill-opacity: .3; stroke: none; }
+svg.geo .target .mk { fill: var(--mc); stroke: #FFFFFF; stroke-width: 1.6px; stroke-linejoin: round; }
+/* diagram labels in the colour of what they measure (Z): the legend names the colours */
+svg.geo text.dt.rft { fill: var(--part); }
+svg.geo text.dt.bkt { fill: color-mix(in srgb, var(--frame) 65%, #FFFFFF); }
+svg.geo text.dt.xr { fill: var(--part); }
+svg.geo text.dt.xg { fill: color-mix(in srgb, var(--frame) 65%, #FFFFFF); }
+svg.geo text.dt.xe { fill: var(--laser); }
+/* legend key for the red expected-hand diamond */
+.lg i.mkx { width: 9px; height: 9px; background: var(--laser); border: 1.5px solid #FFFFFF; transform: rotate(45deg); margin: 0 3px; }
+svg.geo .dim .dl, svg.geo .dim .tk { stroke: var(--ink-2); stroke-opacity: .55; stroke-width: 1px; }
+svg.geo .dim .ext { stroke: var(--ink-2); stroke-opacity: .35; stroke-width: .8px; }
+svg.geo .dim .plumb, svg.geo .rr { stroke: var(--ink-2); stroke-opacity: .55; stroke-width: 1px; stroke-dasharray: 3 3; }
+svg.geo .dim .lvl { stroke-dasharray: 2 3; stroke-opacity: .6; }
+svg.geo .dim.rfd .dl, svg.geo .dim.rfd .tk, svg.geo .dim.rfd .ext { stroke: var(--part); }
+svg.geo .dim.bkd .dl, svg.geo .dim.bkd .tk, svg.geo .dim.bkd .ext { stroke: var(--frame); }
+svg.geo text.dt { font: 400 calc(var(--k) * 11px) var(--mono); fill: var(--ink); paint-order: stroke; stroke: var(--draw-bg); stroke-width: 3px; stroke-linejoin: round; }
+svg.geo text.bbl { font: 400 calc(var(--k) * 11px) var(--mono); fill: var(--ink); }
+@media (max-width: 520px) {
+  svg.geo.main text.dt, svg.geo.main text.bbl { font-size: calc(var(--k) * 19px); }
+  svg.geo.main .gl { font-size: calc(var(--k) * 16px); }
+}
+.filebar { display: flex; gap: 8px 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-top: -8px; min-height: 0; }
+.filebar-in { flex: 1 1 auto; display: flex; gap: 8px 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.filebar:has(> .filebar-in:empty) { display: none; }
+.file-btns { display: flex; gap: 8px 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; margin-left: auto; }
+.file-status { font-size: 13px; color: var(--ink-2); flex: 1 1 260px; }
+.file-status b { color: var(--ink); font-weight: 600; }
+.file-status.ok::before, .file-status.warn::before { content: ""; display: inline-block; vertical-align: middle; margin: 0 7px 2px 0; width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+.file-status.warn::before { background: var(--part); }
+.filebar .btn { padding: 5px 11px; font-size: 13px; }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <svg class="mark px" viewBox="0 0 24 20" shape-rendering="crispEdges" role="img" aria-label="Bikefit Simulator logo: the three fit points, saddle, hands and bottom bracket, joined in a triangle"><path class="px-ol" d="M2.5 2.5h4v.25h-4zM2.5 2.75h4v.25h-4zM2.5 3h0.5v.25h-0.5zM6 3h0.5v.25h-0.5zM2.5 3.25h0.5v.25h-0.5zM6 3.25h0.5v.25h-0.5zM2.5 3.5h0.5v.25h-0.5zM6 3.5h1.5v.25h-1.5zM2.5 3.75h0.5v.25h-0.5zM6 3.75h1.5v.25h-1.5zM2.5 4h0.5v.25h-0.5zM7 4h0.5v.25h-0.5zM2.5 4.25h0.5v.25h-0.5zM7 4.25h0.5v.25h-0.5zM2.5 4.5h0.5v.25h-0.5zM7 4.5h5.5v.25h-5.5zM2.5 4.75h0.5v.25h-0.5zM7 4.75h5.5v.25h-5.5zM2.5 5h0.5v.25h-0.5zM6 5h1v.25h-1zM12 5h0.5v.25h-0.5zM2.5 5.25h0.5v.25h-0.5zM6 5.25h1v.25h-1zM12 5.25h0.5v.25h-0.5zM2.5 5.5h0.5v.25h-0.5zM6 5.5h1v.25h-1zM12 5.5h10.5v.25h-10.5zM2.5 5.75h0.5v.25h-0.5zM6 5.75h1v.25h-1zM12 5.75h10.5v.25h-10.5zM2.5 6h2.5v.25h-2.5zM6 6h6v.25h-6zM18 6h1v.25h-1zM22 6h0.5v.25h-0.5zM2.5 6.25h2.5v.25h-2.5zM6 6.25h6v.25h-6zM18 6.25h1v.25h-1zM22 6.25h0.5v.25h-0.5zM4.5 6.5h0.5v.25h-0.5zM6 6.5h0.5v.25h-0.5zM11.5 6.5h0.5v.25h-0.5zM18 6.5h1v.25h-1zM22 6.5h0.5v.25h-0.5zM4.5 6.75h0.5v.25h-0.5zM6 6.75h0.5v.25h-0.5zM11.5 6.75h0.5v.25h-0.5zM18 6.75h1v.25h-1zM22 6.75h0.5v.25h-0.5zM4.5 7h0.5v.25h-0.5zM6 7h0.5v.25h-0.5zM11.5 7h6.5v.25h-6.5zM22 7h0.5v.25h-0.5zM4.5 7.25h0.5v.25h-0.5zM6 7.25h0.5v.25h-0.5zM11.5 7.25h6.5v.25h-6.5zM22 7.25h0.5v.25h-0.5zM4.5 7.5h0.5v.25h-0.5zM6 7.5h1.5v.25h-1.5zM17.5 7.5h0.5v.25h-0.5zM22 7.5h0.5v.25h-0.5zM4.5 7.75h0.5v.25h-0.5zM6 7.75h1.5v.25h-1.5zM17.5 7.75h0.5v.25h-0.5zM22 7.75h0.5v.25h-0.5zM4.5 8h1.5v.25h-1.5zM7 8h0.5v.25h-0.5zM17.5 8h1.5v.25h-1.5zM22 8h0.5v.25h-0.5zM4.5 8.25h1.5v.25h-1.5zM7 8.25h0.5v.25h-0.5zM17.5 8.25h1.5v.25h-1.5zM22 8.25h0.5v.25h-0.5zM5.5 8.5h0.5v.25h-0.5zM7 8.5h0.5v.25h-0.5zM16.5 8.5h2.5v.25h-2.5zM22 8.5h0.5v.25h-0.5zM5.5 8.75h0.5v.25h-0.5zM7 8.75h0.5v.25h-0.5zM16.5 8.75h2.5v.25h-2.5zM22 8.75h0.5v.25h-0.5zM5.5 9h0.5v.25h-0.5zM7 9h0.5v.25h-0.5zM16.5 9h0.5v.25h-0.5zM19 9h3.5v.25h-3.5zM5.5 9.25h0.5v.25h-0.5zM7 9.25h0.5v.25h-0.5zM16.5 9.25h0.5v.25h-0.5zM19 9.25h3.5v.25h-3.5zM5.5 9.5h0.5v.25h-0.5zM7 9.5h0.5v.25h-0.5zM15.5 9.5h1.5v.25h-1.5zM19 9.5h0.5v.25h-0.5zM5.5 9.75h0.5v.25h-0.5zM7 9.75h0.5v.25h-0.5zM15.5 9.75h1.5v.25h-1.5zM19 9.75h0.5v.25h-0.5zM5.5 10h0.5v.25h-0.5zM7 10h0.5v.25h-0.5zM15.5 10h0.5v.25h-0.5zM17 10h2.5v.25h-2.5zM5.5 10.25h0.5v.25h-0.5zM7 10.25h0.5v.25h-0.5zM15.5 10.25h0.5v.25h-0.5zM17 10.25h2.5v.25h-2.5zM5.5 10.5h0.5v.25h-0.5zM7 10.5h1.5v.25h-1.5zM14.5 10.5h1.5v.25h-1.5zM17 10.5h0.5v.25h-0.5zM5.5 10.75h0.5v.25h-0.5zM7 10.75h1.5v.25h-1.5zM14.5 10.75h1.5v.25h-1.5zM17 10.75h0.5v.25h-0.5zM5.5 11h1.5v.25h-1.5zM8 11h0.5v.25h-0.5zM14.5 11h0.5v.25h-0.5zM16 11h1.5v.25h-1.5zM5.5 11.25h1.5v.25h-1.5zM8 11.25h0.5v.25h-0.5zM14.5 11.25h0.5v.25h-0.5zM16 11.25h1.5v.25h-1.5zM6.5 11.5h0.5v.25h-0.5zM8 11.5h0.5v.25h-0.5zM13.5 11.5h1.5v.25h-1.5zM16 11.5h0.5v.25h-0.5zM6.5 11.75h0.5v.25h-0.5zM8 11.75h0.5v.25h-0.5zM13.5 11.75h1.5v.25h-1.5zM16 11.75h0.5v.25h-0.5zM6.5 12h0.5v.25h-0.5zM8 12h0.5v.25h-0.5zM13.5 12h0.5v.25h-0.5zM15 12h1.5v.25h-1.5zM6.5 12.25h0.5v.25h-0.5zM8 12.25h0.5v.25h-0.5zM13.5 12.25h0.5v.25h-0.5zM15 12.25h1.5v.25h-1.5zM6.5 12.5h0.5v.25h-0.5zM8 12.5h1.5v.25h-1.5zM12.5 12.5h1.5v.25h-1.5zM15 12.5h0.5v.25h-0.5zM6.5 12.75h0.5v.25h-0.5zM8 12.75h1.5v.25h-1.5zM12.5 12.75h1.5v.25h-1.5zM15 12.75h0.5v.25h-0.5zM6.5 13h1.5v.25h-1.5zM9 13h0.5v.25h-0.5zM12.5 13h0.5v.25h-0.5zM14 13h1.5v.25h-1.5zM6.5 13.25h1.5v.25h-1.5zM9 13.25h0.5v.25h-0.5zM12.5 13.25h0.5v.25h-0.5zM14 13.25h1.5v.25h-1.5zM7.5 13.5h0.5v.25h-0.5zM9 13.5h0.5v.25h-0.5zM10.5 13.5h2.5v.25h-2.5zM14 13.5h0.5v.25h-0.5zM7.5 13.75h0.5v.25h-0.5zM9 13.75h0.5v.25h-0.5zM10.5 13.75h2.5v.25h-2.5zM14 13.75h0.5v.25h-0.5zM7.5 14h0.5v.25h-0.5zM9 14h0.5v.25h-0.5zM10.5 14h0.5v.25h-0.5zM13 14h1.5v.25h-1.5zM7.5 14.25h0.5v.25h-0.5zM9 14.25h0.5v.25h-0.5zM10.5 14.25h0.5v.25h-0.5zM13 14.25h1.5v.25h-1.5zM7.5 14.5h0.5v.25h-0.5zM9 14.5h2v.25h-2zM13 14.5h0.5v.25h-0.5zM7.5 14.75h0.5v.25h-0.5zM9 14.75h2v.25h-2zM13 14.75h0.5v.25h-0.5zM7.5 15h0.5v.25h-0.5zM11 15h2.5v.25h-2.5zM7.5 15.25h0.5v.25h-0.5zM11 15.25h2.5v.25h-2.5zM7.5 15.5h0.5v.25h-0.5zM11 15.5h0.5v.25h-0.5zM7.5 15.75h0.5v.25h-0.5zM11 15.75h0.5v.25h-0.5zM7.5 16h0.5v.25h-0.5zM11 16h0.5v.25h-0.5zM7.5 16.25h0.5v.25h-0.5zM11 16.25h0.5v.25h-0.5zM7.5 16.5h0.5v.25h-0.5zM11 16.5h0.5v.25h-0.5zM7.5 16.75h0.5v.25h-0.5zM11 16.75h0.5v.25h-0.5zM7.5 17h0.5v.25h-0.5zM11 17h0.5v.25h-0.5zM7.5 17.25h0.5v.25h-0.5zM11 17.25h0.5v.25h-0.5zM7.5 17.5h0.5v.25h-0.5zM11 17.5h0.5v.25h-0.5zM7.5 17.75h0.5v.25h-0.5zM11 17.75h0.5v.25h-0.5zM7.5 18h4v.25h-4zM7.5 18.25h4v.25h-4z"></path><path class="px-line" d="M6 4h1v1h-1zM7 5h5v1h-5zM5 6h1v1h-1zM12 6h6v1h-6zM5 7h1v1h-1zM18 7h1v1h-1zM6 8h1v1h-1zM6 9h1v1h-1zM17 9h2v1h-2zM6 10h1v1h-1zM16 10h1v1h-1zM7 11h1v1h-1zM15 11h1v1h-1zM7 12h1v1h-1zM14 12h1v1h-1zM8 13h1v1h-1zM13 13h1v1h-1zM8 14h1v1h-1zM11 14h2v1h-2z"></path><path class="px-ring" d="M2.5 2.5h4v.25h-4zM2.5 2.75h4v.25h-4zM2.5 3h0.5v.25h-0.5zM6 3h0.5v.25h-0.5zM2.5 3.25h0.5v.25h-0.5zM6 3.25h0.5v.25h-0.5zM2.5 3.5h0.5v.25h-0.5zM6 3.5h0.5v.25h-0.5zM2.5 3.75h0.5v.25h-0.5zM6 3.75h0.5v.25h-0.5zM2.5 4h0.5v.25h-0.5zM6 4h0.5v.25h-0.5zM2.5 4.25h0.5v.25h-0.5zM6 4.25h0.5v.25h-0.5zM2.5 4.5h0.5v.25h-0.5zM6 4.5h0.5v.25h-0.5zM2.5 4.75h0.5v.25h-0.5zM6 4.75h0.5v.25h-0.5zM2.5 5h0.5v.25h-0.5zM6 5h0.5v.25h-0.5zM2.5 5.25h0.5v.25h-0.5zM6 5.25h0.5v.25h-0.5zM2.5 5.5h0.5v.25h-0.5zM6 5.5h0.5v.25h-0.5zM18.5 5.5h4v.25h-4zM2.5 5.75h0.5v.25h-0.5zM6 5.75h0.5v.25h-0.5zM18.5 5.75h4v.25h-4zM2.5 6h4v.25h-4zM18.5 6h0.5v.25h-0.5zM22 6h0.5v.25h-0.5zM2.5 6.25h4v.25h-4zM18.5 6.25h0.5v.25h-0.5zM22 6.25h0.5v.25h-0.5zM18.5 6.5h0.5v.25h-0.5zM22 6.5h0.5v.25h-0.5zM18.5 6.75h0.5v.25h-0.5zM22 6.75h0.5v.25h-0.5zM18.5 7h0.5v.25h-0.5zM22 7h0.5v.25h-0.5zM18.5 7.25h0.5v.25h-0.5zM22 7.25h0.5v.25h-0.5zM18.5 7.5h0.5v.25h-0.5zM22 7.5h0.5v.25h-0.5zM18.5 7.75h0.5v.25h-0.5zM22 7.75h0.5v.25h-0.5zM18.5 8h0.5v.25h-0.5zM22 8h0.5v.25h-0.5zM18.5 8.25h0.5v.25h-0.5zM22 8.25h0.5v.25h-0.5zM18.5 8.5h0.5v.25h-0.5zM22 8.5h0.5v.25h-0.5zM18.5 8.75h0.5v.25h-0.5zM22 8.75h0.5v.25h-0.5zM18.5 9h4v.25h-4zM18.5 9.25h4v.25h-4zM7.5 14.5h4v.25h-4zM7.5 14.75h4v.25h-4zM7.5 15h0.5v.25h-0.5zM11 15h0.5v.25h-0.5zM7.5 15.25h0.5v.25h-0.5zM11 15.25h0.5v.25h-0.5zM7.5 15.5h0.5v.25h-0.5zM11 15.5h0.5v.25h-0.5zM7.5 15.75h0.5v.25h-0.5zM11 15.75h0.5v.25h-0.5zM7.5 16h0.5v.25h-0.5zM11 16h0.5v.25h-0.5zM7.5 16.25h0.5v.25h-0.5zM11 16.25h0.5v.25h-0.5zM7.5 16.5h0.5v.25h-0.5zM11 16.5h0.5v.25h-0.5zM7.5 16.75h0.5v.25h-0.5zM11 16.75h0.5v.25h-0.5zM7.5 17h0.5v.25h-0.5zM11 17h0.5v.25h-0.5zM7.5 17.25h0.5v.25h-0.5zM11 17.25h0.5v.25h-0.5zM7.5 17.5h0.5v.25h-0.5zM11 17.5h0.5v.25h-0.5zM7.5 17.75h0.5v.25h-0.5zM11 17.75h0.5v.25h-0.5zM7.5 18h4v.25h-4zM7.5 18.25h4v.25h-4z"></path><path class="px-p1" d="M3 3h3v1h-3zM3 4h3v1h-3zM3 5h3v1h-3z"></path><path class="px-p2" d="M19 6h3v1h-3zM19 7h3v1h-3zM19 8h3v1h-3z"></path><path class="px-p3" d="M8 15h3v1h-3zM8 16h3v1h-3zM8 17h3v1h-3z"></path></svg>
+      <div class="brand-text">
+        <h1>Bikefit <span class="h1-sim">Sim</span>ulator</h1>
+        <p class="tag">Simulate your bikefit on any bike in three steps</p>
+      </div>
+      <svg class="mark px flip" viewBox="0 0 24 20" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path class="px-ol" d="M2.5 2.5h4v.25h-4zM2.5 2.75h4v.25h-4zM2.5 3h0.5v.25h-0.5zM6 3h0.5v.25h-0.5zM2.5 3.25h0.5v.25h-0.5zM6 3.25h0.5v.25h-0.5zM2.5 3.5h0.5v.25h-0.5zM6 3.5h1.5v.25h-1.5zM2.5 3.75h0.5v.25h-0.5zM6 3.75h1.5v.25h-1.5zM2.5 4h0.5v.25h-0.5zM7 4h0.5v.25h-0.5zM2.5 4.25h0.5v.25h-0.5zM7 4.25h0.5v.25h-0.5zM2.5 4.5h0.5v.25h-0.5zM7 4.5h5.5v.25h-5.5zM2.5 4.75h0.5v.25h-0.5zM7 4.75h5.5v.25h-5.5zM2.5 5h0.5v.25h-0.5zM6 5h1v.25h-1zM12 5h0.5v.25h-0.5zM2.5 5.25h0.5v.25h-0.5zM6 5.25h1v.25h-1zM12 5.25h0.5v.25h-0.5zM2.5 5.5h0.5v.25h-0.5zM6 5.5h1v.25h-1zM12 5.5h10.5v.25h-10.5zM2.5 5.75h0.5v.25h-0.5zM6 5.75h1v.25h-1zM12 5.75h10.5v.25h-10.5zM2.5 6h2.5v.25h-2.5zM6 6h6v.25h-6zM18 6h1v.25h-1zM22 6h0.5v.25h-0.5zM2.5 6.25h2.5v.25h-2.5zM6 6.25h6v.25h-6zM18 6.25h1v.25h-1zM22 6.25h0.5v.25h-0.5zM4.5 6.5h0.5v.25h-0.5zM6 6.5h0.5v.25h-0.5zM11.5 6.5h0.5v.25h-0.5zM18 6.5h1v.25h-1zM22 6.5h0.5v.25h-0.5zM4.5 6.75h0.5v.25h-0.5zM6 6.75h0.5v.25h-0.5zM11.5 6.75h0.5v.25h-0.5zM18 6.75h1v.25h-1zM22 6.75h0.5v.25h-0.5zM4.5 7h0.5v.25h-0.5zM6 7h0.5v.25h-0.5zM11.5 7h6.5v.25h-6.5zM22 7h0.5v.25h-0.5zM4.5 7.25h0.5v.25h-0.5zM6 7.25h0.5v.25h-0.5zM11.5 7.25h6.5v.25h-6.5zM22 7.25h0.5v.25h-0.5zM4.5 7.5h0.5v.25h-0.5zM6 7.5h1.5v.25h-1.5zM17.5 7.5h0.5v.25h-0.5zM22 7.5h0.5v.25h-0.5zM4.5 7.75h0.5v.25h-0.5zM6 7.75h1.5v.25h-1.5zM17.5 7.75h0.5v.25h-0.5zM22 7.75h0.5v.25h-0.5zM4.5 8h1.5v.25h-1.5zM7 8h0.5v.25h-0.5zM17.5 8h1.5v.25h-1.5zM22 8h0.5v.25h-0.5zM4.5 8.25h1.5v.25h-1.5zM7 8.25h0.5v.25h-0.5zM17.5 8.25h1.5v.25h-1.5zM22 8.25h0.5v.25h-0.5zM5.5 8.5h0.5v.25h-0.5zM7 8.5h0.5v.25h-0.5zM16.5 8.5h2.5v.25h-2.5zM22 8.5h0.5v.25h-0.5zM5.5 8.75h0.5v.25h-0.5zM7 8.75h0.5v.25h-0.5zM16.5 8.75h2.5v.25h-2.5zM22 8.75h0.5v.25h-0.5zM5.5 9h0.5v.25h-0.5zM7 9h0.5v.25h-0.5zM16.5 9h0.5v.25h-0.5zM19 9h3.5v.25h-3.5zM5.5 9.25h0.5v.25h-0.5zM7 9.25h0.5v.25h-0.5zM16.5 9.25h0.5v.25h-0.5zM19 9.25h3.5v.25h-3.5zM5.5 9.5h0.5v.25h-0.5zM7 9.5h0.5v.25h-0.5zM15.5 9.5h1.5v.25h-1.5zM19 9.5h0.5v.25h-0.5zM5.5 9.75h0.5v.25h-0.5zM7 9.75h0.5v.25h-0.5zM15.5 9.75h1.5v.25h-1.5zM19 9.75h0.5v.25h-0.5zM5.5 10h0.5v.25h-0.5zM7 10h0.5v.25h-0.5zM15.5 10h0.5v.25h-0.5zM17 10h2.5v.25h-2.5zM5.5 10.25h0.5v.25h-0.5zM7 10.25h0.5v.25h-0.5zM15.5 10.25h0.5v.25h-0.5zM17 10.25h2.5v.25h-2.5zM5.5 10.5h0.5v.25h-0.5zM7 10.5h1.5v.25h-1.5zM14.5 10.5h1.5v.25h-1.5zM17 10.5h0.5v.25h-0.5zM5.5 10.75h0.5v.25h-0.5zM7 10.75h1.5v.25h-1.5zM14.5 10.75h1.5v.25h-1.5zM17 10.75h0.5v.25h-0.5zM5.5 11h1.5v.25h-1.5zM8 11h0.5v.25h-0.5zM14.5 11h0.5v.25h-0.5zM16 11h1.5v.25h-1.5zM5.5 11.25h1.5v.25h-1.5zM8 11.25h0.5v.25h-0.5zM14.5 11.25h0.5v.25h-0.5zM16 11.25h1.5v.25h-1.5zM6.5 11.5h0.5v.25h-0.5zM8 11.5h0.5v.25h-0.5zM13.5 11.5h1.5v.25h-1.5zM16 11.5h0.5v.25h-0.5zM6.5 11.75h0.5v.25h-0.5zM8 11.75h0.5v.25h-0.5zM13.5 11.75h1.5v.25h-1.5zM16 11.75h0.5v.25h-0.5zM6.5 12h0.5v.25h-0.5zM8 12h0.5v.25h-0.5zM13.5 12h0.5v.25h-0.5zM15 12h1.5v.25h-1.5zM6.5 12.25h0.5v.25h-0.5zM8 12.25h0.5v.25h-0.5zM13.5 12.25h0.5v.25h-0.5zM15 12.25h1.5v.25h-1.5zM6.5 12.5h0.5v.25h-0.5zM8 12.5h1.5v.25h-1.5zM12.5 12.5h1.5v.25h-1.5zM15 12.5h0.5v.25h-0.5zM6.5 12.75h0.5v.25h-0.5zM8 12.75h1.5v.25h-1.5zM12.5 12.75h1.5v.25h-1.5zM15 12.75h0.5v.25h-0.5zM6.5 13h1.5v.25h-1.5zM9 13h0.5v.25h-0.5zM12.5 13h0.5v.25h-0.5zM14 13h1.5v.25h-1.5zM6.5 13.25h1.5v.25h-1.5zM9 13.25h0.5v.25h-0.5zM12.5 13.25h0.5v.25h-0.5zM14 13.25h1.5v.25h-1.5zM7.5 13.5h0.5v.25h-0.5zM9 13.5h0.5v.25h-0.5zM10.5 13.5h2.5v.25h-2.5zM14 13.5h0.5v.25h-0.5zM7.5 13.75h0.5v.25h-0.5zM9 13.75h0.5v.25h-0.5zM10.5 13.75h2.5v.25h-2.5zM14 13.75h0.5v.25h-0.5zM7.5 14h0.5v.25h-0.5zM9 14h0.5v.25h-0.5zM10.5 14h0.5v.25h-0.5zM13 14h1.5v.25h-1.5zM7.5 14.25h0.5v.25h-0.5zM9 14.25h0.5v.25h-0.5zM10.5 14.25h0.5v.25h-0.5zM13 14.25h1.5v.25h-1.5zM7.5 14.5h0.5v.25h-0.5zM9 14.5h2v.25h-2zM13 14.5h0.5v.25h-0.5zM7.5 14.75h0.5v.25h-0.5zM9 14.75h2v.25h-2zM13 14.75h0.5v.25h-0.5zM7.5 15h0.5v.25h-0.5zM11 15h2.5v.25h-2.5zM7.5 15.25h0.5v.25h-0.5zM11 15.25h2.5v.25h-2.5zM7.5 15.5h0.5v.25h-0.5zM11 15.5h0.5v.25h-0.5zM7.5 15.75h0.5v.25h-0.5zM11 15.75h0.5v.25h-0.5zM7.5 16h0.5v.25h-0.5zM11 16h0.5v.25h-0.5zM7.5 16.25h0.5v.25h-0.5zM11 16.25h0.5v.25h-0.5zM7.5 16.5h0.5v.25h-0.5zM11 16.5h0.5v.25h-0.5zM7.5 16.75h0.5v.25h-0.5zM11 16.75h0.5v.25h-0.5zM7.5 17h0.5v.25h-0.5zM11 17h0.5v.25h-0.5zM7.5 17.25h0.5v.25h-0.5zM11 17.25h0.5v.25h-0.5zM7.5 17.5h0.5v.25h-0.5zM11 17.5h0.5v.25h-0.5zM7.5 17.75h0.5v.25h-0.5zM11 17.75h0.5v.25h-0.5zM7.5 18h4v.25h-4zM7.5 18.25h4v.25h-4z"></path><path class="px-line" d="M6 4h1v1h-1zM7 5h5v1h-5zM5 6h1v1h-1zM12 6h6v1h-6zM5 7h1v1h-1zM18 7h1v1h-1zM6 8h1v1h-1zM6 9h1v1h-1zM17 9h2v1h-2zM6 10h1v1h-1zM16 10h1v1h-1zM7 11h1v1h-1zM15 11h1v1h-1zM7 12h1v1h-1zM14 12h1v1h-1zM8 13h1v1h-1zM13 13h1v1h-1zM8 14h1v1h-1zM11 14h2v1h-2z"></path><path class="px-ring" d="M2.5 2.5h4v.25h-4zM2.5 2.75h4v.25h-4zM2.5 3h0.5v.25h-0.5zM6 3h0.5v.25h-0.5zM2.5 3.25h0.5v.25h-0.5zM6 3.25h0.5v.25h-0.5zM2.5 3.5h0.5v.25h-0.5zM6 3.5h0.5v.25h-0.5zM2.5 3.75h0.5v.25h-0.5zM6 3.75h0.5v.25h-0.5zM2.5 4h0.5v.25h-0.5zM6 4h0.5v.25h-0.5zM2.5 4.25h0.5v.25h-0.5zM6 4.25h0.5v.25h-0.5zM2.5 4.5h0.5v.25h-0.5zM6 4.5h0.5v.25h-0.5zM2.5 4.75h0.5v.25h-0.5zM6 4.75h0.5v.25h-0.5zM2.5 5h0.5v.25h-0.5zM6 5h0.5v.25h-0.5zM2.5 5.25h0.5v.25h-0.5zM6 5.25h0.5v.25h-0.5zM2.5 5.5h0.5v.25h-0.5zM6 5.5h0.5v.25h-0.5zM18.5 5.5h4v.25h-4zM2.5 5.75h0.5v.25h-0.5zM6 5.75h0.5v.25h-0.5zM18.5 5.75h4v.25h-4zM2.5 6h4v.25h-4zM18.5 6h0.5v.25h-0.5zM22 6h0.5v.25h-0.5zM2.5 6.25h4v.25h-4zM18.5 6.25h0.5v.25h-0.5zM22 6.25h0.5v.25h-0.5zM18.5 6.5h0.5v.25h-0.5zM22 6.5h0.5v.25h-0.5zM18.5 6.75h0.5v.25h-0.5zM22 6.75h0.5v.25h-0.5zM18.5 7h0.5v.25h-0.5zM22 7h0.5v.25h-0.5zM18.5 7.25h0.5v.25h-0.5zM22 7.25h0.5v.25h-0.5zM18.5 7.5h0.5v.25h-0.5zM22 7.5h0.5v.25h-0.5zM18.5 7.75h0.5v.25h-0.5zM22 7.75h0.5v.25h-0.5zM18.5 8h0.5v.25h-0.5zM22 8h0.5v.25h-0.5zM18.5 8.25h0.5v.25h-0.5zM22 8.25h0.5v.25h-0.5zM18.5 8.5h0.5v.25h-0.5zM22 8.5h0.5v.25h-0.5zM18.5 8.75h0.5v.25h-0.5zM22 8.75h0.5v.25h-0.5zM18.5 9h4v.25h-4zM18.5 9.25h4v.25h-4zM7.5 14.5h4v.25h-4zM7.5 14.75h4v.25h-4zM7.5 15h0.5v.25h-0.5zM11 15h0.5v.25h-0.5zM7.5 15.25h0.5v.25h-0.5zM11 15.25h0.5v.25h-0.5zM7.5 15.5h0.5v.25h-0.5zM11 15.5h0.5v.25h-0.5zM7.5 15.75h0.5v.25h-0.5zM11 15.75h0.5v.25h-0.5zM7.5 16h0.5v.25h-0.5zM11 16h0.5v.25h-0.5zM7.5 16.25h0.5v.25h-0.5zM11 16.25h0.5v.25h-0.5zM7.5 16.5h0.5v.25h-0.5zM11 16.5h0.5v.25h-0.5zM7.5 16.75h0.5v.25h-0.5zM11 16.75h0.5v.25h-0.5zM7.5 17h0.5v.25h-0.5zM11 17h0.5v.25h-0.5zM7.5 17.25h0.5v.25h-0.5zM11 17.25h0.5v.25h-0.5zM7.5 17.5h0.5v.25h-0.5zM11 17.5h0.5v.25h-0.5zM7.5 17.75h0.5v.25h-0.5zM11 17.75h0.5v.25h-0.5zM7.5 18h4v.25h-4zM7.5 18.25h4v.25h-4z"></path><path class="px-p1" d="M3 3h3v1h-3zM3 4h3v1h-3zM3 5h3v1h-3z"></path><path class="px-p2" d="M19 6h3v1h-3zM19 7h3v1h-3zM19 8h3v1h-3z"></path><path class="px-p3" d="M8 15h3v1h-3zM8 16h3v1h-3zM8 17h3v1h-3z"></path></svg>
+    </div>
+  </header>
+
+  <div class="filebar">
+    <div class="filebar-in" id="fileBar" aria-live="polite"></div>
+  </div>
+  <input type="file" id="fileInput" accept=".json,application/json" hidden>
+
+
+
+
+  <!-- step 1, Input: saved frames, saddles and cockpits, one under the other (Z) -->
+  <section class="sheet" aria-labelledby="inTitle">
+    <div class="sec-head">
+      <span class="step">1</span><h2 id="inTitle">Library</h2>
+    </div>
+    <div class="lib-grid">
+      <details class="parts lib" open><summary>Frames</summary><div class="tabs" id="frameTabs" role="tablist" aria-label="Saved frames"></div><div class="lib-form" id="frameForm"></div></details>
+      <details class="parts lib" open><summary>Saddles</summary><div class="tabs" id="saddleTabs" role="tablist" aria-label="Saved saddles"></div><div class="lib-form" id="saddleForm"></div></details>
+      <details class="parts lib" open><summary>Cockpits</summary><div class="tabs" id="barTabs" role="tablist" aria-label="Saved cockpits"></div><div class="lib-form" id="barForm"></div></details>
+    </div>
+  </section>
+
+  <!-- step 2, Input: the reference and the target bikes, two unnumbered windows side by side (Z) -->
+  <section class="sheet" aria-labelledby="selTitle">
+    <div class="sec-head">
+      <span class="step">2</span><h2 id="selTitle">Input</h2>
+    </div>
+    <div class="sel-pair">
+      <section class="sheet sub" aria-labelledby="refTitle">
+        <div class="sec-head">
+          <h3 id="refTitle">Reference</h3>
+        </div>
+        <div class="kinds-row">
+          <div class="kinds" id="refKinds" role="tablist" aria-label="Kind of reference"></div>
+        </div>
+        <div class="tabs" id="refTabs" role="tablist" aria-label="Bikefits"></div>
+        <div class="ref-name" id="refName"></div>
+        <div class="pick-grid" id="refForm"></div>
+        <div class="ref-checks" id="cpCard" aria-live="polite" hidden></div>
+        <div class="row-actions" id="refActions"></div>
+      </section>
+      <section class="sheet sub" aria-labelledby="bikeTitle">
+        <div class="sec-head">
+          <h3 id="bikeTitle">Target</h3>
+        </div>
+        <div class="tabs" id="tabs" role="tablist" aria-label="Target bikes"></div>
+        <div class="bike-form" id="bikeForm"></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="outTitle">
+    <div class="sec-head">
+      <span class="step">3</span><h2 id="outTitle">Output</h2>
+    </div>
+    <details class="parts opts" id="optsBox" open>
+      <summary>Component options</summary>
+      <div id="optFields"></div>
+      <div class="ref-checks" id="optCard" aria-live="polite" hidden></div>
+      <div id="optList"></div>
+    </details>
+    <div class="bike-out" id="bikeOut" aria-live="polite"></div>
+    <div class="viz-wrap" id="vizWrap" aria-live="polite"></div>
+  </section>
+
+  <section class="sheet alt" aria-labelledby="cmpTitle">
+    <div class="sec-head">
+      <h2 id="cmpTitle">Summary</h2>
+    </div>
+    <div class="tbl-wrap" id="cmp"></div>
+  </section>
+
+  <!-- what each field means: no longer shown as a section (Z), only read for the tooltips on the fields -->
+  <section class="how-data" hidden>
+    <div class="how">
+      <div id="m-sta"><h4>Seat tube angle</h4><p>From the geometry chart, or measured from horizontal with the bike level.</p></div>
+      <div id="m-hta"><h4>Head tube angle</h4><p>From the geometry chart, or measured from horizontal with the bike level.</p></div>
+      <div id="m-htLength"><h4>Head tube length</h4><p>End to end along the head tube.</p></div>
+      <div id="m-bbDrop"><h4>BB drop</h4><p>How far the BB centre sits below a line between the two axles.</p></div>
+      <div id="m-ett"><h4>Top tube (eff.)</h4><p>Measured level from the top of the head tube back to the seat tube line. Enter this, the actual top tube or the reach.</p></div>
+      <div id="m-att"><h4>Top tube (actual)</h4><p>Along the top tube, centre to centre. Enter this, the effective top tube or the reach.</p></div>
+      <div id="m-seatTube"><h4>Seat tube (c-t)</h4><p>BB centre to the top of the seat tube. Enter this or the c-c.</p></div>
+      <div id="m-seatTubeCC"><h4>Seat tube (c-c)</h4><p>BB centre to the centre of the top tube junction. Enter this or the c-t.</p></div>
+      <div id="m-forkA2C"><h4>Fork length</h4><p>Axle to crown race, plus any lower headset cup. Optional when you enter the stack.</p></div>
+      <div id="m-forkOffset"><h4>Fork offset</h4><p>Also called rake: how far the front axle sits ahead of the steering axis.</p></div>
+      <div id="m-stack" class="opt"><h4>Stack</h4><p>Height of the top of the head tube above the BB centre. When given, it is used instead of the one worked out from the tubes.</p></div>
+      <div id="m-reach" class="opt"><h4>Reach</h4><p>Level distance from the BB centre to the top of the head tube. When given, it is used instead of the one worked out from the tubes.</p></div>
+      <div id="m-chainstay" class="opt"><h4>Chainstay</h4><p>BB centre to rear axle. Places the rear wheel. With it on both frames, they are also drawn on level ground.</p></div>
+      <div id="m-wheelbase" class="opt"><h4>Wheelbase</h4><p>Axle to axle. With the chainstay, places the front wheel exactly.</p></div>
+      <div id="m-tyre" class="opt"><h4>Tyre width</h4><p>Tyre width. Only used in the drawings: wheel size, BB height and trail.</p></div>
+      <div id="m-wheel" class="opt"><h4>Wheel size</h4><p>The rim size. Like the tyre width, only used in the drawings. A target bike follows its reference until you pick another size.</p></div>
+
+      <div id="m-saddleHeight"><h4>Saddle height on a bikefit</h4><p>BB centre to the top of the saddle, along the seat tube.</p></div>
+      <div id="m-saddleLine"><h4>Saddle height on a personal fit</h4><p>Straight line from the BB centre to the saddle tip. It reads about 30 mm less than along the seat tube.</p></div>
+      <div id="m-setback"><h4>Saddle setback</h4><p>With the bike level, hang a plumb line from the saddle tip and measure level from it back to the BB centre.</p></div>
+      <div id="m-frameId"><h4>Frame</h4><p>Pick a frame saved in Library, where its geometry is entered.</p></div>
+      <div id="m-saddleId"><h4>Saddle</h4><p>Pick a saddle saved in Library. A reference needs one; on a target bike, Same as reference uses the reference's saddle.</p></div>
+      <div id="m-saddleLen"><h4>Saddle length</h4><p>Measured level from the tip to the back of the saddle.</p></div>
+      <div id="m-tipToRails"><h4>Tip to rail centre</h4><p>Measured level from the saddle tip to a point above the middle of the rail markings.</p></div>
+      <div id="m-railTravel"><h4>Saddle rail length</h4><p>Length of the adjustment markings on the rails. The seatpost clamp has to stay inside them.</p></div>
+      <div id="m-railH"><h4>Rail height</h4><p>Vertical distance from the top of the saddle down to the rails, at the seatpost clamp.</p></div>
+      <div id="m-clampLen"><h4>Seatpost clamp</h4><p>Length of the seatpost's rail clamp, front to back. Saved with the saddle, since it decides how far the saddle can slide.</p></div>
+
+      <div id="m-spacers"><h4>Spacers under stem</h4><p>Everything between the top of the head tube and the stem, top cap included.</p></div>
+      <div id="m-stemLength"><h4>Stem length</h4><p>As printed on the stem: steerer centre to bar clamp centre.</p></div>
+      <div id="m-stemAngle"><h4>Stem angle</h4><p>As printed on the stem. Negative points down, for example −6.</p></div>
+      <div id="m-riderReach"><h4>Personal reach</h4><p>Straight line from the saddle tip to your hand point, where the web between thumb and index finger touches the bar.</p></div>
+      <div id="m-drop"><h4>Hand drop</h4><p>Vertical distance from the saddle top down to your hand point. Negative if the hands are higher.</p></div>
+      <div id="m-stemH"><h4>Stem height</h4><p>Height of the stem where it clamps the steerer.</p></div>
+      <div id="m-handX"><h4>Hand X</h4><p>Measured level from the top centre of the stem's bar clamp to your hand point. Forward is positive. Tops, hoods, drops or flat bar grips all work.</p></div>
+      <div id="m-handY"><h4>Hand Y</h4><p>Measured vertically from the top centre of the stem's bar clamp to your hand point. Up is positive.</p></div>
+      <div id="m-barWidth"><h4>Hand width</h4><p>Centre to centre between your hands at that position.</p></div>
+      <div id="m-barId"><h4>Cockpit</h4><p>Pick a cockpit saved in Library. A reference needs one; on a target bike, Same as reference keeps the reference's stem height and hand position. A target bike that picks one uses its stem height, hand position and hand width.</p></div>
+      <div id="m-hbDrop" class="opt"><h4>Bar drop</h4><p>Centre of the tops to centre of the drops. Only drawn.</p></div>
+      <div id="m-hbReach" class="opt"><h4>Bar reach</h4><p>From the bar centre forward to the front of the bend. Only drawn.</p></div>
+      <div id="m-hbDiam" class="opt"><h4>Bar diameter</h4><p>Where the stem clamps it. Empty is 31.8. Only drawn.</p></div>
+      <div id="m-hbRise" class="opt"><h4>Bar rise</h4><p>How far the tops rise above the bar centre at the stem clamp. Empty is 0. Only drawn: Hand Y already includes it.</p></div>
+
+      <div id="m-stemLengths"><h4>Stem lengths</h4><p>Stem lengths you can use, separated by commas.</p></div>
+      <div id="m-stemAngles"><h4>Stem angles</h4><p>Stem angles you can use, separated by commas. Leave out the positive ones if you won't flip a stem.</p></div>
+      <div id="m-spacerStep"><h4>Spacer step</h4><p>Your thinnest spacer. The options go up in steps of this.</p></div>
+      <div id="m-minSpacers" class="opt"><h4>Min spacers</h4><p>The fewest spacers you would run. Empty is 0.</p></div>
+      <div id="m-maxSpacers"><h4>Max spacers</h4><p>The most spacers you would run.</p></div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="limTitle">
+    <div class="sec-head"><h2 id="limTitle">Known limitations</h2></div>
+    <div class="limits">
+      <ul>
+        <li>Simulation isn't possible if the same saddle position is not achievable.</li>
+        <li>Manufacturers' geometry charts aren't always exact.</li>
+        <li>Every saddle is taken to be level.</li>
+        <li>Crank length affects a bikefit, every bike is assumed to use the same.</li>
+        <li>Results are estimates. Check the setup on the bike before riding.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="credits">
+    <div>
+      <p>© 2026 <a href="https://zemiguelmoreira.github.io/">zemiguelmoreira.github.io</a></p>
+    </div>
+  </footer>
+</div>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<nav class="stepnav" aria-label="Go to the top or a step">
+  <button type="button" data-top title="Back to the top" aria-label="Back to the top">↑</button>
+  <button type="button" data-goto="inTitle" title="Step 1: Library (key 1)" aria-label="Go to step 1: Library">1</button>
+  <button type="button" data-goto="selTitle" title="Step 2: Input (key 2)" aria-label="Go to step 2: Input">2</button>
+  <button type="button" data-goto="outTitle" title="Step 3: Output (key 3)" aria-label="Go to step 3: Output">3</button>
+</nav>
