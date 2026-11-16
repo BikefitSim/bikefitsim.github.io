@@ -72,7 +72,7 @@
     refs: [blankRef('bike', 'r1', 'Reference bike 1'), blankRef('fit', 'r2', 'Personal fit 1')],
     lastRef: { bike: 'r1', fit: 'r2' }, // the one last open in each tab
     defaults: {}, // no longer used (Default references was removed); kept so older saves and links read the same
-    opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-25, -17, -10, -8, -6, 0, 6, 8, 10, 17, 25', spacerStep: 5, minSpacers: 0, maxSpacers: 40, missMax: 10 }, // minSpacers empty: 0, missMax empty: 10
+    opts: { stemLengths: '60, 70, 80, 90, 100, 110, 120, 130, 140', stemAngles: '-25, -17, -10, -8, -6, 0, 6, 8, 10, 17, 25', spacerStep: 5, minSpacers: 0, maxSpacers: 40, missMax: 10, maxResults: 30 }, // minSpacers empty: 0, missMax empty: 10, maxResults empty: 30
     bikes: [Object.assign({ id: 'b1', name: 'Target bike 1', refId: 'r1' }, BLANK_GEO, { frameId: null, stemH: null, hbDrop: null, hbReach: null, hbDiam: null, hbRise: null, tipToRails: null, railTravel: null, clampLen: null, saddleLen: null, railH: null, saddleId: null, barId: null, pick: '' })],
     selected: 'b1',
     selectedRef: 'r1', refKind: 'bike',
@@ -436,7 +436,8 @@
     { k: 'spacerStep', l: 'Spacer step', u: 'mm' },
     { k: 'minSpacers', l: 'Min spacers', u: 'mm', opt: true, ph: '0' },
     { k: 'maxSpacers', l: 'Max spacers', u: 'mm' },
-    { k: 'missMax', l: 'Miss threshold', u: 'mm', opt: true, ph: '10' },
+    { k: 'missMax', l: 'Miss threshold', u: 'mm', opt: true, ph: '10', line: 'list' },
+    { k: 'maxResults', l: 'Max results', opt: true, ph: '30', line: 'list' },
   ];
 
 
@@ -528,9 +529,10 @@
       <button class="btn danger" type="button" id="delRef">Delete ${kindName(r)}</button>`;
   }
   function renderOptFields() {
-    // the stem lists on one wide line, the spacer fields under them (Z)
+    // the stem lists on one wide line, the spacer fields under them, then the list's miss threshold and length (Z)
     const row = (fs, cls) => `<div class="fields${cls}">${fs.map((f) => fieldHTML(f, 'opts', state.opts)).join('')}</div>`;
-    $('optFields').innerHTML = row(OPT_FIELDS.filter((f) => f.type === 'list'), ' lists') + row(OPT_FIELDS.filter((f) => f.type !== 'list'), '');
+    $('optFields').innerHTML = row(OPT_FIELDS.filter((f) => f.type === 'list'), ' lists')
+      + row(OPT_FIELDS.filter((f) => f.type !== 'list' && !f.line), '') + row(OPT_FIELDS.filter((f) => f.line === 'list'), '');
   }
   function renderTabs() {
     $('tabs').innerHTML = state.bikes.map((b) => `<button class="tab" role="tab" type="button" data-tab="${esc(b.id)}" aria-selected="${b.id === state.selected}">${esc(b.name || 'Untitled bike')}</button>`).join('')
@@ -681,6 +683,7 @@
     if (finite(o.minSpacers) && o.minSpacers < 0) e.push('Min spacers should be 0 or more.');
     else if (finite(o.minSpacers) && finite(o.maxSpacers) && o.minSpacers > o.maxSpacers) e.push('Min spacers should not be more than max spacers.');
     if (!blank(o.missMax) && (!finite(o.missMax) || o.missMax <= 0)) e.push('Miss threshold should be a positive number.');
+    if (!blank(o.maxResults) && (!finite(o.maxResults) || o.maxResults < 1 || !Number.isInteger(o.maxResults))) e.push('Max results should be a whole number, 1 or more.');
     return e;
   }
 
@@ -832,11 +835,11 @@
   let optLeast = false; // the flipped order of the sorted column
   /* The list shows only the options that put the hands within the miss threshold of the target (the one
      the whole app uses: 10 mm unless Component options says otherwise), as the Miss column rounds it,
-     the closest 30 at most (Z);
-     Show more lists the closest 30 whatever their miss. With none that close, it shows the closest one. One per stem keeps
+     the closest Max results (30 unless set) at most (Z);
+     Show more lists that many whatever their miss. With none that close, it shows the closest one. One per stem keeps
      only each stem's closest spacer stack. */
   const optNearMax = () => (finite(state.opts.missMax) && state.opts.missMax > 0 ? state.opts.missMax : 10);
-  const OPT_MAX = 30;
+  const optMax = () => (finite(state.opts.maxResults) && state.opts.maxResults >= 1 ? Math.floor(state.opts.maxResults) : 30); // Max results in Component options
   let optAll = false;
   let optUnique = false;
   const optPool = (all) => {
@@ -844,7 +847,7 @@
     const seen = new Set();
     return all.filter((x) => { const k = `${x.angle}|${x.length}`; if (seen.has(k)) return false; seen.add(k); return true; });
   };
-  const optNear = (all) => { const near = all.filter((x) => Math.round(x.err * 10) / 10 < optNearMax()).slice(0, OPT_MAX); return near.length ? near : all.slice(0, 1); };
+  const optNear = (all) => { const near = all.filter((x) => Math.round(x.err * 10) / 10 < optNearMax()).slice(0, optMax()); return near.length ? near : all.slice(0, 1); };
   function sortOpts(list) {
     if (optSort === 'miss') return optLeast ? list.slice().reverse() : list; // the engine's order, closest first
     const [, , , first, by] = OPT_COLS.find((c) => c[0] === optSort);
@@ -905,7 +908,7 @@
           <span class="opt-count"><button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}</span></div>
         <div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
-  const optMore = (pool) => pool.slice(0, OPT_MAX);
+  const optMore = (pool) => pool.slice(0, optMax());
 
   function optTableHTML(r, o) {
     const pool = optPool(r.cockpit.all);
@@ -1227,7 +1230,7 @@
   const LINK_BIKE = ['barReach', 'barWidth', 'tipToRails', 'railTravel', 'clampLen', 'saddleLen', 'saddleId', 'barId', 'pick', 'railH', 'stemH', 'hbWidth', 'hbDrop', 'hbReach', 'hbDiam', 'hbRamp', 'hbRise'];
   const LINK_PART = { saddle: ['saddleLen', 'tipToRails', 'railTravel', 'railH', 'clampLen'], bar: ['barReach', 'barWidth', 'hbWidth', 'hbDrop', 'hbReach', 'hbDiam', 'hbRamp', 'handX', 'handY', 'stemH', 'hbRise'] }; // a handlebar's barWidth is its hand width
   const LINK_DEF = ['tipToRails', 'railTravel', 'clampLen', 'saddleLen', 'barWidth', 'barReach', 'tyre', 'railH', 'handX', 'handY', 'stemH', 'wheel'];
-  const LINK_OPTS = ['stemLengths', 'stemAngles', 'spacerStep', 'minSpacers', 'maxSpacers', 'missMax']; // new ones go last, so older links still read
+  const LINK_OPTS = ['stemLengths', 'stemAngles', 'spacerStep', 'minSpacers', 'maxSpacers', 'missMax', 'maxResults']; // new ones go last, so older links still read
   const LINK_NAME = { bike: 'Reference bike', fit: 'Personal fit', target: 'Target bike', frame: 'Frame', saddle: 'Saddle', bar: 'Cockpit' };
   const LINK_PID = { frame: 'fr', saddle: 'sd', bar: 'hb' };
   const nameOut = (name, word) => { const m = new RegExp(`^${word} ([1-9]\\d{0,5})$`).exec(name || ''); return m ? +m[1] : name || ''; };
