@@ -417,6 +417,6 @@ const GB = (() => {
     return { bike, geo, saddle: { x, y }, setback: -x, tipShift, saddleLen: len(saddle.saddleLen), heightAlong, noseAhead, railMove, sameSaddle, railPos, railOver, railTravel, railHalf: rail.railHalf, clampLen: rail.clampLen, railH: rail.railH, postTries: rail.tries, postOffset, tipToRails, exposed, target, hand, reachH, barWidth: wRef, cockpit, handTol, checks, drawing: fd };
   }
 
-  return { fitPoints, bodyPoints, frameGeometry, forkFromStack, forkLength, solveBike, frameChecks, barFor, handOff, parseList, railFit, frameDrawing, steerer, rad, HAND_TOL, STEM_H, HAND_Y, stemH, RAIL_TOL };
+  return { fitPoints, bodyPoints, frameGeometry, forkFromStack, forkLength, solveBike, frameChecks, barFor, handOff, parseList, railFit, frameDrawing, steerer, rad, STEM_H, HAND_Y, stemH, RAIL_TOL };
 })();
 if (typeof module !== 'undefined') module.exports = GB;

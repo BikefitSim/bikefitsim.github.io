@@ -897,17 +897,11 @@
     list.innerHTML = `
         <div class="sub-h">
           <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}" title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first">${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
-          <span class="opt-count">${optCountTxt(optPool(r.cockpit.all))}<button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}</span></div>
+          <span class="opt-count"><button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}</span></div>
         <div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
   const optMore = (pool) => pool.slice(0, OPT_MAX);
-  function optCountTxt(pool) {
-    if (optAll) return `Closest ${optMore(pool).length} of ${pool.length}`;
-    const n = optNear(pool).length;
-    const m = optNearMax();
-    if (!pool.some((x) => Math.round(x.err * 10) / 10 < m)) return `None under ${m} mm, the closest shown`;
-    return n === OPT_MAX && pool.filter((x) => Math.round(x.err * 10) / 10 < m).length > OPT_MAX ? `Closest ${n} under ${m} mm` : `${n} under ${m} mm`;
-  }
+
   function optTableHTML(r, o) {
     const pool = optPool(r.cockpit.all);
     const top = optAll ? optMore(pool) : optNear(pool);

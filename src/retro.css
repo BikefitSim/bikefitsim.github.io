@@ -193,7 +193,7 @@ table.data td { padding: 3px 8px; border: 1px solid #555555; }
 table.data tbody tr.opt:hover td { background: #150055; }
 table.data tbody tr.pick td, table.data tbody tr.pick:hover td { background: var(--pick); color: #000; }  /* tbody: beats the row hover */
 table.data tr.pick td:first-child { box-shadow: none; }
-table.data input[type="radio"], .tog input { accent-color: var(--pick); }
+.tog input { accent-color: var(--pick); }
 .cmp td:first-child { background: var(--bar); color: #000; font: 12px var(--mono); }
 .cmp td.sel, .cmp th.sel { background: var(--well); }
 .cmp th.refcol, .cmp td.refcol { color: var(--ink-2); }
