@@ -21,12 +21,12 @@ A target bike keeps the reference's personal reach and drop. With a saved cockpi
 
 ## Limitations
 
-- The simulation isn't possible if the same saddle position is not achievable.
+- Simulation output will be blocked if the same saddle position isn't possible on the target frame.
 - You need each frame's geometry and a few measurements, so some knowledge of bike geometry helps.
 - Manufacturers' geometry charts aren't always exact.
 - Every saddle is taken to be level.
-- Brake hoods aren't drawn, since their shape and size vary from one model to another. The hand position works the same with or without them.
-- Crank length affects a bikefit, every bike is assumed to use the same.
+- Brake hoods aren't drawn, since their shape and size vary from one model to another. The hand position works regardless.
+- Crank length affects a bikefit, use the same to keep the same fit.
 
 ## Folders
 
