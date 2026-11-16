@@ -538,7 +538,7 @@
       const f = OPT_FIELDS.find((x) => x.k === k);
       return `<label class="opt-in" for="opts-${k}" data-m="${k}">${before}<input id="opts-${k}" data-bind="opts.${k}" type="text" data-num="1" data-opt="1" inputmode="decimal" autocomplete="off" spellcheck="false" value="${esc(state.opts[k] ?? '')}" placeholder="${esc(f.ph)}" aria-label="${esc(f.l)}">${after}</label>`;
     };
-    $('optListFields').innerHTML = small('missMax', 'Threshold', 'mm') + small('maxResults', 'Show', '');
+    $('optListFields').innerHTML = small('missMax', 'Miss threshold', 'mm') + small('maxResults', 'Show', '');
   }
   function renderTabs() {
     $('tabs').innerHTML = state.bikes.map((b) => `<button class="tab" role="tab" type="button" data-tab="${esc(b.id)}" aria-selected="${b.id === state.selected}">${esc(b.name || 'Untitled bike')}</button>`).join('')
