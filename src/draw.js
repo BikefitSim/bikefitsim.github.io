@@ -305,8 +305,8 @@ const GBDraw = (() => {
     const handMoved = Math.hypot(tHand.x - fp.hand.x, tHand.y - fp.hand.y) >= 0.5;
     // the target's expected hand position (where its cockpit should put the hands to keep personal reach),
     // marked only when another hand width moves it off the reference's hands and no stem and spacers
-    // come within GB.HAND_TOL of it (Z); otherwise it is the reference's hand position
-    const exp = o && o.err > GB.HAND_TOL && Math.hypot(hand.x - fp.hand.x, hand.y - fp.hand.y) >= 0.5 ? hand : null;
+    // come within the miss threshold of it (Z); otherwise it is the reference's hand position
+    const exp = o && o.err > r.handTol && Math.hypot(hand.x - fp.hand.x, hand.y - fp.hand.y) >= 0.5 ? hand : null;
     /* Labels, the same way on every drawing (Z): the legend window names the colours, so a label
        says what is measured and its colour says whose: reference yellow ('rft'), target blue ('bkt'),
        and next to a marker its colour (yellow reference, blue target). A value both

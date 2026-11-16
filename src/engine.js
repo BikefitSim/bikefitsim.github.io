@@ -14,7 +14,7 @@ const GB = (() => {
   const CLAMP_LEN = 35;    // seatpost clamp length along the rails, when none is passed: its centre can move the rail length less this
   const RAIL_TRAVEL = 60;  // adjusting area marked on saddle rails, end to end, when none is passed
   const TIP_TO_RAILS = 150; // saddle tip to the middle of its rails, horizontally, when none is passed (the app passes its Defaults)
-  const HAND_TOL = 10;     // a stem and spacers that miss the hand position by more than this don't match it (Z: 10 mm)
+  const HAND_TOL = 10;     // a stem and spacers that miss the hand position by more than this don't match it (Z: 10 mm); opts.missMax overrides it
   const RAIL_TOL = 5;      // a clamp up to this far past the rail markings is a warning to check on the bike; further, an error
   const MAX_OFFSET = 40;   // most offset a seatpost is sold with, for the hint when neither fits
   const RIM_R = 311;      // 700c rim, bead seat radius
@@ -380,6 +380,7 @@ const GB = (() => {
     const ho = { x: fin(bike.handX) ? bike.handX : handOff(fit).x, y: fin(bike.handY) ? bike.handY : handOff(fit).y };
     const target = { x: hand.x - ho.x, y: hand.y - ho.y - stemH(bike) / 2 }; // the bar centre that puts the hands there
     const cockpit = solveCockpit(bike, opts, target, fp.stem ? fp.stem.angle : PLAIN_ANGLE);
+    const handTol = fin(opts.missMax) && opts.missMax > 0 ? opts.missMax : HAND_TOL; // the Miss threshold in Component options
     const checks = frameChecks(bikeIn);
 
     // another hand width moves the hands to keep personal reach: say so (Z)
@@ -402,18 +403,18 @@ const GB = (() => {
     } else if (exposed > 280) {
       checks.push({ level: 'warn', text: `About ${exposed.toFixed(0)} mm of seatpost would show${ctNote}. Check post length and minimum insertion.` });
     }
-    if (cockpit.best && cockpit.best.err > HAND_TOL) {
+    if (cockpit.best && cockpit.best.err > handTol) {
       const b = cockpit.best;
       const bits = [];
       if (Math.abs(b.dx) >= 1) bits.push(`${Math.abs(b.dx).toFixed(0)} mm ${b.dx > 0 ? 'too far forward' : 'too close'}`);
       if (Math.abs(b.dy) >= 1) bits.push(`${Math.abs(b.dy).toFixed(0)} mm ${b.dy > 0 ? 'too high' : 'too low'}`);
-      checks.push({ level: 'bad', hand: true, text: `No stem and spacer combination reaches the hand position within a ${HAND_TOL} mm margin. The closest leaves it ${bits.join(' and ')}.` });
+      checks.push({ level: 'bad', hand: true, text: `No stem and spacer combination reaches the hand position within a ${handTol} mm margin. The closest leaves it ${bits.join(' and ')}.` });
     }
     if (cockpit.steepest && cockpit.steepest.spacers < cockpit.minSpacers - 2) {
       const stemTxt = cockpit.minSpacers > 0 ? `${cockpit.steepest.angle}° stem on the minimum ${cockpit.minSpacers} mm of spacers` : `slammed ${cockpit.steepest.angle}° stem`;
       checks.push({ level: 'warn', text: `The front end is tall for this fit. Even a ${stemTxt} leaves the bar about ${(cockpit.minSpacers - cockpit.steepest.spacers).toFixed(0)} mm higher than wanted.` });
     }
-    return { bike, geo, saddle: { x, y }, setback: -x, tipShift, saddleLen: len(saddle.saddleLen), heightAlong, noseAhead, railMove, sameSaddle, railPos, railOver, railTravel, railHalf: rail.railHalf, clampLen: rail.clampLen, railH: rail.railH, postTries: rail.tries, postOffset, tipToRails, exposed, target, hand, reachH, barWidth: wRef, cockpit, checks, drawing: fd };
+    return { bike, geo, saddle: { x, y }, setback: -x, tipShift, saddleLen: len(saddle.saddleLen), heightAlong, noseAhead, railMove, sameSaddle, railPos, railOver, railTravel, railHalf: rail.railHalf, clampLen: rail.clampLen, railH: rail.railH, postTries: rail.tries, postOffset, tipToRails, exposed, target, hand, reachH, barWidth: wRef, cockpit, handTol, checks, drawing: fd };
   }
 
   return { fitPoints, bodyPoints, frameGeometry, forkFromStack, forkLength, solveBike, frameChecks, barFor, handOff, parseList, railFit, frameDrawing, steerer, rad, HAND_TOL, STEM_H, HAND_Y, stemH, RAIL_TOL };

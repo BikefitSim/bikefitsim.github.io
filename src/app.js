@@ -824,8 +824,9 @@
   const OPT_SORTS = [['miss', 'Closest', 'Furthest'], ['reach', 'Most reach', 'Least reach'], ['stack', 'Most stack', 'Least stack']];
   let optSort = 'miss';
   let optLeast = false; // the flipped order: furthest, least reach or least stack first
-  /* The list shows only the options that put the hands within the miss threshold of the target (10 mm
-     unless Component options says otherwise), as the Miss column rounds it, the closest 30 at most (Z);
+  /* The list shows only the options that put the hands within the miss threshold of the target (the one
+     the whole app uses: 10 mm unless Component options says otherwise), as the Miss column rounds it,
+     the closest 30 at most (Z);
      Show more lists the closest 30 whatever their miss. With none that close, it shows the closest one. One per stem keeps
      only each stem's closest spacer stack. */
   const optNearMax = () => (finite(state.opts.missMax) && state.opts.missMax > 0 ? state.opts.missMax : 10);
@@ -878,7 +879,7 @@
     const hasBike = !!r.fp.bike; // a personal fit has no bike to compare with
     const dH = hasBike ? r.heightAlong - fit.saddleHeight : 0;
     const checks = r.checks.filter((c) => !c.frame); // the frame's own checks are in step 2
-    if (o && o.err <= GB.HAND_TOL && !checks.some((c) => c.level === 'bad')) checks.unshift({ level: 'ok', text: `This frame can carry the fit of ${refName(r.ref)}. Hand position ${missTxt(o)}${o.err >= 1 ? ' of the target' : ''}.` });
+    if (o && o.err <= r.handTol && !checks.some((c) => c.level === 'bad')) checks.unshift({ level: 'ok', text: `This frame can carry the fit of ${refName(r.ref)}. Hand position ${missTxt(o)}${o.err >= 1 ? ' of the target' : ''}.` });
 
     out.innerHTML = `
       <div class="tiles">
@@ -904,6 +905,7 @@
     if (optAll) return `Closest ${optMore(pool).length} of ${pool.length}`;
     const n = optNear(pool).length;
     const m = optNearMax();
+    if (!pool.some((x) => Math.round(x.err * 10) / 10 < m)) return `None under ${m} mm, the closest shown`;
     return n === OPT_MAX && pool.filter((x) => Math.round(x.err * 10) / 10 < m).length > OPT_MAX ? `Closest ${n} under ${m} mm` : `${n} under ${m} mm`;
   }
   function optTableHTML(r, o) {
@@ -957,7 +959,7 @@
           stem: o ? esc(stemTxt(o)) : na,
           spacers: o ? `${n1(o.spacers)} mm${r.fp.bike ? ` <span class="calc-mark">${sgn(o.spacers - f.spacers, 1)}</span>` : ''}` : na,
           stemh: `${n1(effBike(b, r.ref).stemH)} mm`, bar: handTxt(effBike(b, r.ref)), width: r.barWidth > 0 ? `${n0(r.barWidth)} mm` : na,
-          hand: o ? `<span class="${o.err > GB.HAND_TOL ? 'miss-bad' : 'miss-ok'}">${esc(missTxt(o))}</span>` : na,
+          hand: o ? `<span class="${o.err > r.handTol ? 'miss-bad' : 'miss-ok'}">${esc(missTxt(o))}</span>` : na,
         },
       };
     });
