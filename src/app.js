@@ -823,7 +823,7 @@
   let optSort = 'miss';
   let optLeast = false; // the flipped order: furthest, least reach or least stack first
   /* The list shows only the options that put the hands within 10 mm of the target, as the Miss column
-     rounds it, the closest 30 at most (Z); Show all options lists the rest too. With none that close, it
+     rounds it, the closest 30 at most (Z); Show more lists the rest too. With none that close, it
      shows the closest one. One per stem keeps only each stem's closest spacer stack. */
   const OPT_NEAR = 10;
   const OPT_MAX = 30;
@@ -893,7 +893,7 @@
     list.innerHTML = `
         <div class="sub-h">
           <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}" title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first">${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
-          <span class="opt-count">${optCountTxt(optPool(r.cockpit.all))}<button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optNear(optPool(r.cockpit.all)).length < optPool(r.cockpit.all).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show closest' : 'Show all options'}</button>` : ''}</span></div>
+          <span class="opt-count">${optCountTxt(optPool(r.cockpit.all))}<button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optNear(optPool(r.cockpit.all)).length < optPool(r.cockpit.all).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}</span></div>
         <div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
   function optCountTxt(pool) {
@@ -906,11 +906,11 @@
     const top = optAll ? pool : optNear(pool);
     return `
           <table class="data" id="optTable">
-            <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
-            <tbody>${sortOpts(top.concat(o && !top.includes(o) ? [o] : [])).map((x, i) => {
+            <thead><tr><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
+            <tbody>${sortOpts(top.concat(o && !top.includes(o) ? [o] : [])).map((x) => {
               const sel = o && optKey(x) === optKey(o);
-              return `<tr class="opt${sel ? ' pick' : ''}" data-opt="${esc(optKey(x))}">
-                <td><input type="radio" name="opt" id="opt-${i}" aria-label="Use ${esc(stemTxt(x))} with ${n1(x.spacers)} mm spacers" ${sel ? 'checked' : ''}></td>
+              // the row itself is the choice (Z): click it, or Tab to it and press Enter or Space
+              return `<tr class="opt${sel ? ' pick' : ''}" data-opt="${esc(optKey(x))}" tabindex="0" aria-selected="${!!sel}" aria-label="Use ${esc(stemTxt(x))} with ${n1(x.spacers)} mm spacers">
                 <td>${esc(stemTxt(x))}</td><td class="num">${n1(x.spacers)}</td>
                 <td class="num">${sgn(x.dx, 1)}</td><td class="num">${sgn(x.dy, 1)}</td><td class="num">${n1(x.err)}</td></tr>`;
             }).join('')}</tbody>
@@ -1647,8 +1647,8 @@
       const b = curBike(); if (!b) return; const r = model.res[b.id];
       b.pick = r && r.cockpit && r.cockpit.best && row.dataset.opt === optKey(r.cockpit.best) ? '' : row.dataset.opt;
       renderOutputs(); scheduleSave();
-      const radio = document.querySelector(`tr.opt[data-opt="${CSS.escape(row.dataset.opt)}"] input`);
-      if (radio) radio.focus({ preventScroll: true });
+      const again = document.querySelector(`tr.opt[data-opt="${CSS.escape(row.dataset.opt)}"]`);
+      if (again) again.focus({ preventScroll: true });
     }
   });
 
@@ -1664,6 +1664,7 @@
   });
   // keys 1, 2 and 3 press the step buttons too, unless you are typing in a field (Z)
   document.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('tr.opt')) { e.preventDefault(); e.target.click(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || !/^[123]$/.test(e.key)) return;
     const at = e.target;
     if (at && at.closest && at.closest('input, textarea, select, [contenteditable]')) return;
