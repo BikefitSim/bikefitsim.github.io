@@ -161,7 +161,7 @@ details.parts summary:hover::before { background: #55FF55; }
 details.parts[open] summary::before { content: "\2212"; }
 .grp h4, .sub-h h4 { font: bold 13px var(--mono); color: #FFFFFF; }
 .grp h4 { border-bottom: 1px solid var(--rule); }
-.limits li, .about { color: var(--ink-2); font-size: 13px; }
+.limits li { color: var(--ink-2); font-size: 13px; }
 .tip { background: var(--bar); color: #000; border: 1px solid #000; border-radius: 0; box-shadow: var(--shade-s); font: 12px/1.45 var(--mono); }
 .tip b { color: #000; }
 .sub-h p, .grp p.note { color: var(--ink-2); }
