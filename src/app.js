@@ -822,11 +822,19 @@
   const OPT_SORTS = [['miss', 'Closest', 'Furthest'], ['reach', 'Most reach', 'Least reach'], ['stack', 'Most stack', 'Least stack']];
   let optSort = 'miss';
   let optLeast = false; // the flipped order: furthest, least reach or least stack first
-  /* The list shows only the options that put the hands within 10 mm of the target, as the Miss column rounds it (Z); Show all options
-     lists the rest too. With none that close, it shows the closest one. */
+  /* The list shows only the options that put the hands within 10 mm of the target, as the Miss column
+     rounds it, the closest 30 at most (Z); Show all options lists the rest too. With none that close, it
+     shows the closest one. One per stem keeps only each stem's closest spacer stack. */
   const OPT_NEAR = 10;
+  const OPT_MAX = 30;
   let optAll = false;
-  const optNear = (all) => { const near = all.filter((x) => Math.round(x.err * 10) / 10 < OPT_NEAR); return near.length ? near : all.slice(0, 1); };
+  let optUnique = false;
+  const optPool = (all) => {
+    if (!optUnique) return all;
+    const seen = new Set();
+    return all.filter((x) => { const k = `${x.angle}|${x.length}`; if (seen.has(k)) return false; seen.add(k); return true; });
+  };
+  const optNear = (all) => { const near = all.filter((x) => Math.round(x.err * 10) / 10 < OPT_NEAR).slice(0, OPT_MAX); return near.length ? near : all.slice(0, 1); };
   function sortOpts(list) {
     if (optSort === 'miss') return optLeast ? list.slice().reverse() : list;
     const by = optSort === 'stack' ? (x) => x.dy : (x) => x.dx;
@@ -885,11 +893,17 @@
     list.innerHTML = `
         <div class="sub-h">
           <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}" title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first">${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
-          ${optNear(r.cockpit.all).length < r.cockpit.all.length ? `<span class="opt-count">${optAll ? `All ${r.cockpit.all.length} options` : `${optNear(r.cockpit.all).length} under ${OPT_NEAR} mm`}<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? `Only under ${OPT_NEAR} mm` : 'Show all options'}</button></span>` : ''}</div>
+          <span class="opt-count">${optCountTxt(optPool(r.cockpit.all))}<button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optNear(optPool(r.cockpit.all)).length < optPool(r.cockpit.all).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show closest' : 'Show all options'}</button>` : ''}</span></div>
         <div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
+  function optCountTxt(pool) {
+    if (optAll) return `All ${pool.length} options`;
+    const n = optNear(pool).length;
+    return n === OPT_MAX && pool.filter((x) => Math.round(x.err * 10) / 10 < OPT_NEAR).length > OPT_MAX ? `Closest ${n} under ${OPT_NEAR} mm` : `${n} under ${OPT_NEAR} mm`;
+  }
   function optTableHTML(r, o) {
-    const top = optAll ? r.cockpit.all : optNear(r.cockpit.all);
+    const pool = optPool(r.cockpit.all);
+    const top = optAll ? pool : optNear(pool);
     return `
           <table class="data" id="optTable">
             <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
@@ -1612,10 +1626,11 @@
       renderAll(); scheduleSave();
       return;
     }
-    if (e.target.closest('#optAll')) {
-      optAll = !optAll;
+    const optBtn = e.target.closest('#optAll, #optUnique');
+    if (optBtn) {
+      if (optBtn.id === 'optAll') optAll = !optAll; else optUnique = !optUnique;
       renderBikeOut();
-      const again = $('optAll'); if (again) again.focus();
+      const again = $(optBtn.id) || $('optUnique'); if (again) again.focus();
       return;
     }
     const sortBtn = e.target.closest('[data-optsort]');
