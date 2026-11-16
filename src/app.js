@@ -909,7 +909,7 @@
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
       ${o ? `<div class="row-actions"><button class="btn" type="button" id="toRefBike" title="A new bikefit in step 2: this frame with the saddle, stem and spacers above">Copy as reference bike</button></div>` : ''}`;
-    $('optBtns').innerHTML = `<button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}`;
+    $('optBtns').innerHTML = `<button type="button" class="sort-btn" id="optUnique" data-m="optUnique" aria-pressed="${optUnique}">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" data-m="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}`;
     list.innerHTML = `<div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
   const optMore = (pool) => pool.slice(0, optMax());
