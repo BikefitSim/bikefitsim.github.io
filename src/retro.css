@@ -148,7 +148,7 @@ h1 { font: bold 40px/1 var(--mono); color: #FFFFFF; }
 .kinds .kind-tab:hover { color: #FFFFFF; }
 .kinds .kind-tab[aria-selected="true"], .kinds .kind-tab[aria-selected="true"]:hover { background: var(--part); color: #000; }
 .kind-tab .n { font: 11px var(--mono); color: inherit; }
-.sort { color: var(--ink-2); }
+.th-sort button:hover { text-decoration: underline; }
 .sort-btn { padding: 2px 10px; font-size: 12px; }
 .opt-count { margin-left: auto; font: 12px var(--mono); color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
 

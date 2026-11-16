@@ -818,12 +818,18 @@
     el.hidden = !items.length;
   }
 
-  /* Order of the stem and spacer options in Component options: by how close the bar gets (always the default),
-     or by how far forward or how high it ends up. Clicking a sort button again flips it
-     (closest/furthest, most/least first). */
-  const OPT_SORTS = [['miss', 'Closest', 'Furthest'], ['reach', 'Most reach', 'Least reach'], ['stack', 'Most stack', 'Least stack']];
+  /* The options table sorts by the column header clicked (Z); clicking it again flips the order. By
+     default it runs closest first. Hand fwd and Hand up start with the most, the others with the least;
+     ties go to the closest. */
+  const OPT_COLS = [
+    ['stem', 'Stem (length/angle)', false, 1, (x) => x.length * 1000 + x.angle],
+    ['spacers', 'Spacers (mm)', true, 1, (x) => x.spacers],
+    ['reach', 'Hand fwd (mm)', true, -1, (x) => x.dx],
+    ['stack', 'Hand up (mm)', true, -1, (x) => x.dy],
+    ['miss', 'Miss (mm)', true, 1, (x) => x.err],
+  ];
   let optSort = 'miss';
-  let optLeast = false; // the flipped order: furthest, least reach or least stack first
+  let optLeast = false; // the flipped order of the sorted column
   /* The list shows only the options that put the hands within the miss threshold of the target (the one
      the whole app uses: 10 mm unless Component options says otherwise), as the Miss column rounds it,
      the closest 30 at most (Z);
@@ -840,10 +846,10 @@
   };
   const optNear = (all) => { const near = all.filter((x) => Math.round(x.err * 10) / 10 < optNearMax()).slice(0, OPT_MAX); return near.length ? near : all.slice(0, 1); };
   function sortOpts(list) {
-    if (optSort === 'miss') return optLeast ? list.slice().reverse() : list;
-    const by = optSort === 'stack' ? (x) => x.dy : (x) => x.dx;
-    const dir = optLeast ? -1 : 1;
-    return list.slice().sort((p, q) => dir * (by(q) - by(p)) || p.err - q.err);
+    if (optSort === 'miss') return optLeast ? list.slice().reverse() : list; // the engine's order, closest first
+    const [, , , first, by] = OPT_COLS.find((c) => c[0] === optSort);
+    const dir = optLeast ? -first : first;
+    return list.slice().sort((p, q) => dir * (by(p) - by(q)) || p.err - q.err);
   }
 
   function renderBikeOut() {
@@ -896,7 +902,6 @@
       ${o ? `<div class="row-actions"><button class="btn" type="button" id="toRefBike" title="A new bikefit in step 2: this frame with the saddle, stem and spacers above">Copy as reference bike</button></div>` : ''}`;
     list.innerHTML = `
         <div class="sub-h">
-          <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}" title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first">${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
           <span class="opt-count"><button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}</span></div>
         <div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
@@ -907,7 +912,11 @@
     const top = optAll ? optMore(pool) : optNear(pool);
     return `
           <table class="data" id="optTable">
-            <thead><tr><th>Stem (length/angle)</th><th class="num">Spacers (mm)</th><th class="num">Hand fwd (mm)</th><th class="num">Hand up (mm)</th><th class="num">Miss (mm)</th></tr></thead>
+            <thead><tr>${OPT_COLS.map(([k, l, num, first]) => {
+              const on = optSort === k;
+              const up = on && (optLeast ? -first : first) === 1; // ascending
+              return `<th class="${num ? 'num ' : ''}th-sort"${on ? ` aria-sort="${up ? 'ascending' : 'descending'}"` : ''}><button type="button" data-optsort="${k}" title="Sort by this column; click again to reverse">${l}<span class="sort-ar" aria-hidden="true">${on ? (up ? '▲' : '▼') : ''}</span></button></th>`;
+            }).join('')}</tr></thead>
             <tbody>${sortOpts(top.concat(o && !top.includes(o) ? [o] : [])).map((x) => {
               const sel = o && optKey(x) === optKey(o);
               // the row itself is the choice (Z): click it, or Tab to it and press Enter or Space
