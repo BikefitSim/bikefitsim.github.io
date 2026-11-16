@@ -233,29 +233,27 @@ const GB = (() => {
     const minS = fin(opts.minSpacers) && opts.minSpacers > 0 ? opts.minSpacers : 0; // empty means none
     const maxS = Math.max(minS, opts.maxSpacers);
     const k0 = stemH(bike) / 2;
-    const bestPerStem = new Map();
+    /* Every spacer height the options allow (Z): the multiples of the step between the minimum and
+       the maximum, and those two themselves, so each stem can come with several spacer stacks. */
+    const stacks = new Set([minS, maxS]);
+    for (let s = Math.ceil(minS / step) * step; s <= maxS; s += step) stacks.add(Math.round(s * 10) / 10);
+    const spacerList = [...stacks].sort((p, q) => p - q);
+    const combos = [];
     for (const a of angles) {
       const th = rad(90 - bike.hta + a);
       const e = { x: Math.cos(th), y: Math.sin(th) };
       for (const L of lengths) {
-        const px = target.x - bike.reach - k0 * d.x - L * e.x;
-        const py = target.y - bike.stack - k0 * d.y - L * e.y;
-        const sStar = px * d.x + py * d.y;
-        for (let s of [Math.floor(sStar / step) * step, Math.ceil(sStar / step) * step]) {
-          s = Math.round(Math.min(maxS, Math.max(minS, s)) * 10) / 10;
+        for (const s of spacerList) {
           const { B, Q } = barFor(bike, a, L, s);
           const dx = B.x - target.x;
           const dy = B.y - target.y;
-          const c = { angle: a, length: L, spacers: s, B, Q, dx, dy, err: Math.hypot(dx, dy) };
-          const key = `${a}|${L}`;
-          const prev = bestPerStem.get(key);
-          if (!prev || c.err < prev.err) bestPerStem.set(key, c);
+          combos.push({ angle: a, length: L, spacers: s, B, Q, dx, dy, err: Math.hypot(dx, dy) });
         }
       }
     }
     // Rank by miss distance as shown (0.1 mm), so the first option is always the closest;
     // ties go to the stem angle nearest the reference, then to fewer spacers.
-    const ranked = [...bestPerStem.values()].sort((p, q) => {
+    const ranked = combos.sort((p, q) => {
       const ep = Math.round(p.err * 10);
       const eq = Math.round(q.err * 10);
       if (ep !== eq) return ep - eq;

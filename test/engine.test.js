@@ -297,6 +297,13 @@ test('the hands sit where Hand X and Hand Y put them from the top centre of the 
   near(a.target.y - tall.target.y, 5, 1e-9, 'a 10 mm taller stem: bar centre 5 mm lower');
 });
 
+test('each stem comes with every spacer stack the options allow', () => {
+  const fp = GB.fitPoints(ref, fit);
+  const c = GB.solveBike(Object.assign({}, ref, { handX: 50, handY: -4 }), fp, fit, opts).cockpit;
+  const stacks = c.all.filter((o) => o.angle === -6 && o.length === 110).map((o) => o.spacers).sort((p, q) => p - q);
+  assert.deepStrictEqual(stacks, [0, 5, 10, 15, 20, 25, 30, 35, 40]);
+});
+
 test('stem options never use fewer spacers than the minimum; empty means 0', () => {
   const fp = GB.fitPoints(ref, fit);
   const bike = Object.assign({}, ref, { handX: 50, handY: -4 });

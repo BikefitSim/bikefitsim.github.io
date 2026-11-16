@@ -741,10 +741,12 @@
     }
     model = { refs, res, optErrors: oe };
   }
-  const optKey = (o) => `${o.angle}|${o.length}`;
+  // a stem with its spacers; a pick saved before each stem had several spacer stacks is
+  // angle|length alone, and takes that stem's closest one
+  const optKey = (o) => `${o.angle}|${o.length}|${o.spacers}`;
   function chosenFor(b, r) {
     if (!r || !r.cockpit || !r.cockpit.best) return null;
-    return r.cockpit.all.find((o) => optKey(o) === b.pick) || r.cockpit.best;
+    return r.cockpit.all.find((o) => optKey(o) === b.pick) || r.cockpit.all.find((o) => `${o.angle}|${o.length}` === b.pick) || r.cockpit.best;
   }
   const angTxt = (a) => `${a > 0 ? '+' : a < 0 ? MINUS : ''}${String(Math.abs(a)).replace(/\.0$/, '')}°`;
   const stemTxt = (o) => `${o.length} mm ${angTxt(o.angle)}`;
