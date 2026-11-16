@@ -529,10 +529,11 @@
       <button class="btn danger" type="button" id="delRef">Delete ${kindName(r)}</button>`;
   }
   function renderOptFields() {
-    // the stem lists on one wide line, the spacer fields under them, then the list's miss threshold and length (Z)
+    // the stem lists on one wide line, the spacer fields under them (Z)
     const row = (fs, cls) => `<div class="fields${cls}">${fs.map((f) => fieldHTML(f, 'opts', state.opts)).join('')}</div>`;
-    $('optFields').innerHTML = row(OPT_FIELDS.filter((f) => f.type === 'list'), ' lists')
-      + row(OPT_FIELDS.filter((f) => f.type !== 'list' && !f.line), '') + row(OPT_FIELDS.filter((f) => f.line === 'list'), ' list-set'); // a line above them sets them apart (Z)
+    $('optFields').innerHTML = row(OPT_FIELDS.filter((f) => f.type === 'list'), ' lists') + row(OPT_FIELDS.filter((f) => f.type !== 'list' && !f.line), '');
+    // the list's miss threshold and length sit with the list's buttons, above the table (Z); drawn once, so typing keeps its place
+    $('optListFields').innerHTML = OPT_FIELDS.filter((f) => f.line === 'list').map((f) => fieldHTML(f, 'opts', state.opts)).join('');
   }
   function renderTabs() {
     $('tabs').innerHTML = state.bikes.map((b) => `<button class="tab" role="tab" type="button" data-tab="${esc(b.id)}" aria-selected="${b.id === state.selected}">${esc(b.name || 'Untitled bike')}</button>`).join('')
@@ -859,14 +860,14 @@
     const b = curBike();
     const out = $('bikeOut');
     if (!b) {
-      $('optList').innerHTML = '';
+      $('optList').innerHTML = ''; $('optBtns').innerHTML = '';
       out.innerHTML = '<div class="empty"><b>Add a target bike in step 2 to see the changes.</b></div>';
       return;
     }
     const r = model.res[b.id];
     // the stems and spacers you can use stay put at the top of the options box; only the list is redrawn
     const list = $('optList');
-    if (r.refErrors || r.errors || r.optErrors || r.problems) list.innerHTML = '';
+    if (r.refErrors || r.errors || r.optErrors || r.problems) { list.innerHTML = ''; $('optBtns').innerHTML = ''; }
     if (r.refErrors) {
       out.innerHTML = r.noRef ? '<div class="empty"><b>Add a reference in step 2 first.</b></div>' : `<div class="empty"><b>Fill in ${esc(refName(r.ref))} in step 2 first.</b></div>`;
       return;
@@ -903,10 +904,8 @@
       </div>
       <ul class="checks">${checks.map((c) => `<li class="${c.level}">${esc(c.text)}</li>`).join('')}</ul>
       ${o ? `<div class="row-actions"><button class="btn" type="button" id="toRefBike" title="A new bikefit in step 2: this frame with the saddle, stem and spacers above">Copy as reference bike</button></div>` : ''}`;
-    list.innerHTML = `
-        <div class="sub-h">
-          <span class="opt-count"><button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}</span></div>
-        <div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
+    $('optBtns').innerHTML = `<button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}`;
+    list.innerHTML = `<div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
   const optMore = (pool) => pool.slice(0, optMax());
 
