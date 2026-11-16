@@ -39,10 +39,16 @@ def read(name):
         return f.read()
 
 
+def paypal_qr():
+    # the donation QR code, inline like everything else
+    with open(os.path.join(ROOT, 'assets', 'paypal-qr.png'), 'rb') as f:
+        return 'data:image/png;base64,' + base64.b64encode(f.read()).decode()
+
+
 def build_page():
     engine = read('engine.js').replace("if (typeof module !== 'undefined') module.exports = GB;\n", '')
     scripts = ['\n' + engine + '\n' + read('draw.js') + '\n' + read('datafile.js'), '\n' + read('app.js')]
-    return (HEAD.replace('{csp}', csp(scripts)) + read('base.css') + '\n' + read('body.html') + '\n' + read('retro.css') + '\n'
+    return (HEAD.replace('{csp}', csp(scripts)) + read('base.css') + '\n' + read('body.html').replace('{paypal_qr}', paypal_qr()) + '\n' + read('retro.css') + '\n'
             + ''.join('<script>' + s + '</script>\n' for s in scripts) + '</body></html>\n')
 
 
