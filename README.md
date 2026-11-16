@@ -25,7 +25,7 @@ A target bike keeps the reference's personal reach and drop. With a saved cockpi
 - You need each frame's geometry and a few measurements, so some knowledge of bike geometry helps.
 - Manufacturers' geometry charts aren't always exact.
 - Every saddle is taken to be level.
-- Brake hoods aren't drawn, since their shape and size vary from one model to another. The hand position works regardless.
+- The handlebar drawing is only representative, and brake hoods aren't drawn, since their shape and size vary from one model to another. The hand position works regardless.
 - Only the bottom bracket position is taken into account. To keep the same fit, use the same crank length, stance width and cleat position.
 
 ## Folders
