@@ -826,7 +826,7 @@
   let optLeast = false; // the flipped order: furthest, least reach or least stack first
   /* The list shows only the options that put the hands within the miss threshold of the target (10 mm
      unless Component options says otherwise), as the Miss column rounds it, the closest 30 at most (Z);
-     Show more lists the rest too. With none that close, it shows the closest one. One per stem keeps
+     Show more lists the closest 30 whatever their miss. With none that close, it shows the closest one. One per stem keeps
      only each stem's closest spacer stack. */
   const optNearMax = () => (finite(state.opts.missMax) && state.opts.missMax > 0 ? state.opts.missMax : 10);
   const OPT_MAX = 30;
@@ -896,18 +896,19 @@
     list.innerHTML = `
         <div class="sub-h">
           <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}" title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first">${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
-          <span class="opt-count">${optCountTxt(optPool(r.cockpit.all))}<button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optNear(optPool(r.cockpit.all)).length < optPool(r.cockpit.all).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}</span></div>
+          <span class="opt-count">${optCountTxt(optPool(r.cockpit.all))}<button type="button" class="sort-btn" id="optUnique" aria-pressed="${optUnique}" title="Only each stem's closest spacer stack">One per stem</button>${optAll || optNear(optPool(r.cockpit.all)).length < optMore(optPool(r.cockpit.all)).length ? `<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? 'Show less' : 'Show more'}</button>` : ''}</span></div>
         <div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
+  const optMore = (pool) => pool.slice(0, OPT_MAX);
   function optCountTxt(pool) {
-    if (optAll) return `All ${pool.length} options`;
+    if (optAll) return `Closest ${optMore(pool).length} of ${pool.length}`;
     const n = optNear(pool).length;
     const m = optNearMax();
     return n === OPT_MAX && pool.filter((x) => Math.round(x.err * 10) / 10 < m).length > OPT_MAX ? `Closest ${n} under ${m} mm` : `${n} under ${m} mm`;
   }
   function optTableHTML(r, o) {
     const pool = optPool(r.cockpit.all);
-    const top = optAll ? pool : optNear(pool);
+    const top = optAll ? optMore(pool) : optNear(pool);
     return `
           <table class="data" id="optTable">
             <thead><tr><th>Stem (length/angle)</th><th class="num">Spacers (mm)</th><th class="num">Hand fwd (mm)</th><th class="num">Hand up (mm)</th><th class="num">Miss (mm)</th></tr></thead>
