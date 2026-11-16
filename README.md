@@ -26,7 +26,7 @@ A target bike keeps the reference's personal reach and drop. With a saved cockpi
 - Manufacturers' geometry charts aren't always exact.
 - Every saddle is taken to be level.
 - Brake hoods aren't drawn, since their shape and size vary from one model to another. The hand position works regardless.
-- Crank length affects a bikefit, use the same to keep the same fit.
+- Only the bottom bracket position is taken into account. To keep the same fit, use the same crank length, stance width and cleat position.
 
 ## Folders
 
