@@ -1355,6 +1355,8 @@
     renderFileBar();
   }
   window.addEventListener('hashchange', () => { if (loaded) initLink(); });
+  // an anonymous event count on the public site (GoatCounter); nothing about the bikes goes with it
+  const track = (name) => { try { if (!isLocal && window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, title: name, event: true }); } catch (e) { /* not counted */ } };
   async function downloadData() {
     const text = GBFile.pack(state, lastEdit || Date.now());
     const name = 'bikefit-data.json';
@@ -1362,6 +1364,7 @@
     const a = document.createElement('a');
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
+    track('download-data-file');
     flash(`Downloaded ${name}. Open it later with Open data file.`);
   }
   function renderFileBar() {
@@ -1436,7 +1439,9 @@
         clearTimeout(saveTimer); await flush(); // saved as a fresh page, so a share link opens straight away
         flash(note);
       } else if (id === 'fileShare') {
-        flash((await copyText(shareLink())) ? 'Share link copied to clipboard. Anyone who opens it sees these bikes.' : 'The share link could not be copied in this browser.');
+        const copied = await copyText(shareLink());
+        if (copied) track('copy-share-link');
+        flash(copied ? 'Share link copied to clipboard. Anyone who opens it sees these bikes.' : 'The share link could not be copied in this browser.');
       } else if (id === 'fileDownload') {
         await downloadData();
       }

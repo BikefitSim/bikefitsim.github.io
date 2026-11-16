@@ -20,16 +20,34 @@ def favicon():
 
 
 def csp(scripts):
-    # only these exact scripts may run, nothing is loaded from anywhere else, and the page sends nothing
+    # only these exact scripts and the GoatCounter counter may run; the page sends only the anonymous visit count
     hashes = ' '.join("'sha256-" + base64.b64encode(hashlib.sha256(s.encode('utf-8')).digest()).decode() + "'" for s in scripts)
-    return ('<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src ' + hashes
-            + "; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'\">")
+    return ('<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src ' + hashes + ' ' + COUNTER_JS
+            + "; style-src 'unsafe-inline'; img-src data: blob: " + COUNTER + '; connect-src ' + COUNTER
+            + "; base-uri 'none'; form-action 'none'\">")
 
+
+SITE = 'https://bikefitsim.github.io/'
+DESCRIPTION = ('Move your bike fit to another bike: enter the bike that fits you and the new frame&#39;s geometry, '
+               'and get the saddle height, setback, seatpost, stem and spacers.')
+COUNTER = 'https://bikefitsim.goatcounter.com'
+COUNTER_JS = 'https://gc.zgo.at'
+
+# what search engines and link previews show
+META = ('<meta name="description" content="{d}"><link rel="canonical" href="{u}">'
+        '<meta property="og:type" content="website"><meta property="og:site_name" content="Bikefit Simulator">'
+        '<meta property="og:title" content="Bikefit Simulator"><meta property="og:description" content="{d}">'
+        '<meta property="og:url" content="{u}"><meta name="twitter:card" content="summary">'
+        '<meta name="twitter:title" content="Bikefit Simulator"><meta name="twitter:description" content="{d}">'
+        ).format(d=DESCRIPTION, u=SITE)
+
+# anonymous visit counts (GoatCounter); it counts nothing on localhost or a file opened from disk
+ANALYTICS = '<script data-goatcounter="' + COUNTER + '/count" async src="' + COUNTER_JS + '/count.js"></script>'
 
 # a small reset and the logo as the tab icon
 HEAD = ('<!doctype html><html lang="en"><head><meta charset="utf-8">{csp}'
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-        '<title>Bikefit Simulator</title>' + favicon() +
+        '<title>Bikefit Simulator</title>' + META + favicon() + ANALYTICS +
         '<style>:root{color-scheme:dark}body{margin:0;font:14px system-ui}img{max-width:100%}'
         '[hidden]{display:none!important}</style></head><body>\n')
 

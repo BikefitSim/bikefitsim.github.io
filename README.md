@@ -27,6 +27,7 @@ A target bike keeps the reference's personal reach and drop. With a saved cockpi
 - Every saddle is taken to be level.
 - The handlebar drawing is only representative, and brake hoods aren't drawn, since their shape and size vary from one model to another. The hand position works regardless.
 - Only the bottom bracket position is taken into account. To keep the same fit, use the same crank length, stance width and cleat position.
+- Only anonymous visit counts are sent, to GoatCounter. Your bikes and measurements never leave this browser.
 
 ## Folders
 
