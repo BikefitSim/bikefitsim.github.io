@@ -229,9 +229,9 @@ svg.geo .bike .barc, svg.geo .bike .joint { fill: #000; }
 .opt-in { display: inline-flex; align-items: center; gap: 6px; }
 .opt-in input { width: 48px; background: var(--well); color: var(--ink); border: 1px solid var(--rule); font: 12px var(--mono); padding: 2px 4px; }
 .opt-in input[aria-invalid="true"] { border-color: var(--bad, #FF5555); }
-.support { margin-bottom: 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.support { padding: 6px 0 4px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .support .support-btn { text-decoration: none; }
-.credits .support .support-note { display: block; max-width: 520px; margin: 0; background: none; box-shadow: none; color: var(--ink); font: 13px var(--mono); text-align: center; line-height: 1.5; }
+.support .support-note { display: block; max-width: 520px; margin: 0; background: none; box-shadow: none; color: var(--ink); font: 13px var(--mono); text-align: center; line-height: 1.5; }
 .support-qr { display: block; background: #fff; padding: 6px; box-shadow: var(--shade-s); }
 
 /* step buttons: a small black panel */
