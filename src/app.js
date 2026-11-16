@@ -906,7 +906,7 @@
     const top = optAll ? pool : optNear(pool);
     return `
           <table class="data" id="optTable">
-            <thead><tr><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
+            <thead><tr><th>Stem (length/angle)</th><th class="num">Spacers (mm)</th><th class="num">Hand fwd (mm)</th><th class="num">Hand up (mm)</th><th class="num">Miss (mm)</th></tr></thead>
             <tbody>${sortOpts(top.concat(o && !top.includes(o) ? [o] : [])).map((x) => {
               const sel = o && optKey(x) === optKey(o);
               // the row itself is the choice (Z): click it, or Tab to it and press Enter or Space
