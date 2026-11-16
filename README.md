@@ -27,7 +27,6 @@ A target bike keeps the reference's personal reach and drop. With a saved cockpi
 - Every saddle is taken to be level.
 - Brake hoods aren't drawn, since their shape and size vary from one model to another. The hand position works the same with or without them.
 - Crank length affects a bikefit, every bike is assumed to use the same.
-- Results are estimates. Check the setup on the bike before riding.
 
 ## Folders
 
