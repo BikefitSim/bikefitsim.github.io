@@ -223,7 +223,7 @@ svg.geo .bike .barc, svg.geo .bike .joint { fill: #000; }
 /* footer: a grey status line */
 .credits p { display: inline-block; background: var(--bar); color: #000; font: 13px var(--mono); padding: 3px 12px; box-shadow: var(--shade-s); }
 .credits a { color: #000; }
-.opt-ctl { margin-top: 14px; align-items: center; justify-content: flex-end; }
+.opt-ctl { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--rule); align-items: center; justify-content: flex-end; } /* the line sets the list apart from the stem and spacer fields (Z) */
 .opt-ctl .opt-count { margin-left: 0; }
 #optListFields { gap: 14px; margin-right: 8px; }
 .opt-in { display: inline-flex; align-items: center; gap: 6px; }
