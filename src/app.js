@@ -532,7 +532,7 @@
     // the stem lists on one wide line, the spacer fields under them, then the list's miss threshold and length (Z)
     const row = (fs, cls) => `<div class="fields${cls}">${fs.map((f) => fieldHTML(f, 'opts', state.opts)).join('')}</div>`;
     $('optFields').innerHTML = row(OPT_FIELDS.filter((f) => f.type === 'list'), ' lists')
-      + row(OPT_FIELDS.filter((f) => f.type !== 'list' && !f.line), '') + row(OPT_FIELDS.filter((f) => f.line === 'list'), '');
+      + row(OPT_FIELDS.filter((f) => f.type !== 'list' && !f.line), '') + row(OPT_FIELDS.filter((f) => f.line === 'list'), ' list-set'); // a line above them sets them apart (Z)
   }
   function renderTabs() {
     $('tabs').innerHTML = state.bikes.map((b) => `<button class="tab" role="tab" type="button" data-tab="${esc(b.id)}" aria-selected="${b.id === state.selected}">${esc(b.name || 'Untitled bike')}</button>`).join('')
