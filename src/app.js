@@ -842,7 +842,7 @@
   /* The list shows only the options that put the hands within the miss threshold of the target (the one
      the whole app uses: 10 mm unless Component options says otherwise), as the Miss column rounds it,
      the closest Max results (30 unless set) at most (Z);
-     Show more lists that many whatever their miss. With none that close, it shows the closest one. One per stem keeps
+     Show max lists that many whatever their miss. With none that close, it shows the closest one. One per stem keeps
      only each stem's closest spacer stack. */
   const optNearMax = () => (finite(state.opts.missMax) && state.opts.missMax > 0 ? state.opts.missMax : 10);
   const optMax = () => (finite(state.opts.maxResults) && state.opts.maxResults >= 1 ? Math.floor(state.opts.maxResults) : 30); // Max results in Component options
