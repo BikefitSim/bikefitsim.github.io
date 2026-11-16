@@ -234,6 +234,7 @@ svg.geo .bike .barc, svg.geo .bike .joint { fill: #000; }
 .support-pay { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: none; }
 @media (max-width: 600px) { .support { flex-direction: column; align-items: center; } }
 .support .support-btn { text-decoration: none; }
+.support-act { margin-top: 4px; }
 .support .support-note { max-width: 90ch; margin: 0; color: var(--ink-2); font: normal 13px var(--mono); line-height: 1.5; text-align: left; } /* like the Known limitations text (Z) */
 .support-qr { display: block; background: #fff; padding: 6px; box-shadow: var(--shade-s); }
 
