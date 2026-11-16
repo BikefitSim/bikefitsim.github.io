@@ -532,8 +532,13 @@
     // the stem lists on one wide line, the spacer fields under them (Z)
     const row = (fs, cls) => `<div class="fields${cls}">${fs.map((f) => fieldHTML(f, 'opts', state.opts)).join('')}</div>`;
     $('optFields').innerHTML = row(OPT_FIELDS.filter((f) => f.type === 'list'), ' lists') + row(OPT_FIELDS.filter((f) => f.type !== 'list' && !f.line), '');
-    // the list's miss threshold and length sit with the list's buttons, above the table (Z); drawn once, so typing keeps its place
-    $('optListFields').innerHTML = OPT_FIELDS.filter((f) => f.line === 'list').map((f) => fieldHTML(f, 'opts', state.opts)).join('');
+    /* the list's miss threshold and length: small inline inputs with the list's buttons above the table,
+       like the old Show X of Y (Z); drawn once, so typing keeps its place */
+    const small = (k, before, after) => {
+      const f = OPT_FIELDS.find((x) => x.k === k);
+      return `<label class="opt-in" for="opts-${k}" data-m="${k}">${before}<input id="opts-${k}" data-bind="opts.${k}" type="text" data-num="1" data-opt="1" inputmode="decimal" autocomplete="off" spellcheck="false" value="${esc(state.opts[k] ?? '')}" placeholder="${esc(f.ph)}" aria-label="${esc(f.l)}">${after}</label>`;
+    };
+    $('optListFields').innerHTML = small('missMax', 'Miss under', 'mm') + small('maxResults', 'Show', 'max');
   }
   function renderTabs() {
     $('tabs').innerHTML = state.bikes.map((b) => `<button class="tab" role="tab" type="button" data-tab="${esc(b.id)}" aria-selected="${b.id === state.selected}">${esc(b.name || 'Untitled bike')}</button>`).join('')
