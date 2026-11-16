@@ -377,8 +377,12 @@
   const orRef = (v, rv) => (v == null || v === '' ? rv : v);
   // a picked saddle or cockpit gives its sizes; a target bike with no cockpit of its own keeps
   // its reference's stem height and hand position and is drawn with its reference's bar
+  // the frame a target bike uses: its own pick, else (Same as reference) its reference's, when that is a bikefit
+  const bikeFrame = (b, ref) => partOf('frame', b.frameId) || (ref && ref.kind === 'bike' ? partOf('frame', ref.frameId) : null);
   function effBike(b, ref) {
     const o = Object.assign({}, b);
+    const fr = bikeFrame(b, ref);
+    if (fr && !partOf('frame', b.frameId)) for (const k of GEO_KEYS) o[k] = fr[k];
     for (const kind of PART_KINDS) { const p = partOf(kind, b[`${kind}Id`]); if (p) for (const k of PART_KEYS[kind]) o[k] = p[k]; }
     if (!partOf('bar', b.barId) && BAR_SIZE_KEYS.every((k) => o[k] == null)) for (const k of BAR_SIZE_KEYS) o[k] = ref.fit[k];
     if (!partOf('bar', b.barId)) for (const k of HAND_KEYS) o[k] = ref.fit[k]; // no saved handlebar: the reference's hand position
@@ -395,9 +399,9 @@
     spacers: { k: 'spacers', l: 'Spacers', u: 'mm' }, // short so the three stem fields fit on one line
   };
   /* A group title with its saved frame, saddle or cockpit picker beside it (Z). An empty pick is
-     missing, except a target bike's saddle or cockpit, which then is the reference's. */
+     missing, except on a target bike, where it is the reference's frame, saddle or cockpit. */
   const PICK_LABEL = { frame: 'Frame', saddle: 'Saddle', bar: 'Cockpit' };
-  const pickNone = (kind, scope) => (kind !== 'frame' && scope === 'bike' ? 'Same as reference'
+  const pickNone = (kind, scope) => (scope === 'bike' ? 'Same as reference'
     : partList(kind).length ? `Choose a ${PART_WORD[kind]}` : `No ${PART_WORD[kind]}s saved yet`);
   const pickTitle = (kind, scope, obj) => {
     const f = { k: `${kind}Id`, l: PICK_LABEL[kind], type: 'select', opts: [['', pickNone(kind, scope)], ...partList(kind).map((p) => [p.id, partName(kind, p)])] };
@@ -717,7 +721,7 @@
       const rm = curRef() ? refs[curRef().id] : null;
       const ref = rm ? rm.eff : effRef(blankRef('bike', 'none', '')); // with no reference, only the bike's own numbers are checked
       const b = effBike(b0, ref);
-      const fr = partOf('frame', b.frameId);
+      const fr = bikeFrame(b0, ref);
       const be = fr ? partErrors('frame', fr) : [NEEDS('target bike', ['a frame'])];
       const frameOk = !be.length;
       for (const kind of PART_KINDS) { const p = partOf(kind, b0[`${kind}Id`]); if (p) be.push(...partErrors(kind, p)); }
@@ -816,10 +820,11 @@
   const OPT_SORTS = [['miss', 'Closest', 'Furthest'], ['reach', 'Most reach', 'Least reach'], ['stack', 'Most stack', 'Least stack']];
   let optSort = 'miss';
   let optLeast = false; // the flipped order: furthest, least reach or least stack first
-  // how many of the closest options the list shows; a per-browser view setting, like the drawing layers
-  const OPT_COUNT_KEY = 'geobike.optCount';
-  let optCount = 10;
-  try { const v = parseInt(localStorage.getItem(OPT_COUNT_KEY), 10); if (v >= 1 && v <= 500) optCount = v; } catch (err) { /* default */ }
+  /* The list shows only the options that put the hands within 10 mm of the target, as the Miss column rounds it (Z); Show all options
+     lists the rest too. With none that close, it shows the closest one. */
+  const OPT_NEAR = 10;
+  let optAll = false;
+  const optNear = (all) => { const near = all.filter((x) => Math.round(x.err * 10) / 10 < OPT_NEAR); return near.length ? near : all.slice(0, 1); };
   function sortOpts(list) {
     if (optSort === 'miss') return optLeast ? list.slice().reverse() : list;
     const by = optSort === 'stack' ? (x) => x.dy : (x) => x.dx;
@@ -878,12 +883,11 @@
     list.innerHTML = `
         <div class="sub-h">
           <div class="sort" role="group" aria-label="Sort options">Sort by ${OPT_SORTS.map(([k, most, least]) => `<button type="button" class="sort-btn" data-optsort="${k}" aria-pressed="${optSort === k}" title="Click again for ${optSort === k && !optLeast ? least.toLowerCase() : most.toLowerCase()} first">${optSort === k && optLeast ? least : most}</button>`).join('')}</div>
-          <label class="opt-count" for="optCount">Show <input type="number" id="optCount" min="1" max="${r.cockpit.all.length}" step="1" value="${Math.min(optCount, r.cockpit.all.length)}"> of ${r.cockpit.all.length}</label></div>
+          ${optNear(r.cockpit.all).length < r.cockpit.all.length ? `<span class="opt-count">${optAll ? `All ${r.cockpit.all.length} options` : `${optNear(r.cockpit.all).length} under ${OPT_NEAR} mm`}<button type="button" class="sort-btn" id="optAll" aria-pressed="${optAll}">${optAll ? `Only under ${OPT_NEAR} mm` : 'Show all options'}</button></span>` : ''}</div>
         <div class="tbl-wrap" id="optWrap">${optTableHTML(r, o)}</div>`;
   }
-  // the options table alone, so changing how many it shows leaves the Show field (and its caret) alone
   function optTableHTML(r, o) {
-    const top = r.cockpit.all.slice(0, optCount);
+    const top = optAll ? r.cockpit.all : optNear(r.cockpit.all);
     return `
           <table class="data" id="optTable">
             <thead><tr><th></th><th>Stem</th><th class="num">Spacers mm</th><th class="num">Hand fwd mm</th><th class="num">Hand up mm</th><th class="num">Miss mm</th></tr></thead>
@@ -1030,9 +1034,9 @@
       why = 'A personal fit has no frame to compare this one with. Use a bikefit as the reference in step 2, and enter the chainstay of both frames.';
     } else {
       const missing = [];
-      const frameName = (o) => { const f = partOf('frame', o.frameId); return f ? partName('frame', f) : 'its frame'; };
-      if (!GB.frameDrawing(r.fp.bike).csKnown) missing.push(esc(frameName(r.ref)));
-      if (!r.drawing.csKnown && !missing.includes(esc(frameName(b)))) missing.push(esc(frameName(b)));
+      const frameName = (f) => (f ? partName('frame', f) : 'its frame');
+      if (!GB.frameDrawing(r.fp.bike).csKnown) missing.push(esc(frameName(partOf('frame', r.ref.frameId))));
+      if (!r.drawing.csKnown && !missing.includes(esc(frameName(bikeFrame(b, r.ref))))) missing.push(esc(frameName(bikeFrame(b, r.ref))));
       why = `It needs the chainstay of both frames. Enter it for ${missing.join(' and ')} under Frames in step 1.`;
     }
     return `<div class="viz-ground"><div class="ground-off"><b>No Ground aligned drawing</b><span>${why}</span></div></div>`;
@@ -1433,15 +1437,6 @@
   const objFor = (scope) => (scope === 'bike' ? curBike() : scope === 'ref' ? curRef() : scope === 'fit' ? curRef().fit
     : LIB_KINDS.includes(scope) ? curPart(scope) : state[scope]);
   document.addEventListener('input', (e) => {
-    if (e.target.id === 'optCount') {
-      const v = parseInt(e.target.value, 10);
-      if (!(v >= 1)) return; // empty while typing: keep the list as it is
-      optCount = Math.min(v, 500);
-      try { localStorage.setItem(OPT_COUNT_KEY, String(optCount)); } catch (err) { /* per-browser only */ }
-      const b = curBike(); if (!b) return; const r = model.res[b.id]; const wrap = $('optWrap');
-      if (wrap && r && r.cockpit) wrap.innerHTML = optTableHTML(r, chosenFor(b, r));
-      return;
-    }
     const el = e.target.closest && e.target.closest('[data-bind]');
     if (!el || !loaded) return;
     const [scope, key] = el.dataset.bind.split('.');
@@ -1566,7 +1561,7 @@
         if (!o) return;
         made = blankRef('bike', uid('r'), nextDefaultName('bike'));
         // the target's frame, saddle and cockpit (its reference's where it picks none)
-        made.frameId = b.frameId;
+        made.frameId = b.frameId || (src.kind === 'bike' ? src.frameId : null);
         Object.assign(made.fit, {
           saddleHeight: r1(r.heightAlong), setback: r1(r.setback), spacers: o.spacers, stemLength: o.length, stemAngle: o.angle,
           saddleId: b.saddleId || src.fit.saddleId, barId: b.barId || src.fit.barId,
@@ -1613,6 +1608,12 @@
       state.bikes = state.bikes.filter((b) => b.id !== state.selected);
       state.selected = state.bikes.length ? state.bikes[0].id : null; // the last one can go too (Z)
       renderAll(); scheduleSave();
+      return;
+    }
+    if (e.target.closest('#optAll')) {
+      optAll = !optAll;
+      renderBikeOut();
+      const again = $('optAll'); if (again) again.focus();
       return;
     }
     const sortBtn = e.target.closest('[data-optsort]');
