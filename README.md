@@ -21,7 +21,7 @@ A target bike keeps the reference's personal reach and drop. With a saved cockpi
 
 ## Limitations
 
-- Simulation output will be blocked if the same saddle position isn't possible on the target frame.
+- Simulation output will be blocked if the same saddle position isn't achievable on the target frame.
 - You need each frame's geometry and a few measurements, so some knowledge of bike geometry helps.
 - Manufacturers' geometry charts aren't always exact.
 - Every saddle is taken to be level.
