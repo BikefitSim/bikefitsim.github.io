@@ -1662,11 +1662,12 @@
     }
   });
 
-  /* Step buttons: back to the top, or jump to step 1, 2 or 3, and light up the step you are in.
+  /* Step buttons: back to the top, jump to step 1, 2 or 3, or all the way down (Z), and light up the step you are in.
      Any other [data-goto] link jumps the same way. */
   const stepSecs = () => [...document.querySelectorAll('.stepnav [data-goto]')].map((b) => [b, $(b.dataset.goto) && $(b.dataset.goto).closest('section')]);
   document.addEventListener('click', (e) => {
     if (e.target.closest('.stepnav [data-top]')) { scrollTo({ top: 0, behavior: smooth() }); return; }
+    if (e.target.closest('.stepnav [data-bottom]')) { scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth() }); return; }
     const go = e.target.closest('[data-goto]');
     if (!go) return;
     const sec = $(go.dataset.goto) && $(go.dataset.goto).closest('section');
