@@ -377,4 +377,41 @@ test('the rail check tries each seatpost it is given', () => {
   assert.ok([0, 20].includes(b.postOffset), 'inline or 20 mm');
 });
 
+test('the fork offset is worked out from stack, reach and front centre (or wheelbase) when it is empty', () => {
+  // size M of a real chart: its fork is 45 mm
+  const m = { sta: 73.5, hta: 72.5, htLength: 150, ett: 545, seatTube: 500, bbDrop: 58, stack: 530, reach: 400, chainstay: 400 };
+  const fc = GB.offsetFromFrame(Object.assign({}, m, { frontCentre: 599 }));
+  near(fc.offset, 45.17, 0.01, 'from the front centre');
+  assert.strictEqual(fc.from, 'frontCentre');
+  const wb = GB.offsetFromFrame(Object.assign({}, m, { wheelbase: 992 }));
+  near(wb.offset, 45.21, 0.01, 'from wheelbase and chainstay');
+  assert.strictEqual(wb.from, 'wheelbase');
+  assert.strictEqual(GB.offsetFromFrame(Object.assign({}, m, { wheelbase: 992, chainstay: null })), null, 'wheelbase needs the chainstay');
+  assert.strictEqual(GB.offsetFromFrame(Object.assign({}, m, { frontCentre: 599, stack: null, forkA2C: 370 })), null, 'needs the chart stack');
+  // the reach can come from the top tube
+  const ett = Object.assign({}, m, { reach: null, ett: 400 + 530 / Math.tan(GB.rad(73.5)), frontCentre: 599 });
+  near(GB.offsetFromFrame(ett).offset, fc.offset, 1e-9, 'reach from the effective top tube');
+  // the frame drawn with the worked-out offset puts the front axle at the front centre
+  const d = GB.frameDrawing(Object.assign({}, m, { frontCentre: 599 }));
+  near(Math.hypot(d.front.x, d.front.y), 599, 1e-6, 'front centre');
+  near(d.front.y, 58, 1e-9, 'front axle level');
+  // a fork length from the stack, with the worked-out offset
+  near(GB.forkFromStack(Object.assign({}, m, { frontCentre: 599 })), GB.forkFromStack(Object.assign({}, m, { forkOffset: fc.offset })), 1e-9, 'fork length');
+  // shown as a note, and an entered offset is used instead, flagged when far off
+  const note = GB.frameChecks(Object.assign({}, m, { frontCentre: 599 }));
+  assert.ok(note.some((c) => c.level === 'info' && c.text.includes('45 mm')), 'note with the offset');
+  const typed = GB.frameDrawing(Object.assign({}, m, { frontCentre: 599, forkOffset: 45 }));
+  assert.ok(Math.abs(Math.hypot(typed.front.x, typed.front.y) - 599) > 0.05, 'the entered offset is used');
+  assert.ok(!GB.frameChecks(Object.assign({}, m, { frontCentre: 599, forkOffset: 45 })).some((c) => c.text.includes('fork offset')), 'close: no flag');
+  assert.ok(GB.frameChecks(Object.assign({}, m, { frontCentre: 599, forkOffset: 55 })).some((c) => c.level === 'warn' && c.text.includes('fork offset of 45 mm')), 'far: flagged');
+  // and the whole calculation runs with it
+  const fp = GB.fitPoints(ref, fit);
+  const sol = GB.solveBike(Object.assign({}, m, { frontCentre: 599, handX: 50, handY: -4 }), fp, fit, opts);
+  const sol2 = GB.solveBike(Object.assign({}, m, { forkOffset: fc.offset, handX: 50, handY: -4 }), fp, fit, opts);
+  near(sol.drawing.front.x, sol2.drawing.front.x, 1e-9, 'same as entering it');
+  const rf = Object.assign({}, ref, { forkOffset: null, frontCentre: Math.hypot(GB.frameDrawing(ref).front.x, ref.bbDrop) });
+  near(GB.offsetFromFrame(rf).offset, 50, 1e-6, 'the reference fork, back from its front centre');
+  near(GB.fitPoints(rf, fit).hand.x, GB.fitPoints(ref, fit).hand.x, 1e-6, 'a reference with no offset entered');
+});
+
 console.log(`\n${passed} checks passed`);

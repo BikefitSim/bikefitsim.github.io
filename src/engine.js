@@ -99,6 +99,7 @@ const GB = (() => {
   /* Fork length (axle to crown plus any lower headset cup) that puts the head tube top at the
      chart stack, with the front axle BB drop above the BB on the fork's offset line. */
   function forkFromStack(b) {
+    b = withFork(b);
     if (![b.stack, b.htLength, b.forkOffset, b.bbDrop, b.hta].every(fin) || !(b.stack > 0)) return null;
     const H = rad(b.hta);
     return (b.stack - b.bbDrop + b.forkOffset * Math.cos(H)) / Math.sin(H) - b.htLength;
@@ -109,7 +110,7 @@ const GB = (() => {
   /* Stack and reach: from the chart when given, otherwise from head tube, fork and BB drop, and
      the effective top tube or, without one, the actual top tube. The actual top tube runs centre
      to centre from the seat tube, at its c-c length, to the head tube, 18 mm below its top. */
-  function frameGeometry(b) {
+  function geometryOf(b) {
     const H = rad(b.hta);
     const S = rad(b.sta);
     const tubesOk = [b.htLength, b.forkA2C, b.forkOffset, b.bbDrop].every(fin);
@@ -134,6 +135,37 @@ const GB = (() => {
       ccEst: reachFrom === 'att' && st.ccEst, // reach from the actual top tube with the c-c estimated
       stackSrc: hasStack ? 'chart' : 'tubes', reachSrc: hasReach ? 'chart' : 'tubes',
     };
+  }
+
+  const frameGeometry = (b) => geometryOf(withFork(b));
+
+  /* Fork offset worked out from the frame when it isn't given (Z, 2026-11-19). The front axle sits
+     BB drop above the BB and front centre ahead of it or, without a front centre, the wheelbase less
+     the chainstay's level run. The steering axis runs through the top of the head tube (stack,
+     reach), and the offset is the axle's distance square to it: the level gap at axle height
+     times the sine of the head angle. It takes the chart stack, since a stack from the tubes
+     needs the offset; the reach can come from the top tube. */
+  function offsetFromFrame(b) {
+    if (!b || !fin(b.hta) || !fin(b.bbDrop) || !(fin(b.stack) && b.stack > 0)) return null;
+    const E = b.bbDrop;
+    let axle = null; let from = null;
+    if (fin(b.frontCentre) && b.frontCentre > Math.abs(E)) {
+      axle = Math.sqrt(b.frontCentre ** 2 - E ** 2); from = 'frontCentre';
+    } else if (fin(b.wheelbase) && fin(b.chainstay) && b.chainstay > Math.abs(E) + 1) {
+      axle = b.wheelbase - Math.sqrt(b.chainstay ** 2 - E ** 2); from = 'wheelbase';
+    }
+    if (axle == null) return null;
+    const reach = geometryOf(Object.assign({}, b, { forkOffset: null })).reach;
+    if (!fin(reach)) return null;
+    const H = rad(b.hta);
+    const axis = reach + (b.stack - E) / Math.tan(H); // steering axis at axle height
+    return { offset: (axle - axis) * Math.sin(H), from };
+  }
+  // the frame with its fork offset as entered or, when it is empty, worked out from the frame
+  function withFork(b) {
+    if (!b || fin(b.forkOffset)) return b;
+    const o = offsetFromFrame(b);
+    return o ? Object.assign({}, b, { forkOffset: o.offset }) : b;
   }
 
   /* Where the hands sit (the web between thumb and index finger on the bar) from the top centre of
@@ -181,6 +213,7 @@ const GB = (() => {
      instead (handFrom 'reach'), and the stem is worked out from those. */
   function fitPoints(ref, fit) {
     if (ref.kind === 'fit') return bodyPoints(fit);
+    ref = withFork(ref);
     const geo = frameGeometry(ref);
     const S = rad(ref.sta);
     const ys = fit.saddleHeight * Math.sin(S);
@@ -281,6 +314,7 @@ const GB = (() => {
   }
 
   function frameDrawing(bike) {
+    bike = withFork(bike);
     const { d, n } = steerer(bike.hta);
     const S = rad(bike.sta);
     const T = { x: bike.reach, y: bike.stack };
@@ -320,6 +354,9 @@ const GB = (() => {
      tubes, or a reach that rests on a guessed seat tube c-c. Each is marked frame: true, so the app
      can show them with the frame they belong to. */
   function frameChecks(bikeIn) {
+    const typed = fin(bikeIn.forkOffset);
+    const off = offsetFromFrame(Object.assign({}, bikeIn, { forkOffset: null }));
+    bikeIn = withFork(bikeIn);
     const geo = frameGeometry(bikeIn);
     const bike = Object.assign({}, bikeIn, { stack: geo.stack, reach: geo.reach });
     const checks = [];
@@ -335,6 +372,12 @@ const GB = (() => {
     if (geo.reachSrc === 'tubes' && geo.ccEst) {
       checks.push({ level: 'info', text: 'Reach comes from the actual top tube, taking the seat tube c-c as 20 mm less than the c-t. Enter the c-c for an exact reach.' });
     }
+    const fromWhat = off && (off.from === 'frontCentre' ? 'front centre' : 'wheelbase and chainstay');
+    if (off && !typed) {
+      checks.push({ level: 'info', text: `Fork offset worked out from the stack, reach, head tube angle, BB drop and ${fromWhat}: ${off.offset.toFixed(0)} mm.` });
+    } else if (off && Math.abs(off.offset - bikeIn.forkOffset) > 5) {
+      checks.push({ level: 'warn', text: `The stack, reach, head tube angle, BB drop and ${fromWhat} give a fork offset of ${off.offset.toFixed(0)} mm, but ${bikeIn.forkOffset} mm was entered. The offset entered is used.` });
+    }
     const fd = frameDrawing(bike);
     if (fd.wbKnown && Math.abs(fd.wbCalc - bike.wheelbase) > 8) {
       checks.push({ level: 'warn', text: `Chainstay, head tube, fork and reach give a wheelbase of ${fd.wbCalc.toFixed(0)} mm, but ${bike.wheelbase} mm was entered. Check the fork length and chainstay. The wheelbase entered is used in the drawings.` });
@@ -342,6 +385,7 @@ const GB = (() => {
     return checks.map((c) => Object.assign(c, { frame: true }));
   }
   function solveBike(bikeIn, fp, fit, opts) {
+    bikeIn = withFork(bikeIn);
     const geo = frameGeometry(bikeIn);
     const bike = Object.assign({}, bikeIn, { stack: geo.stack, reach: geo.reach });
     const S = rad(bike.sta);
@@ -417,6 +461,6 @@ const GB = (() => {
     return { bike, geo, saddle: { x, y }, setback: -x, tipShift, saddleLen: len(saddle.saddleLen), heightAlong, noseAhead, railMove, sameSaddle, railPos, railOver, railTravel, railHalf: rail.railHalf, clampLen: rail.clampLen, railH: rail.railH, postTries: rail.tries, postOffset, tipToRails, exposed, target, hand, reachH, barWidth: wRef, cockpit, handTol, checks, drawing: fd };
   }
 
-  return { fitPoints, bodyPoints, frameGeometry, forkFromStack, forkLength, solveBike, frameChecks, barFor, handOff, parseList, railFit, frameDrawing, steerer, rad, STEM_H, HAND_Y, stemH, RAIL_TOL };
+  return { fitPoints, bodyPoints, frameGeometry, forkFromStack, offsetFromFrame, forkLength, solveBike, frameChecks, barFor, handOff, parseList, railFit, frameDrawing, steerer, rad, STEM_H, HAND_Y, stemH, RAIL_TOL };
 })();
 if (typeof module !== 'undefined') module.exports = GB;

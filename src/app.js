@@ -15,8 +15,8 @@
   const finite = (v) => typeof v === 'number' && Number.isFinite(v);
   const isObj = (o) => o && typeof o === 'object';
 
-  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay', 'wheelbase', 'tyre', 'wheel'];
-  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null, chainstay: null, wheelbase: null, tyre: null, wheel: null };
+  const GEO_KEYS = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay', 'wheelbase', 'tyre', 'wheel', 'frontCentre'];
+  const BLANK_GEO = { sta: null, hta: null, htLength: null, ett: null, att: null, seatTube: null, seatTubeCC: null, bbDrop: null, forkA2C: null, forkOffset: null, stack: null, reach: null, chainstay: null, wheelbase: null, tyre: null, wheel: null, frontCentre: null };
   /* Two kinds of reference, each with its own tab. A bikefit (kind 'bike') is a frame plus how
      it is set up (saddle, spacers, stem, hand position, handlebar); a personal fit (kind 'fit') is only the rider's
      numbers (saddle height as a straight line to the saddle tip, setback, personal reach, drop,
@@ -348,11 +348,12 @@
     { k: 'seatTube', l: 'Seat tube (c-t)', u: 'mm', opt: true },
     { k: 'seatTubeCC', l: 'Seat tube (c-c)', u: 'mm', opt: true },
     { k: 'forkA2C', l: 'Fork length', u: 'mm', opt: true },
-    { k: 'forkOffset', l: 'Fork offset', u: 'mm' },
+    { k: 'forkOffset', l: 'Fork offset', u: 'mm' }, // optional when the frame gives it: see FORK_CALC
     { k: 'stack', l: 'Stack', u: 'mm', opt: true },
     { k: 'reach', l: 'Reach', u: 'mm', opt: true },
     { k: 'chainstay', l: 'Chainstay', u: 'mm', opt: true },
     { k: 'wheelbase', l: 'Wheelbase', u: 'mm', opt: true },
+    { k: 'frontCentre', l: 'Front centre', u: 'mm', opt: true },
     { k: 'tyre', l: 'Tyre width', u: 'mm', opt: true },
     { k: 'wheel', l: 'Wheel size', type: 'select', opt: true }, // options: wheelField
   ];
@@ -445,9 +446,12 @@
      value that replaces it, is filled in and it is itself empty. */
   const EITHER = { ett: ['att', 'reach'], att: ['ett', 'reach'], seatTube: ['seatTubeCC'], seatTubeCC: ['seatTube'], forkA2C: ['stack'] };
   const given = (v) => finite(v) && v > 0;
-  const isOpt = (f, obj) => (EITHER[f.k] ? !given(obj[f.k]) && EITHER[f.k].some((k) => given(obj[k])) : !!f.opt);
+  // the fork offset turns grey once the stack, reach and front centre (or wheelbase and chainstay) give it
+  const forkCalc = (obj) => (finite(obj.forkOffset) ? null : GB.offsetFromFrame(obj));
+  const isOpt = (f, obj) => (f.k === 'forkOffset' ? forkCalc(obj) != null
+    : EITHER[f.k] ? !given(obj[f.k]) && EITHER[f.k].some((k) => given(obj[k])) : !!f.opt);
   function refreshOptional(scope, obj) {
-    for (const k of Object.keys(EITHER)) {
+    for (const k of [...Object.keys(EITHER), 'forkOffset']) {
       const el = $(`${scope}-${k}`);
       if (el) el.closest('.f').classList.toggle('opt', isOpt({ k }, obj));
     }
@@ -471,7 +475,8 @@
   function calcPlaceholders(b) {
     const g = GB.frameGeometry(Object.assign({}, b, { stack: null, reach: null }));
     const fork = GB.forkFromStack(b);
-    return { stack: g.stackCalc != null ? `calc. ${Math.round(g.stackCalc)}` : '', reach: g.reachCalc != null ? `calc. ${Math.round(g.reachCalc)}` : '', forkA2C: fork != null ? `calc. ${Math.round(fork)}` : '' };
+    const off = forkCalc(b);
+    return { stack: g.stackCalc != null ? `calc. ${Math.round(g.stackCalc)}` : '', reach: g.reachCalc != null ? `calc. ${Math.round(g.reachCalc)}` : '', forkA2C: fork != null ? `calc. ${Math.round(fork)}` : '', forkOffset: off ? `calc. ${Math.round(off.offset)}` : '' };
   }
   function geoFieldsHTML(scope, b) {
     const ph = calcPlaceholders(b);
@@ -479,7 +484,7 @@
   }
   function refreshPlaceholders(scope, b) {
     const ph = calcPlaceholders(b);
-    for (const k of ['stack', 'reach', 'forkA2C']) { const el = $(`${scope}-${k}`); if (el) el.placeholder = ph[k]; }
+    for (const k of ['stack', 'reach', 'forkA2C', 'forkOffset']) { const el = $(`${scope}-${k}`); if (el) el.placeholder = ph[k]; }
   }
 
   /* ---------- rendering: inputs ---------- */
@@ -615,11 +620,17 @@
     if (b.seatTube == null && b.seatTubeCC == null) c.missing.push('seat tube, c-t or c-c');
     if (b.seatTube != null) c.chk('seatTube', 200, 750, 'Seat tube (c-t)');
     if (b.seatTubeCC != null) c.chk('seatTubeCC', 200, 750, 'Seat tube (c-c)');
-    c.chk('bbDrop', -40, 110, 'BB drop'); c.chk('forkOffset', 0, 80, 'Fork offset');
+    c.chk('bbDrop', -40, 110, 'BB drop');
+    if (b.frontCentre != null && b.frontCentre !== '' && !(finite(b.frontCentre) && b.frontCentre >= 450 && b.frontCentre <= 800)) c.wrong.push('Front centre should be between 450 and 800.');
+    // the fork offset as entered or, when it is empty, from stack, reach and front centre (or wheelbase)
+    const off = forkCalc(b);
+    if (!off && (b.forkOffset == null || b.forkOffset === '')) c.missing.push('fork offset (or stack and front centre)');
+    else if (!off) c.chk('forkOffset', 0, 80, 'Fork offset');
+    else if (!c.wrong.length && (off.offset < 0 || off.offset > 80)) c.wrong.push(`The ${off.from === 'frontCentre' ? 'front centre' : 'wheelbase and chainstay'} give a fork offset of ${Math.round(off.offset)} mm, outside 0 to 80. Check the ${off.from === 'frontCentre' ? 'front centre' : 'wheelbase, chainstay'}, stack and reach, or enter the fork offset.`);
     const hasStack = finite(b.stack) && b.stack > 0;
     if (b.forkA2C != null && b.forkA2C !== '') c.chk('forkA2C', 300, 600, 'Fork length');
     else if (!hasStack) c.missing.push('fork length (or stack)');
-    else if (finite(b.htLength) && finite(b.forkOffset) && finite(b.bbDrop) && finite(b.hta)) {
+    else if (finite(b.htLength) && (finite(b.forkOffset) || off) && finite(b.bbDrop) && finite(b.hta)) {
       const fork = GB.forkFromStack(b);
       if (fork < 300 || fork > 600) c.wrong.push(`The stack gives a fork length of ${Math.round(fork)} mm, outside 300 to 600. Check the stack, head tube length and BB drop.`);
     }
@@ -1228,7 +1239,7 @@
      the list (1 = first), and default names ("Target bike 2") just their number. Saved frames came last
      (2026-11-12): a bike that picks one leaves its own frame sizes out and gives the frame's place at the
      end of its row; older links carry the sizes, which become saved frames as they open. */
-  const LINK_GEO = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay', 'wheelbase', 'tyre', 'wheel'];
+  const LINK_GEO = ['sta', 'hta', 'htLength', 'ett', 'att', 'seatTube', 'seatTubeCC', 'bbDrop', 'forkA2C', 'forkOffset', 'stack', 'reach', 'chainstay', 'wheelbase', 'tyre', 'wheel', 'frontCentre'];
   // hbRamp: a removed field, kept so older share links still line up by position
   const LINK_FIT = ['saddleHeight', 'saddleLine', 'setback', 'riderReach', 'drop', 'stemLength', 'stemAngle', 'barWidth', 'spacers', 'barReach', 'tipToRails', 'railTravel', 'clampLen', 'saddleLen', 'saddleId', 'barId', 'handFrom', 'stemImplied', 'railH', 'handX', 'handY', 'stemH', 'hbWidth', 'hbDrop', 'hbReach', 'hbDiam', 'hbRamp', 'hbRise'];
   const LINK_BIKE = ['barReach', 'barWidth', 'tipToRails', 'railTravel', 'clampLen', 'saddleLen', 'saddleId', 'barId', 'pick', 'railH', 'stemH', 'hbWidth', 'hbDrop', 'hbReach', 'hbDiam', 'hbRamp', 'hbRise'];
